@@ -68,8 +68,8 @@ function gerarFiltrosDinamicos() {
     });
 
     if (listaJsonsCache.length === 0) {
-        batContainer.innerHTML = `<span style="font-size:0.85rem; color: var(--text-muted);">Nenhum arquivo no banco.</span>`;
-        pilContainer.innerHTML = `<span style="font-size:0.85rem; color: var(--text-muted);">Nenhum piloto no banco.</span>`;
+        batContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--accent-gold);">ℹ️ Conectado, mas nenhum arquivo encontrado no nó 'baterias'.</span>`;
+        pilContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--text-muted);">Nenhum piloto.</span>`;
         return;
     }
 
@@ -97,27 +97,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        dbInstancia.ref('pilotosMetadados').on('value', snapshot => { 
-            setPilotosMetadadosCache(snapshot.val() || {}); 
-            gerarFiltrosDinamicos(); 
-        }, err => console.error("Erro em pilotosMetadados:", err));
-
-        dbInstancia.ref('mesclagensPilotos').on('value', snapshot => { 
-            let servidorMesclagens = snapshot.val() || {};
-            setMesclagensCache(Object.assign({}, ALIAS_EDGARD_DJ_DEFAULTS, servidorMesclagens)); 
-            gerarFiltrosDinamicos(); 
-        }, err => console.error("Erro em mesclagensPilotos:", err));
-
-        dbInstancia.ref('campeonatos').on('value', snapshot => { 
-            setCampeonatosCache(snapshot.val() || {}); 
-            renderizarListaCampeonatosModal(); 
-        }, err => console.error("Erro em campeonatos:", err));
-
-        dbInstancia.ref('comprasColetivas').on('value', snapshot => { 
-            setComprasColetivasCache(snapshot.val() || {}); 
-            renderizarListaComprasColetivas(); 
-        }, err => console.error("Erro em comprasColetivas:", err));
-
         dbInstancia.ref('baterias').on('value', snapshot => {
             let novaLista = [];
             snapshot.forEach(child => { 
@@ -127,9 +106,35 @@ document.addEventListener("DOMContentLoaded", () => {
             novaLista.sort((a, b) => extrairPesoOrdenacao(b.sessao) - extrairPesoOrdenacao(a.sessao));
             setListaJsonsCache(novaLista);
             gerarFiltrosDinamicos();
-        }, err => console.error("Erro em baterias:", err));
+        }, err => {
+            console.error("Erro ao ler baterias:", err);
+            const batContainer = document.getElementById('filtro-baterias-container');
+            if (batContainer) batContainer.innerHTML = `<span style="color: var(--accent-red); font-size: 0.8rem;">❌ Erro Firebase: ${err.message}</span>`;
+        });
+
+        dbInstancia.ref('pilotosMetadados').on('value', snapshot => { 
+            setPilotosMetadadosCache(snapshot.val() || {}); 
+            gerarFiltrosDinamicos(); 
+        });
+
+        dbInstancia.ref('mesclagensPilotos').on('value', snapshot => { 
+            let servidorMesclagens = snapshot.val() || {};
+            setMesclagensCache(Object.assign({}, ALIAS_EDGARD_DJ_DEFAULTS, servidorMesclagens)); 
+            gerarFiltrosDinamicos(); 
+        });
+
+        dbInstancia.ref('campeonatos').on('value', snapshot => { 
+            setCampeonatosCache(snapshot.val() || {}); 
+            renderizarListaCampeonatosModal(); 
+        });
+
+        dbInstancia.ref('comprasColetivas').on('value', snapshot => { 
+            setComprasColetivasCache(snapshot.val() || {}); 
+            renderizarListaComprasColetivas(); 
+        });
     } else {
-        console.error("Instância do banco de dados Firebase é nula.");
+        const batContainer = document.getElementById('filtro-baterias-container');
+        if (batContainer) batContainer.innerHTML = `<span style="color: var(--accent-red); font-size: 0.8rem;">❌ Erro: Instância do banco Firebase nula.</span>`;
     }
 
     // Eventos dos Botões
@@ -192,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnCriarCc) btnCriarCc.onclick = criarCompraColetiva;
 
     const btnCloseRes = document.getElementById('btn-fechar-resumo-fiscal');
-    if (btnCloseRes) onCloseRes.onclick = () => document.getElementById('resumo-fiscal-modal').style.display = 'none';
+    if (btnCloseRes) btnCloseRes.onclick = () => document.getElementById('resumo-fiscal-modal').style.display = 'none';
 
     const btnPdf = document.getElementById('btn-gerar-pdf');
     if (btnPdf) btnPdf.onclick = () => window.print();
