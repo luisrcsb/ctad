@@ -1,0 +1,9 @@
+/krathus-racing/
+├── index.html
+├── style.css
+└── js/
+    ├── state.js            # Central de estados globais e caches
+    ├── telemetria.js       # Gráficos, Replay Canvas, PDF parser e Dossie do Piloto
+    ├── campeonato.js       # ZRound Championship Manager e Grids
+    ├── compras-coletivas.js# Rateio, Pix, QR Code e Resumo Fiscal
+    └── main.js             # Inicialização do Firebase e Event Listeners globais
