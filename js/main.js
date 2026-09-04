@@ -64,7 +64,6 @@ function atualizarDashboard() {
     bateriasFiltradas.forEach(arq => {
         if (!arq.dados || !Array.isArray(arq.dados)) return;
 
-        // Agrupar dados por piloto já aplicando a regra de mesclagem
         let mapaPilotosBateria = {};
 
         arq.dados.forEach(d => {
@@ -166,6 +165,44 @@ function atualizarDashboard() {
     }
 }
 
+function renderizarListaUploadModal() {
+    const ul = document.getElementById('upload-lista-historico');
+    if (!ul) return;
+    if (listaJsonsCache.length === 0) {
+        ul.innerHTML = `<li>Nenhum arquivo no histórico.</li>`;
+        return;
+    }
+    ul.innerHTML = listaJsonsCache.map(arq => {
+        let nome = arq.sessao || arq.nomeArquivoOriginal || arq.firebaseKey;
+        return `
+            <li>
+                <span>📄 ${escapeHtml(nome)}</span>
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn-text-action" onclick="window.inspecionarJsonUpload('${arq.firebaseKey}')">Inspecionar</button>
+                    <button class="btn-text-action" style="color: var(--accent-red);" onclick="window.excluirArquivoUpload('${arq.firebaseKey}')">Excluir</button>
+                </div>
+            </li>
+        `;
+    }).join('');
+}
+
+window.inspecionarJsonUpload = (key) => {
+    let arq = listaJsonsCache.find(a => a.firebaseKey === key);
+    const viewer = document.getElementById('upload-json-viewer');
+    if (viewer && arq) {
+        viewer.innerText = JSON.stringify(arq, null, 2);
+    }
+};
+
+window.excluirArquivoUpload = async (key) => {
+    if (confirm("Deseja realmente excluir este arquivo do banco de dados?")) {
+        if (db) {
+            await db.ref('baterias/' + key).remove();
+            alert("Arquivo excluído com sucesso!");
+        }
+    }
+};
+
 function renderizarTabelaPilotosMetadados() {
     const tbody = document.getElementById('tabela-pilotos-metadados');
     if (!tbody) return;
@@ -192,7 +229,6 @@ function renderizarTabelaMesclagens() {
     const selDestino = document.getElementById('select-piloto-destino');
     if (!tbody || !selOrigem || !selDestino) return;
 
-    // Coletar todos os nomes únicos encontrados no banco
     let todosPilotos = new Set();
     listaJsonsCache.forEach(arq => {
         if (arq.dados && Array.isArray(arq.dados)) {
@@ -212,7 +248,6 @@ function renderizarTabelaMesclagens() {
     selOrigem.innerHTML = optionsHtml;
     selDestino.innerHTML = optionsHtml;
 
-    // Listar mesclagens ativas salvas no servidor (excluindo os defaults)
     let mesclagensSalvas = Object.keys(mesclagensCache).filter(k => !ALIAS_EDGARD_DJ_DEFAULTS[k]);
     if (mesclagensSalvas.length === 0) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhuma mesclagem ativa.</td></tr>`;
@@ -308,6 +343,7 @@ function gerarFiltrosDinamicos() {
         atualizarDashboard();
     };
 
+    renderizarListaUploadModal();
     renderizarTabelaPilotosMetadados();
     renderizarTabelaMesclagens();
     atualizarDashboard();
@@ -383,18 +419,12 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Abertura e Fechamento do Modal de Pilotos
-    const btnAbriPil = document.getElementById('btn-abrir-pilotos');
-    if (btnAbriPil) btnAbriPil.onclick = () => document.getElementById('pilotos-modal').style.display = 'flex';
-    const btnFechPil = document.getElementById('btn-fechar-pilotos');
-    if (btnFechPil) btnFechPil.onclick = () => document.getElementById('pilotos-modal').style.display = 'none';
-
-    // Outros botões do sistema
+    // Botão de Processar Upload de Arquivos
     const btnProcUpload = document.getElementById('btn-processar-upload');
     if (btnProcUpload) {
         btnProcUpload.onclick = async () => {
             const inputEl = document.getElementById('input-pdf-upload');
-            if (!inputEl || !inputEl.files || inputEl.files.length === 0) { alert("Selecione arquivos."); return; }
+            if (!inputEl || !inputEl.files || inputEl.files.length === 0) { alert("Selecione arquivos PDF ou HTML."); return; }
             if (!db) { alert("Erro: Banco não conectado."); return; }
 
             for (let file of inputEl.files) {
@@ -412,13 +442,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     let sessaoNome = file.name.replace(/\.[^/.]+$/, "").trim();
                     let dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, "bat_" + Date.now());
-                    if (!dadosExtraidos || dadosExtraidos.length === 0) continue;
+                    if (!dadosExtraidos || dadosExtraidos.length === 0) {
+                        alert(`Aviso: Não foi possível extrair dados válidos de ${file.name}`);
+                        continue;
+                    }
 
                     let pdfBase64 = await arquivoParaBase64(file);
                     let batKey = "bat_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
                     let novoRegistro = { bateriaKey: batKey, sessao: sessaoNome, id: Date.now(), dados: dadosExtraidos, pdfBase64: pdfBase64, nomeArquivoOriginal: file.name };
                     await db.ref('baterias/' + batKey).set(novoRegistro);
-                } catch (err) { console.error("Erro:", err); }
+                } catch (err) {
+                    console.error("Erro:", err);
+                    alert(`Erro ao processar ${file.name}: ${err.message}`);
+                }
             }
             inputEl.value = "";
             alert("Upload(s) salvos com sucesso!");
@@ -426,13 +462,26 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    document.getElementById('btn-abrir-upload').onclick = () => document.getElementById('upload-modal').style.display = 'flex';
+    // Abertura e Fechamento de Modais
+    document.getElementById('btn-abrir-upload').onclick = () => {
+        document.getElementById('upload-modal').style.display = 'flex';
+        renderizarListaUploadModal();
+    };
     document.getElementById('btn-fechar-upload').onclick = () => document.getElementById('upload-modal').style.display = 'none';
+
     document.getElementById('btn-abrir-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'flex';
     document.getElementById('btn-fechar-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'none';
     document.getElementById('btn-criar-campeonato').onclick = criarCampeonatoProtegido;
+
+    document.getElementById('btn-abrir-pilotos').onclick = () => {
+        document.getElementById('pilotos-modal').style.display = 'flex';
+        renderizarTabelaMesclagens();
+    };
+    document.getElementById('btn-fechar-pilotos').onclick = () => document.getElementById('pilotos-modal').style.display = 'none';
+
     document.getElementById('btn-abrir-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'flex';
     document.getElementById('btn-fechar-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'none';
     document.getElementById('btn-criar-cc').onclick = criarCompraColetiva;
+
     document.getElementById('btn-gerar-pdf').onclick = () => window.print();
 });
