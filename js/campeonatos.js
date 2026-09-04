@@ -1,32 +1,81 @@
-import { 
-    setDb, db, listaJsonsCache, setListaJsonsCache, campeonatosCache, setCampeonatosCache, 
-    comprasColetivasCache, setComprasColetivasCache, pilotosMetadadosCache, setPilotosMetadadosCache, 
-    mesclagensCache, setMesclagensCache, ALIAS_EDGARD_DJ_DEFAULTS 
-} from './state.js';
+import { campeonatosCache, campeonatoAtivoKey, db, SENHA_UNIFICADA } from './state.js';
 
-import { 
-    formatarNomeSessao, extrairPesoOrdenacao, obterTodosDadosConsolidados 
-} from './telemetria.js';
+export function calcularClassificacaoBancoSeparado(camp) {
+    let provasSep = camp.bateriasBancoSeparado || {};
+    let conf = camp.configuracoes || {};
+    let tabelaPontosArr = conf.pontuacaoTabela || [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+    let pilotoPontos = {};
 
-import { renderizarListaCampeonatosModal } from './campeonatos.js';
-import { renderizarListaComprasColetivas } from './compras-coletivas.js';
+    Object.values(provasSep).forEach(arq => {
+        if (arq && arq.dados) {
+            arq.dados.forEach(d => {
+                if (!d.laps || d.laps.length === 0) return;
+                let posNum = parseInt(String(d.pos).replace('º', '').trim(), 10);
+                let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
+                if (pts > 0) {
+                    let pNome = d.piloto;
+                    if (!pilotoPontos[pNome]) pilotoPontos[pNome] = 0;
+                    pilotoPontos[pNome] += pts;
+                }
+            });
+        }
+    });
 
-const firebaseConfig = {
-    apiKey: "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",
-    authDomain: "krathus-telemetria.firebaseapp.com",
-    projectId: "krathus-telemetria",
-    storageBucket: "krathus-telemetria.firebasestorage.app",
-    messagingSenderId: "1051581039922",
-    appId: "1:1051581039922:web:d8ae00eb4ab45fa3d5432b",
-    measurementId: "G-JPR41S7CZ3",
-    databaseURL: "https://krathus-telemetria-default-rtdb.firebaseio.com"
-};
+    let ranking = [];
+    for (let [piloto, pontos] of Object.entries(pilotoPontos)) {
+        ranking.push({ piloto, pontos });
+    }
+    ranking.sort((a, b) => b.pontos - a.pontos);
+    return ranking;
+}
 
-try {
-    firebase.initializeApp(firebaseConfig);
-    setDb(firebase.database());
-} catch (e) {
-    console.warn("Erro Firebase:", e);
+export function renderizarListaCampeonatosModal() {
+    const ul = document.getElementById('campeonatos-lista-modal');
+    if (!ul) return;
+    ul.innerHTML = "";
+    let keys = Object.keys(campeonatosCache);
+    if (keys.length === 0) {
+        ul.innerHTML = `<li style="color: var(--text-muted); text-align: center; padding: 6px;">Nenhum campeonato cadastrado.</li>`;
+        return;
+    }
+
+    keys.forEach(key => {
+        let camp = campeonatosCache[key];
+        let statusCamp = camp.status || "Em andamento";
+        const li = document.createElement('li');
+        li.style.background = "var(--bg-input)";
+        li.style.padding = "12px 16px";
+        li.style.borderRadius = "8px";
+        li.style.border = "1px solid var(--border-card)";
+        li.style.display = "flex";
+        li.style.flexDirection = "column";
+        li.style.gap = "8px";
+
+        li.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <span style="font-size: 1rem; font-weight: 700; color: var(--text-title);">🏆 ${escapeHtml(camp.nome)}</span>
+                    <span style="font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: 8px; background: ${statusCamp === 'Finalizada' ? 'rgba(46,196,182,0.15); color: var(--accent-green);' : 'rgba(255,183,3,0.15); color: var(--accent-gold);'}">${statusCamp}</span>
+                </div>
+            </div>`;
+        ul.appendChild(li);
+    });
+}
+
+export async function criarCampeonatoProtegido() {
+    let senha = prompt("🔒 Digite a senha unificada (1234):");
+    if (senha !== SENHA_UNIFICADA) { alert("❌ Senha incorreta!"); return; }
+    let nomeCamp = document.getElementById('input-nome-campeonato').value.trim();
+    if (!nomeCamp) { alert("Digite o nome do campeonato."); return; }
+    let campKey = "camp_" + nomeCamp.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    let novoCamp = {
+        chave: campKey, nome: nomeCamp, status: "Em andamento",
+        configuracoes: { numeroProvas: 4, pilotosPorProva: 10, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+        pilotosInscritos: {}, bateriasBancoSeparado: {}
+    };
+    await db.ref('campeonatos/' + campKey).set(novoCamp);
+    document.getElementById('input-nome-campeonato').value = "";
+    alert("Campeonato criado com sucesso!");
 }
 
 function escapeHtml(text) {
@@ -34,163 +83,3 @@ function escapeHtml(text) {
     let map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
     return String(text).replace(/[&<>"']/g, m => map[m]);
 }
-
-// Função que preenche os checkboxes de baterias e pilotos na tela
-function gerarFiltrosDinamicos() {
-    const batContainer = document.getElementById('filtro-baterias-container');
-    const pilContainer = document.getElementById('filtro-pilotos-container');
-    if (!batContainer || !pilContainer) return;
-
-    const pilotosSet = new Set();
-    listaJsonsCache.forEach(arq => {
-        if (arq.dados && Array.isArray(arq.dados)) {
-            arq.dados.forEach(d => { 
-                if (d.piloto && d.laps && d.laps.length > 0) {
-                    let pReal = d.piloto;
-                    let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
-                    if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
-                    pilotosSet.add(pReal); 
-                } 
-            });
-        }
-    });
-
-    Object.keys(pilotosMetadadosCache).forEach(p => {
-        let safeKey = p.replace(/[.#$\/\[\]]/g, "_");
-        let pReal = mesclagensCache[safeKey] || p;
-        pilotosSet.add(pReal);
-    });
-
-    if (listaJsonsCache.length === 0) {
-        batContainer.innerHTML = `<span style="font-size:0.85rem; color: var(--text-muted);">Nenhum arquivo encontrado.</span>`;
-        pilContainer.innerHTML = `<span style="font-size:0.85rem; color: var(--text-muted);">Nenhum piloto encontrado.</span>`;
-        return;
-    }
-
-    let bateriasSelecionadasAntigas = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
-    let pilotosSelecionadosAntigos = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
-    let primeiraVezBat = bateriasSelecionadasAntigas.length === 0;
-    let primeiraVezPil = pilotosSelecionadosAntigos.length === 0;
-
-    batContainer.innerHTML = listaJsonsCache.map(arq => {
-        let key = arq.firebaseKey;
-        let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
-        let sessaoFormatada = formatarNomeSessao(sessaoOriginal);
-        let marcado = (primeiraVezBat || bateriasSelecionadasAntigas.includes(key)) ? 'checked' : '';
-        return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado}> ${escapeHtml(sessaoFormatada)}</label>`;
-    }).join('');
-
-    let listaNomesUnicos = Array.from(pilotosSet).filter(p => {
-        let sKey = p.replace(/[.#$\/\[\]]/g, "_");
-        if (mesclagensCache[sKey]) return false;
-        return true;
-    });
-
-    pilContainer.innerHTML = listaNomesUnicos.sort().map(piloto => {
-        let meta = pilotosMetadadosCache[piloto] || {};
-        let labelExib = meta.apelido ? `${piloto} (${meta.apelido})` : piloto;
-        let marcado = primeiraVezPil || pilotosSelecionadosAntigos.includes(piloto) ? 'checked' : '';
-        return `<label class="checkbox-item"><input type="checkbox" value="${escapeHtml(piloto)}" class="filter-piloto" ${marcado}> ${escapeHtml(labelExib)}</label>`;
-    }).join('');
-
-    // Ativar escuta para atualizar quando mudar os filtros
-    document.querySelectorAll('.filter-bateria, .filter-piloto, .filter-modulo').forEach(el => {
-        el.onchange = atualizarDashboard;
-    });
-
-    atualizarDashboard();
-}
-
-function atualizarDashboard() {
-    let dadosBase = obterTodosDadosConsolidados();
-    const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
-    const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
-
-    const dadosFiltrados = dadosBase.filter(item => bateriasSel.includes(item.bateriaKey) && (pilotosSel.length === 0 || pilotosSel.includes(item.piloto)));
-
-    if (listaJsonsCache.length > 0) {
-        let totalV = dadosFiltrados.reduce((acc, item) => acc + (item.laps ? item.laps.length : 0), 0);
-        const totalVoltasEl = document.getElementById('kpi-total-voltas');
-        if (totalVoltasEl) totalVoltasEl.innerText = totalV;
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (db) {
-        db.ref('.info/connected').on('value', snap => {
-            const badge = document.getElementById('db-status-badge');
-            if (badge) {
-                if (snap.val() === true) {
-                    badge.style.background = "#2ec4b6";
-                    badge.innerText = "Online (Firebase)";
-                } else {
-                    badge.style.background = "#ffb703";
-                    badge.innerText = "Reconectando...";
-                }
-            }
-        });
-
-        db.ref('pilotosMetadados').on('value', snapshot => {
-            setPilotosMetadadosCache(snapshot.val() || {});
-            gerarFiltrosDinamicos();
-        });
-
-        db.ref('mesclagensPilotos').on('value', snapshot => {
-            let servidorMesclagens = snapshot.val() || {};
-            setMesclagensCache(Object.assign({}, ALIAS_EDGARD_DJ_DEFAULTS, servidorMesclagens));
-            gerarFiltrosDinamicos();
-        });
-
-        db.ref('campeonatos').on('value', snapshot => {
-            setCampeonatosCache(snapshot.val() || {});
-            renderizarListaCampeonatosModal(() => {}, () => {});
-        });
-
-        db.ref('comprasColetivas').on('value', snapshot => {
-            setComprasColetivasCache(snapshot.val() || {});
-            renderizarListaComprasColetivas(() => {}, () => {});
-        });
-
-        db.ref('baterias').on('value', snapshot => {
-            let novaLista = [];
-            snapshot.forEach(childSnapshot => {
-                let val = childSnapshot.val();
-                if (val && val.dados && val.dados.length > 0) {
-                    if (!val.historicoNomesOriginais) val.historicoNomesOriginais = {};
-                    novaLista.push({ firebaseKey: childSnapshot.key, ...val });
-                }
-            });
-            
-            novaLista.sort((a, b) => {
-                let nomeA = a.sessao || (a.dados && a.dados[0] ? a.dados[0].sessao : '') || '';
-                let nomeB = b.sessao || (b.dados && b.dados[0] ? b.dados[0].sessao : '') || '';
-                return extrairPesoOrdenacao(nomeB) - extrairPesoOrdenacao(nomeA);
-            });
-
-            setListaJsonsCache(novaLista);
-            gerarFiltrosDinamicos();
-        });
-    }
-
-    // Vincular botões principais do Header
-    const btnUpload = document.getElementById('btn-abrir-upload');
-    if (btnUpload) btnUpload.onclick = () => document.getElementById('upload-modal').style.display = 'flex';
-    
-    const btnCloseUpload = document.getElementById('btn-fechar-upload');
-    if (btnCloseUpload) btnCloseUpload.onclick = () => document.getElementById('upload-modal').style.display = 'none';
-
-    const btnCamp = document.getElementById('btn-abrir-campeonatos');
-    if (btnCamp) btnCamp.onclick = () => document.getElementById('campeonatos-modal').style.display = 'flex';
-
-    const btnCloseCamp = document.getElementById('btn-fechar-campeonatos');
-    if (btnCloseCamp) btnCloseCamp.onclick = () => document.getElementById('campeonatos-modal').style.display = 'none';
-
-    const btnCc = document.getElementById('btn-abrir-cc');
-    if (btnCc) btnCc.onclick = () => document.getElementById('campeonatos2-modal').style.display = 'flex';
-
-    const btnCloseCc = document.getElementById('btn-fechar-cc');
-    if (btnCloseCc) btnCloseCc.onclick = () => document.getElementById('campeonatos2-modal').style.display = 'none';
-
-    const btnPdf = document.getElementById('btn-gerar-pdf');
-    if (btnPdf) btnPdf.onclick = () => window.print();
-});
