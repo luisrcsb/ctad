@@ -46,9 +46,6 @@
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Arquivos Carregados</span>
                         <ul id="upload-lista-historico"><li>Carregando arquivos...</li></ul>
-                        <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-                            <button class="btn-action-danger" id="btn-excluir-lote-upload" style="padding: 6px 12px; font-size: 0.8rem;">🗑️ Excluir Selecionados</button>
-                        </div>
                     </div>
                 </div>
                 <div>
@@ -81,142 +78,42 @@
                             <li>Carregando campeonatos...</li>
                         </ul>
                     </div>
-
-                    <div id="container-zround-campeonato" style="display: none; flex-direction: column; gap: 15px; border-top: 2px solid var(--border-card); padding-top: 15px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                            <h3 id="zround-camp-titulo-ativo" style="font-size: 1.1rem; color: var(--accent-gold);">Configurando: --</h3>
-                            <button class="btn-action-danger" id="btn-fechar-painel-zround" style="padding: 4px 10px; font-size: 0.78rem;">Fechar Painel</button>
-                        </div>
-
-                        <div class="zround-tabs-header">
-                            <button class="zround-tab-btn active" data-aba="1">📂 1. Visão Geral & Configs</button>
-                            <button class="zround-tab-btn" data-aba="2">🏎️ 2. Inclusão de Pilotos</button>
-                            <button class="zround-tab-btn" data-aba="3">📤 3. Gestão de Provas</button>
-                            <button class="zround-tab-btn" data-aba="4">🔄 4. Grid de Largada</button>
-                            <button class="zround-tab-btn" data-aba="5">📊 5. Classificação Geral</button>
-                        </div>
-
-                        <div id="zround-aba-1" class="zround-aba-content" style="display: flex; flex-direction: column; gap: 12px;">
-                            <div class="config-panel">
-                                <div class="config-panel-title">Parâmetros Gerais e Sistema de Pontuação</div>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div><label style="font-size: 0.75rem; color: var(--text-muted);">Número de Provas</label><input type="number" id="zround-num-provas" class="config-input" style="width:100%; margin-top:4px;"></div>
-                                    <div><label style="font-size: 0.75rem; color: var(--text-muted);">Pilotos por Prova</label><input type="number" id="zround-pilotos-prova" class="config-input" style="width:100%; margin-top:4px;"></div>
-                                </div>
-                                <div style="margin-top: 10px;">
-                                    <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Tabela de Pontuação (1º ao 10º)</label>
-                                    <input type="text" id="zround-tabela-pontos-input" class="config-input" style="width:100%; margin-top:4px;" value="25, 18, 15, 12, 10, 8, 6, 4, 2, 1">
-                                </div>
-                                <div style="margin-top: 12px; background: rgba(0, 119, 182, 0.08); padding: 12px; border-radius: 8px; border: 1px solid var(--border-card);">
-                                    <label class="checkbox-item" style="font-weight: 600;">
-                                        <input type="checkbox" id="zround-usa-grid-treino" style="width: 18px; height: 18px;">
-                                        Formar grid a partir de treino (3 melhores voltas, descarta a pior)
-                                    </label>
-                                </div>
-                                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
-                                    <button class="btn-action-danger" id="btn-excluir-campeonato">🗑️ Excluir Campeonato</button>
-                                    <button class="btn-action-primary" id="btn-salvar-aba1">Salvar Configurações</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="zround-aba-2" class="zround-aba-content" style="display: none; flex-direction: column; gap: 12px;">
-                            <div class="config-panel">
-                                <div class="config-panel-title">Inscrição de Pilotos</div>
-                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                                    <select id="zround-select-piloto-geral" class="config-select"><option value="">Selecione um piloto...</option></select>
-                                    <button class="btn-action-primary" id="btn-importar-piloto-geral">Adicionar do Banco Geral</button>
-                                </div>
-                                <div class="config-row" style="margin-top: 6px;">
-                                    <input type="text" id="zround-novo-piloto-manual" class="config-input" placeholder="Novo piloto">
-                                    <button class="btn-action-primary" id="btn-cadastrar-piloto-manual">Cadastrar Novo</button>
-                                </div>
-                                <div class="table-container" style="margin-top: 10px;">
-                                    <table>
-                                        <thead><tr><th>Piloto Inscrito</th><th style="text-align: right;">Ações</th></tr></thead>
-                                        <tbody id="zround-tabela-pilotos-inscritos"><tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum.</td></tr></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="zround-aba-3" class="zround-aba-content" style="display: none; flex-direction: column; gap: 12px;">
-                            <div class="upload-box" style="border-color: var(--accent-gold); background: rgba(255, 183, 3, 0.04);">
-                                <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">⏱️ Treino para Grid</span>
-                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
-                                    <input type="file" id="zround-input-file-treino-grid" accept=".pdf,.html,.htm" style="background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.85rem;">
-                                    <button class="btn-action-primary" id="btn-processar-treino-grid" style="background: var(--accent-gold); color: #000; font-weight: 700;">Processar Treino</button>
-                                </div>
-                                <div id="status-treino-grid-info" style="font-size: 0.8rem; color: var(--accent-green); margin-top: 4px;">Nenhum treino processado.</div>
-                            </div>
-                            <div class="upload-box">
-                                <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📤 Provas (Banco Separado)</span>
-                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
-                                    <input type="file" id="zround-input-file-prova" accept=".pdf,.html,.htm" multiple style="background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.85rem;">
-                                    <button class="btn btn-upload-modal-trigger" id="btn-upload-prova-separada">Enviar Prova</button>
-                                </div>
-                            </div>
-                            <ul id="zround-lista-provas-banco-separado" style="list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;"></ul>
-                        </div>
-
-                        <div id="zround-aba-4" class="zround-aba-content" style="display: none; flex-direction: column; gap: 12px;">
-                            <div class="config-panel">
-                                <div class="config-panel-title">Grids de Largada</div>
-                                <div style="margin-bottom: 6px;"><label class="checkbox-item"><input type="checkbox" id="zround-inverter-segunda"> Inverter automaticamente ordem da bateria seguinte</label></div>
-                                <div id="container-todos-grids-gerados" style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;"></div>
-                            </div>
-                        </div>
-
-                        <div id="zround-aba-5" class="zround-aba-content" style="display: none; flex-direction: column; gap: 12px;">
-                            <div class="config-panel">
-                                <div class="config-panel-title">Classificação Geral</div>
-                                <div class="table-container" style="margin-top: 6px;">
-                                    <table>
-                                        <thead><tr><th>Pos</th><th>Piloto</th><th style="text-align: right;">Pontos</th></tr></thead>
-                                        <tbody id="zround-tabela-classificacao-geral"><tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pontuação.</td></tr></tbody>
-                                    </table>
-                                </div>
-                                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
-                                    <button class="btn-action-danger" id="btn-finalizar-campeonato" style="background: linear-gradient(135deg, #2ec4b6 0%, var(--accent-blue) 100%); color: #fff; font-weight: 700; padding: 12px 24px;">🏁 Finalizar Campeonato</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Participar do Campeonato -->
-    <div id="participar-campeonato-modal" class="custom-modal" style="z-index: 10500;">
-        <div class="modal-content" style="max-width: 600px;">
+    <!-- Gestão de Pilotos e Apelidos -->
+    <div id="pilotos-modal" class="custom-modal">
+        <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title" id="participar-modal-titulo">🏎️ Participar do Campeonato</div>
-                <button class="modal-close" id="btn-fechar-participar">&times;</button>
+                <div class="modal-title">👤 Configuração e Gestão de Pilotos</div>
+                <button class="modal-close" id="btn-fechar-pilotos">&times;</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
-                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                    <select id="participar-select-piloto" class="config-select"><option value="">Selecione um piloto...</option></select>
-                    <button class="btn-action-primary" id="btn-inscrever-participar">Inscrever Piloto</button>
+                <div class="config-panel">
+                    <div class="config-panel-title">Cadastrar Apelido / Ajustar Nome</div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <input type="text" id="input-piloto-original" class="config-input" placeholder="Nome exato no ZRound (Ex: EDGARD)">
+                        <input type="text" id="input-piloto-apelido" class="config-input" placeholder="Apelido / Nome de Exibição (Ex: Edgard Camilo)">
+                        <button class="btn-action-primary" id="btn-salvar-meta-piloto">Salvar Configuração</button>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>Piloto</th><th style="text-align: right;">Ação</th></tr></thead>
-                        <tbody id="participar-tabela-inscritos"><tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum.</td></tr></tbody>
+                        <thead>
+                            <tr>
+                                <th>Piloto Original</th>
+                                <th>Apelido / Exibição</th>
+                                <th style="text-align: right;">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-pilotos-metadados">
+                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum piloto configurado.</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Resumo Fiscal e Financeiro -->
-    <div id="resumo-fiscal-modal" class="custom-modal" style="z-index: 11000;">
-        <div class="modal-content" style="border-top-color: #480ca8; max-width: 900px;">
-            <div class="modal-header" style="background: #2b1b4e;">
-                <div class="modal-title" id="resumo-fiscal-titulo">📊 Resumo Fiscal e Financeiro</div>
-                <button class="modal-close" id="btn-fechar-resumo-fiscal">&times;</button>
-            </div>
-            <div class="modal-body" id="resumo-fiscal-body" style="display: flex; flex-direction: column; gap: 20px;"></div>
         </div>
     </div>
 
@@ -238,48 +135,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div id="painel-unica-compra-view" style="display: none; flex-direction: column; gap: 14px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-card); padding-bottom: 10px;">
-                        <h3 id="cc-titulo-gerenciamento" style="font-size: 1.1rem; color: var(--accent-cc);">Cadastro: --</h3>
-                        <button class="btn-action-danger" id="btn-voltar-lista-cc" style="background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card);">⬅️ Voltar</button>
-                    </div>
-                    <div class="config-panel">
-                        <div class="config-panel-title">1. Nome da Lista</div>
-                        <input type="text" id="cc-form-nome" class="config-input" style="width: 100%;">
-                    </div>
-                    <div class="config-panel">
-                        <div class="config-panel-title">2. Itens e Peças</div>
-                        <div class="table-container">
-                            <table>
-                                <thead><tr><th>Img</th><th>Descrição</th><th>Link</th><th style="width: 80px;">Valor</th><th style="width: 60px;">Qtd</th><th style="width: 90px;">Subtotal</th><th style="width: 190px;">Atribuído a</th><th style="text-align: right; width: 50px;">Ação</th></tr></thead>
-                                <tbody id="cc-tabela-itens"></tbody>
-                            </table>
-                        </div>
-                        <button class="btn-action-primary" id="btn-adicionar-item-cc" style="background: var(--accent-cc); width: max-content;">➕ Adicionar Item</button>
-                    </div>
-                    <div class="config-panel">
-                        <div class="config-panel-title">3. Informações Financeiras e Fiscais</div>
-                        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;">
-                            <div><label style="font-size: 0.65rem; color: var(--text-muted); font-weight: bold;">SUBTOTAL</label><input type="number" id="cc-form-subtotal" class="config-input" style="width: 100%; background: var(--bg-body);" readonly></div>
-                            <div><label style="font-size: 0.65rem; color: var(--text-muted); font-weight: bold;">DESCONTO</label><input type="number" id="cc-form-desconto" class="config-input" style="width: 100%;" value="0" step="0.01"></div>
-                            <div><label style="font-size: 0.65rem; color: var(--text-muted); font-weight: bold;">FRETE</label><input type="number" id="cc-form-frete" class="config-input" style="width: 100%;" value="0" step="0.01"></div>
-                            <div><label style="font-size: 0.65rem; color: var(--text-muted); font-weight: bold;">IMPOSTO</label><input type="number" id="cc-form-imposto" class="config-input" style="width: 100%;" value="0" step="0.01"></div>
-                            <div><label style="font-size: 0.65rem; color: var(--text-muted); font-weight: bold;">ICMS</label><input type="number" id="cc-form-icms" class="config-input" style="width: 100%;" value="0" step="0.01"></div>
-                            <div><label style="font-size: 0.65rem; color: var(--text-muted); font-weight: bold;">OUTROS</label><input type="number" id="cc-form-outros-descontos" class="config-input" style="width: 100%;" value="0" step="0.01"></div>
-                        </div>
-                        <div style="background: rgba(255, 183, 3, 0.05); padding: 8px 12px; border-radius: 6px; border: 1px dashed var(--accent-gold); display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase;">Valor Global Final:</span>
-                            <div id="cc-form-total-global" style="font-size: 1.15rem; font-weight: 900; color: var(--accent-gold);">R$ 0,00</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <button class="btn-action-danger" id="btn-excluir-cc">🗑️ Excluir Lista</button>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn-action-primary" id="btn-salvar-cc" style="background: var(--accent-cc); padding: 10px 20px;">💾 Salvar Alterações</button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -295,6 +150,7 @@
                 <button class="btn btn-upload-modal-trigger" id="btn-abrir-upload">📤 Uploads</button>
                 <button class="btn btn-campeonatos-trigger" id="btn-abrir-campeonatos">🏆 Championship Manager</button>
                 <button class="btn btn-compras-coletivas-trigger" id="btn-abrir-cc">🛒 Gestão de Peças</button>
+                <button class="btn btn-pilotos-trigger" id="btn-abrir-pilotos">👤 Pilotos</button>
                 <button class="btn btn-pdf-global" id="btn-gerar-pdf">📄 Gerar relatório</button>
             </div>
         </header>
