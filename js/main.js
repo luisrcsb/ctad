@@ -30,6 +30,105 @@ try {
     console.error("Erro Firebase:", e);
 }
 
+function escapeHtml(text) {
+    if (!text) return '';
+    let map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+function atualizarDashboard() {
+    const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
+    const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
+
+    const container = document.getElementById('sessions-container');
+    if (!container) return;
+    container.innerHTML = "";
+
+    let totalVoltasGeral = 0;
+    let melhorVoltaGlobal = Infinity;
+    let melhorVoltaPiloto = "--";
+
+    let bateriasFiltradas = listaJsonsCache.filter(arq => bateriasSel.includes(arq.firebaseKey));
+
+    if (bateriasFiltradas.length === 0) {
+        container.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted);">Nenhuma bateria selecionada.</div>`;
+        return;
+    }
+
+    bateriasFiltradas.forEach(arq => {
+        if (!arq.dados || !Array.isArray(arq.dados)) return;
+        
+        let dadosValidos = arq.dados.filter(d => d.laps && d.laps.length > 0 && (pilotosSel.length === 0 || pilotosSel.includes(d.piloto)));
+        if (dadosValidos.length === 0) return;
+
+        dadosValidos.sort((a, b) => {
+            let vA = a.laps.filter(t => t > 0).length;
+            let vB = b.laps.filter(t => t > 0).length;
+            if (vA !== vB) return vB - vA;
+            let m1 = Math.min(...a.laps.filter(t => t > 0));
+            let m2 = Math.min(...b.laps.filter(t => t > 0));
+            return m1 - m2;
+        });
+
+        dadosValidos.forEach(d => {
+            totalVoltasGeral += (d.laps || []).filter(t => t > 0).length;
+            d.laps.forEach(t => {
+                if (t > 0 && t < melhorVoltaGlobal) {
+                    melhorVoltaGlobal = t;
+                    melhorVoltaPiloto = d.piloto;
+                }
+            });
+        });
+
+        let sessaoNomeFormatada = formatarNomeSessao(arq.sessao || (arq.dados[0] ? arq.dados[0].sessao : arq.firebaseKey));
+
+        let linhasTabela = dadosValidos.map((d, index) => {
+            let melhorT = d.melhorVoltaTxt || (Math.min(...d.laps.filter(t => t > 0)).toFixed(3) + 's');
+            let voltasTot = d.laps.filter(t => t > 0).length;
+            return `
+                <tr>
+                    <td><span class="pos-badge">${index + 1}º</span></td>
+                    <td><strong>${escapeHtml(d.piloto)}</strong></td>
+                    <td>${voltasTot}</td>
+                    <td style="color: var(--accent-green); font-weight: 700;">${melhorT}</td>
+                </tr>
+            `;
+        }).join('');
+
+        let blocoHtml = `
+            <div class="session-block" style="display: flex; flex-direction: column; gap: 15px; background: rgba(19, 27, 46, 0.4); border: 1px solid var(--border-card); border-radius: 14px; padding: 20px; margin-bottom: 20px;">
+                <div class="session-block-header" style="background: var(--bg-card-header); border-left: 5px solid var(--accent-red); padding: 12px 16px; border-radius: 8px;">
+                    <div class="session-block-title" style="font-size: 1.1rem; font-weight: 700; color: var(--text-title);">🏁 ${escapeHtml(sessaoNomeFormatada)}</div>
+                </div>
+                <div class="card" style="background: var(--bg-card); padding: 15px; border-radius: 10px; border: 1px solid var(--border-card);">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Pos</th>
+                                    <th>Piloto</th>
+                                    <th>Voltas</th>
+                                    <th>Melhor Volta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${linhasTabela}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.innerHTML += blocoHtml;
+    });
+
+    document.getElementById('kpi-total-voltas').innerText = totalVoltasGeral;
+    if (melhorVoltaGlobal !== Infinity) {
+        document.getElementById('kpi-melhor-volta').innerText = melhorVoltaGlobal.toFixed(3).replace('.', ',') + 's';
+        document.getElementById('kpi-melhor-volta-sub').innerText = `Piloto: ${melhorVoltaPiloto}`;
+    }
+}
+
 function gerarFiltrosDinamicos() {
     const batContainer = document.getElementById('filtro-baterias-container');
     const pilContainer = document.getElementById('filtro-pilotos-container');
@@ -59,6 +158,21 @@ function gerarFiltrosDinamicos() {
     pilContainer.innerHTML = Array.from(pilotosSet).sort().map(piloto => {
         return `<label class="checkbox-item"><input type="checkbox" value="${piloto}" class="filter-piloto" checked> ${piloto}</label>`;
     }).join('');
+
+    document.querySelectorAll('.filter-bateria, .filter-piloto, .filter-modulo').forEach(el => {
+        el.onchange = atualizarDashboard;
+    });
+
+    document.getElementById('btn-limpar-bateria').onclick = () => {
+        document.querySelectorAll('.filter-bateria').forEach(cb => cb.checked = false);
+        atualizarDashboard();
+    };
+    document.getElementById('btn-limpar-piloto').onclick = () => {
+        document.querySelectorAll('.filter-piloto').forEach(cb => cb.checked = false);
+        atualizarDashboard();
+    };
+
+    atualizarDashboard();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -88,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
         dbInstancia.ref('comprasColetivas').on('value', snapshot => { setComprasColetivasCache(snapshot.val() || {}); renderizarListaComprasColetivas(); });
     }
 
-    // Abertura de Modais
     document.getElementById('btn-abrir-upload').onclick = () => document.getElementById('upload-modal').style.display = 'flex';
     document.getElementById('btn-fechar-upload').onclick = () => document.getElementById('upload-modal').style.display = 'none';
 
