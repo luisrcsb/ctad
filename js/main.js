@@ -154,40 +154,32 @@ function atualizarDashboard() {
     }
 }
 
-function renderizarListaUploadModal() {
-    const ul = document.getElementById('upload-lista-historico');
-    if (!ul) return;
-    if (listaJsonsCache.length === 0) {
-        ul.innerHTML = `<li>Nenhum arquivo no histórico.</li>`;
+function renderizarTabelaPilotosMetadados() {
+    const tbody = document.getElementById('tabela-pilotos-metadados');
+    if (!tbody) return;
+    let keys = Object.keys(pilotosMetadadosCache);
+    if (keys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum piloto configurado.</td></tr>`;
         return;
     }
-    ul.innerHTML = listaJsonsCache.map(arq => {
-        let nome = arq.sessao || arq.nomeArquivoOriginal || arq.firebaseKey;
+    tbody.innerHTML = keys.map(k => {
+        let meta = pilotosMetadadosCache[k];
         return `
-            <li>
-                <span>📄 ${escapeHtml(nome)}</span>
-                <div style="display: flex; gap: 6px;">
-                    <button class="btn-text-action" onclick="window.inspecionarJsonUpload('${arq.firebaseKey}')">Inspecionar</button>
-                    <button class="btn-text-action" style="color: var(--accent-red);" onclick="window.excluirArquivoUpload('${arq.firebaseKey}')">Excluir</button>
-                </div>
-            </li>
+            <tr>
+                <td><strong>${escapeHtml(k)}</strong></td>
+                <td>${escapeHtml(meta.apelido || '')}</td>
+                <td style="text-align: right;"><button class="btn-text-action" style="color: var(--accent-red);" onclick="window.excluirPilotoMeta('${escapeHtml(k)}')">Remover</button></td>
+            </tr>
         `;
     }).join('');
 }
 
-window.inspecionarJsonUpload = (key) => {
-    let arq = listaJsonsCache.find(a => a.firebaseKey === key);
-    const viewer = document.getElementById('upload-json-viewer');
-    if (viewer && arq) {
-        viewer.innerText = JSON.stringify(arq, null, 2);
-    }
-};
-
-window.excluirArquivoUpload = async (key) => {
-    if (confirm("Deseja realmente excluir este arquivo do banco de dados?")) {
+window.excluirPilotoMeta = async (key) => {
+    if (confirm(`Deseja remover a configuração do piloto ${key}?`)) {
         if (db) {
-            await db.ref('baterias/' + key).remove();
-            alert("Arquivo excluído com sucesso!");
+            let safeKey = key.replace(/[.#$\/\[\]]/g, "_");
+            await db.ref('pilotosMetadados/' + safeKey).remove();
+            alert("Removido com sucesso!");
         }
     }
 };
@@ -206,6 +198,8 @@ function gerarFiltrosDinamicos() {
             });
         }
     });
+
+    Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
 
     if (listaJsonsCache.length === 0) {
         batContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--accent-gold);">ℹ️ Nenhum arquivo encontrado.</span>`;
@@ -239,7 +233,7 @@ function gerarFiltrosDinamicos() {
         atualizarDashboard();
     };
 
-    renderizarListaUploadModal();
+    renderizarTabelaPilotosMetadados();
     atualizarDashboard();
 }
 
@@ -265,12 +259,40 @@ document.addEventListener("DOMContentLoaded", () => {
             gerarFiltrosDinamicos();
         });
 
-        dbInstancia.ref('pilotosMetadados').on('value', snapshot => { setPilotosMetadadosCache(snapshot.val() || {}); });
+        dbInstancia.ref('pilotosMetadados').on('value', snapshot => { 
+            setPilotosMetadadosCache(snapshot.val() || {}); 
+            renderizarTabelaPilotosMetadados();
+        });
         dbInstancia.ref('campeonatos').on('value', snapshot => { setCampeonatosCache(snapshot.val() || {}); renderizarListaCampeonatosModal(); });
         dbInstancia.ref('comprasColetivas').on('value', snapshot => { setComprasColetivasCache(snapshot.val() || {}); renderizarListaComprasColetivas(); });
     }
 
-    // Botão de Processar Upload de Arquivos
+    // Botão Salvar Metadados do Piloto
+    const btnSalvarMeta = document.getElementById('btn-salvar-meta-piloto');
+    if (btnSalvarMeta) {
+        btnSalvarMeta.onclick = async () => {
+            let original = document.getElementById('input-piloto-original').value.trim();
+            let apelido = document.getElementById('input-piloto-apelido').value.trim();
+            if (!original || !apelido) {
+                alert("Preencha o nome original e o apelido.");
+                return;
+            }
+            if (!db) { alert("Erro: Banco não conectado."); return; }
+            let safeKey = original.replace(/[.#$\/\[\]]/g, "_");
+            await db.ref(`pilotosMetadados/${safeKey}`).set({ apelido: apelido });
+            document.getElementById('input-piloto-original').value = "";
+            document.getElementById('input-piloto-apelido').value = "";
+            alert("Configuração de piloto salva com sucesso!");
+        };
+    }
+
+    // Abertura e Fechamento do Modal de Pilotos
+    const btnAbriPil = document.getElementById('btn-abrir-pilotos');
+    if (btnAbriPil) btnAbriPil.onclick = () => document.getElementById('pilotos-modal').style.display = 'flex';
+    const btnFechPil = document.getElementById('btn-fechar-pilotos');
+    if (btnFechPil) btnFechPil.onclick = () => document.getElementById('pilotos-modal').style.display = 'none';
+
+    // Outros botões
     const btnProcUpload = document.getElementById('btn-processar-upload');
     if (btnProcUpload) {
         btnProcUpload.onclick = async () => {
@@ -279,10 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("Selecione pelo menos um arquivo PDF ou HTML.");
                 return;
             }
-            if (!db) {
-                alert("Erro: Banco de dados não conectado.");
-                return;
-            }
+            if (!db) { alert("Erro: Banco não conectado."); return; }
 
             for (let file of inputEl.files) {
                 try {
@@ -301,30 +320,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     let dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, "bat_" + Date.now());
                     
                     if (!dadosExtraidos || dadosExtraidos.length === 0) {
-                        alert(`Aviso: Não foi possível extrair dados válidos do arquivo ${file.name}`);
+                        alert(`Aviso: Não foi possível extrair dados válidos de ${file.name}`);
                         continue;
                     }
 
                     let pdfBase64 = await arquivoParaBase64(file);
                     let batKey = "bat_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
                     let novoRegistro = {
-                        bateriaKey: batKey,
-                        sessao: sessaoNome,
-                        id: Date.now(),
-                        dados: dadosExtraidos,
-                        pdfBase64: pdfBase64,
-                        nomeArquivoOriginal: file.name
+                        bateriaKey: batKey, sessao: sessaoNome, id: Date.now(),
+                        dados: dadosExtraidos, pdfBase64: pdfBase64, nomeArquivoOriginal: file.name
                     };
 
                     await db.ref('baterias/' + batKey).set(novoRegistro);
                 } catch (err) {
-                    console.error("Erro ao processar arquivo:", err);
+                    console.error("Erro:", err);
                     alert(`Erro ao processar ${file.name}: ${err.message}`);
                 }
             }
 
             inputEl.value = "";
-            alert("Upload(s) processado(s) e salvos com sucesso no Firebase!");
+            alert("Upload(s) salvos com sucesso no Firebase!");
             document.getElementById('upload-modal').style.display = 'none';
         };
     }
