@@ -63,20 +63,33 @@ function atualizarDashboard() {
 
     bateriasFiltradas.forEach(arq => {
         if (!arq.dados || !Array.isArray(arq.dados)) return;
-        
-        let dadosValidos = arq.dados.filter(d => {
-            if (!d) return false;
-            let pNome = d.piloto || d.name || d.pilot;
-            if (!pNome) return false;
-            let pilotoMatch = pilotosSel.length === 0 || pilotosSel.includes(pNome);
-            let temLaps = d.laps && Array.isArray(d.laps) && d.laps.length > 0;
-            return pilotoMatch && temLaps;
+
+        // Agrupar dados por piloto já aplicando a regra de mesclagem
+        let mapaPilotosBateria = {};
+
+        arq.dados.forEach(d => {
+            if (!d) return;
+            let pNomeBruto = d.piloto || d.name || d.pilot;
+            if (!pNomeBruto || !d.laps || !Array.isArray(d.laps) || d.laps.length === 0) return;
+
+            let safeKey = pNomeBruto.replace(/[.#$\/\[\]]/g, "_");
+            let pNomeReal = mesclagensCache[safeKey] || pNomeBruto;
+
+            if (!mapaPilotosBateria[pNomeReal]) {
+                mapaPilotosBateria[pNomeReal] = { piloto: pNomeReal, laps: [] };
+            }
+            mapaPilotosBateria[pNomeReal].laps = mapaPilotosBateria[pNomeReal].laps.concat(d.laps);
+        });
+
+        let dadosValidos = Object.values(mapaPilotosBateria).filter(d => {
+            let pilotoMatch = pilotosSel.length === 0 || pilotosSel.includes(d.piloto);
+            return pilotoMatch && d.laps.length > 0;
         });
 
         if (dadosValidos.length === 0) return;
 
         dadosValidos.forEach(d => {
-            d.lapsNorm = (d.laps || []).map(extrairTempoNumerico).filter(t => !isNaN(t) && t > 0);
+            d.lapsNorm = d.laps.map(extrairTempoNumerico).filter(t => !isNaN(t) && t > 0);
         });
 
         dadosValidos = dadosValidos.filter(d => d.lapsNorm.length > 0);
@@ -95,7 +108,7 @@ function atualizarDashboard() {
             d.lapsNorm.forEach(t => {
                 if (t < melhorVoltaGlobal) {
                     melhorVoltaGlobal = t;
-                    melhorVoltaPiloto = d.piloto || d.name;
+                    melhorVoltaPiloto = d.piloto;
                 }
             });
         });
@@ -106,11 +119,10 @@ function atualizarDashboard() {
             let melhorTVal = Math.min(...d.lapsNorm);
             let melhorT = melhorTVal.toFixed(3).replace('.', ',') + 's';
             let voltasTot = d.lapsNorm.length;
-            let nomeP = d.piloto || d.name || "Piloto";
             return `
                 <tr>
                     <td><span class="pos-badge">${index + 1}º</span></td>
-                    <td><strong>${escapeHtml(nomeP)}</strong></td>
+                    <td><strong>${escapeHtml(d.piloto)}</strong></td>
                     <td>${voltasTot}</td>
                     <td style="color: var(--accent-green); font-weight: 700;">${melhorT}</td>
                 </tr>
@@ -159,7 +171,7 @@ function renderizarTabelaPilotosMetadados() {
     if (!tbody) return;
     let keys = Object.keys(pilotosMetadadosCache);
     if (keys.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum piloto configurado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum apelido cadastrado.</td></tr>`;
         return;
     }
     tbody.innerHTML = keys.map(k => {
@@ -174,12 +186,67 @@ function renderizarTabelaPilotosMetadados() {
     }).join('');
 }
 
+function renderizarTabelaMesclagens() {
+    const tbody = document.getElementById('tabela-mesclagens-ativas');
+    const selOrigem = document.getElementById('select-piloto-origem');
+    const selDestino = document.getElementById('select-piloto-destino');
+    if (!tbody || !selOrigem || !selDestino) return;
+
+    // Coletar todos os nomes únicos encontrados no banco
+    let todosPilotos = new Set();
+    listaJsonsCache.forEach(arq => {
+        if (arq.dados && Array.isArray(arq.dados)) {
+            arq.dados.forEach(d => {
+                let p = d.piloto || d.name || d.pilot;
+                if (p) todosPilotos.add(p);
+            });
+        }
+    });
+    Object.keys(pilotosMetadadosCache).forEach(p => todosPilotos.add(p));
+
+    let listaOrdenada = Array.from(todosPilotos).sort();
+    let optionsHtml = `<option value="">Selecione um piloto...</option>`;
+    listaOrdenada.forEach(p => {
+        optionsHtml += `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`;
+    });
+    selOrigem.innerHTML = optionsHtml;
+    selDestino.innerHTML = optionsHtml;
+
+    // Listar mesclagens ativas salvas no servidor (excluindo os defaults)
+    let mesclagensSalvas = Object.keys(mesclagensCache).filter(k => !ALIAS_EDGARD_DJ_DEFAULTS[k]);
+    if (mesclagensSalvas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhuma mesclagem ativa.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = mesclagensSalvas.map(origemKey => {
+        let destinoVal = mesclagensCache[origemKey];
+        return `
+            <tr>
+                <td><strong>${escapeHtml(origemKey)}</strong></td>
+                <td style="color: var(--accent-gold);"><strong>${escapeHtml(destinoVal)}</strong></td>
+                <td style="text-align: right;"><button class="btn-text-action" style="color: var(--accent-red);" onclick="window.removerMesclagemPiloto('${escapeHtml(origemKey)}')">Desfazer</button></td>
+            </tr>
+        `;
+    }).join('');
+}
+
 window.excluirPilotoMeta = async (key) => {
-    if (confirm(`Deseja remover a configuração do piloto ${key}?`)) {
+    if (confirm(`Deseja remover o apelido do piloto ${key}?`)) {
         if (db) {
             let safeKey = key.replace(/[.#$\/\[\]]/g, "_");
             await db.ref('pilotosMetadados/' + safeKey).remove();
             alert("Removido com sucesso!");
+        }
+    }
+};
+
+window.removerMesclagemPiloto = async (origemKey) => {
+    if (confirm(`Deseja desfazer a mesclagem de ${origemKey}?`)) {
+        if (db) {
+            let safeKey = origemKey.replace(/[.#$\/\[\]]/g, "_");
+            await db.ref('mesclagensPilotos/' + safeKey).remove();
+            alert("Mesclagem desfeita com sucesso!");
         }
     }
 };
@@ -194,12 +261,20 @@ function gerarFiltrosDinamicos() {
         if (arq.dados && Array.isArray(arq.dados)) {
             arq.dados.forEach(d => { 
                 let p = d.piloto || d.name || d.pilot;
-                if (p && d.laps && d.laps.length > 0) pilotosSet.add(p); 
+                if (p && d.laps && d.laps.length > 0) {
+                    let safeKey = p.replace(/[.#$\/\[\]]/g, "_");
+                    let pReal = mesclagensCache[safeKey] || p;
+                    pilotosSet.add(pReal); 
+                } 
             });
         }
     });
 
-    Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+    Object.keys(pilotosMetadadosCache).forEach(p => {
+        let safeKey = p.replace(/[.#$\/\[\]]/g, "_");
+        let pReal = mesclagensCache[safeKey] || p;
+        pilotosSet.add(pReal);
+    });
 
     if (listaJsonsCache.length === 0) {
         batContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--accent-gold);">ℹ️ Nenhum arquivo encontrado.</span>`;
@@ -234,6 +309,7 @@ function gerarFiltrosDinamicos() {
     };
 
     renderizarTabelaPilotosMetadados();
+    renderizarTabelaMesclagens();
     atualizarDashboard();
 }
 
@@ -263,6 +339,13 @@ document.addEventListener("DOMContentLoaded", () => {
             setPilotosMetadadosCache(snapshot.val() || {}); 
             renderizarTabelaPilotosMetadados();
         });
+
+        dbInstancia.ref('mesclagensPilotos').on('value', snapshot => {
+            let servidorMesclagens = snapshot.val() || {};
+            setMesclagensCache(Object.assign({}, ALIAS_EDGARD_DJ_DEFAULTS, servidorMesclagens));
+            gerarFiltrosDinamicos();
+        });
+
         dbInstancia.ref('campeonatos').on('value', snapshot => { setCampeonatosCache(snapshot.val() || {}); renderizarListaCampeonatosModal(); });
         dbInstancia.ref('comprasColetivas').on('value', snapshot => { setComprasColetivasCache(snapshot.val() || {}); renderizarListaComprasColetivas(); });
     }
@@ -273,16 +356,30 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSalvarMeta.onclick = async () => {
             let original = document.getElementById('input-piloto-original').value.trim();
             let apelido = document.getElementById('input-piloto-apelido').value.trim();
-            if (!original || !apelido) {
-                alert("Preencha o nome original e o apelido.");
-                return;
-            }
+            if (!original || !apelido) { alert("Preencha o nome original e o apelido."); return; }
             if (!db) { alert("Erro: Banco não conectado."); return; }
             let safeKey = original.replace(/[.#$\/\[\]]/g, "_");
             await db.ref(`pilotosMetadados/${safeKey}`).set({ apelido: apelido });
             document.getElementById('input-piloto-original').value = "";
             document.getElementById('input-piloto-apelido').value = "";
-            alert("Configuração de piloto salva com sucesso!");
+            alert("Apelido salvo com sucesso!");
+        };
+    }
+
+    // Botão Executar Mesclagem de Pilotos
+    const btnMesclar = document.getElementById('btn-executar-mesclagem');
+    if (btnMesclar) {
+        btnMesclar.onclick = async () => {
+            let origem = document.getElementById('select-piloto-origem').value;
+            let destino = document.getElementById('select-piloto-destino').value;
+            if (!origem || !destino) { alert("Selecione o piloto origem e o piloto destino."); return; }
+            if (origem === destino) { alert("O piloto origem e destino não podem ser o mesmo."); return; }
+            if (!db) { alert("Erro: Banco não conectado."); return; }
+
+            let safeKey = origem.replace(/[.#$\/\[\]]/g, "_");
+            await db.ref(`mesclagensPilotos/${safeKey}`).set(destino);
+            alert(`Piloto "${origem}" mesclado com sucesso para "${destino}"!`);
+            renderizarTabelaMesclagens();
         };
     }
 
@@ -292,15 +389,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnFechPil = document.getElementById('btn-fechar-pilotos');
     if (btnFechPil) btnFechPil.onclick = () => document.getElementById('pilotos-modal').style.display = 'none';
 
-    // Outros botões
+    // Outros botões do sistema
     const btnProcUpload = document.getElementById('btn-processar-upload');
     if (btnProcUpload) {
         btnProcUpload.onclick = async () => {
             const inputEl = document.getElementById('input-pdf-upload');
-            if (!inputEl || !inputEl.files || inputEl.files.length === 0) {
-                alert("Selecione pelo menos um arquivo PDF ou HTML.");
-                return;
-            }
+            if (!inputEl || !inputEl.files || inputEl.files.length === 0) { alert("Selecione arquivos."); return; }
             if (!db) { alert("Erro: Banco não conectado."); return; }
 
             for (let file of inputEl.files) {
@@ -318,51 +412,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     let sessaoNome = file.name.replace(/\.[^/.]+$/, "").trim();
                     let dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, "bat_" + Date.now());
-                    
-                    if (!dadosExtraidos || dadosExtraidos.length === 0) {
-                        alert(`Aviso: Não foi possível extrair dados válidos de ${file.name}`);
-                        continue;
-                    }
+                    if (!dadosExtraidos || dadosExtraidos.length === 0) continue;
 
                     let pdfBase64 = await arquivoParaBase64(file);
                     let batKey = "bat_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-                    let novoRegistro = {
-                        bateriaKey: batKey, sessao: sessaoNome, id: Date.now(),
-                        dados: dadosExtraidos, pdfBase64: pdfBase64, nomeArquivoOriginal: file.name
-                    };
-
+                    let novoRegistro = { bateriaKey: batKey, sessao: sessaoNome, id: Date.now(), dados: dadosExtraidos, pdfBase64: pdfBase64, nomeArquivoOriginal: file.name };
                     await db.ref('baterias/' + batKey).set(novoRegistro);
-                } catch (err) {
-                    console.error("Erro:", err);
-                    alert(`Erro ao processar ${file.name}: ${err.message}`);
-                }
+                } catch (err) { console.error("Erro:", err); }
             }
-
             inputEl.value = "";
-            alert("Upload(s) salvos com sucesso no Firebase!");
+            alert("Upload(s) salvos com sucesso!");
             document.getElementById('upload-modal').style.display = 'none';
         };
     }
 
-    const bUpload = document.getElementById('btn-abrir-upload');
-    if (bUpload) bUpload.onclick = () => document.getElementById('upload-modal').style.display = 'flex';
-    const bCloseUp = document.getElementById('btn-fechar-upload');
-    if (bCloseUp) bCloseUp.onclick = () => document.getElementById('upload-modal').style.display = 'none';
-
-    const bCamp = document.getElementById('btn-abrir-campeonatos');
-    if (bCamp) bCamp.onclick = () => document.getElementById('campeonatos-modal').style.display = 'flex';
-    const bCloseCamp = document.getElementById('btn-fechar-campeonatos');
-    if (bCloseCamp) bCloseCamp.onclick = () => document.getElementById('campeonatos-modal').style.display = 'none';
-    const bCriarCamp = document.getElementById('btn-criar-campeonato');
-    if (bCriarCamp) bCriarCamp.onclick = criarCampeonatoProtegido;
-
-    const bCc = document.getElementById('btn-abrir-cc');
-    if (bCc) bCc.onclick = () => document.getElementById('campeonatos2-modal').style.display = 'flex';
-    const bCloseCc = document.getElementById('btn-fechar-cc');
-    if (bCloseCc) bCloseCc.onclick = () => document.getElementById('campeonatos2-modal').style.display = 'none';
-    const bCriarCc = document.getElementById('btn-criar-cc');
-    if (bCriarCc) bCriarCc.onclick = criarCompraColetiva;
-
-    const bPdf = document.getElementById('btn-gerar-pdf');
-    if (bPdf) bPdf.onclick = () => window.print();
+    document.getElementById('btn-abrir-upload').onclick = () => document.getElementById('upload-modal').style.display = 'flex';
+    document.getElementById('btn-fechar-upload').onclick = () => document.getElementById('upload-modal').style.display = 'none';
+    document.getElementById('btn-abrir-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'flex';
+    document.getElementById('btn-fechar-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'none';
+    document.getElementById('btn-criar-campeonato').onclick = criarCampeonatoProtegido;
+    document.getElementById('btn-abrir-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'flex';
+    document.getElementById('btn-fechar-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'none';
+    document.getElementById('btn-criar-cc').onclick = criarCompraColetiva;
+    document.getElementById('btn-gerar-pdf').onclick = () => window.print();
 });
