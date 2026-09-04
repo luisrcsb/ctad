@@ -36,6 +36,12 @@ function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
+function extrairTempoNumerico(l) {
+    if (l === null || l === undefined) return 0;
+    if (typeof l === 'object') return Number(l.tempo ?? l.time ?? l.lapTime ?? 0);
+    return Number(l);
+}
+
 function atualizarDashboard() {
     const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
     const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
@@ -58,37 +64,54 @@ function atualizarDashboard() {
     bateriasFiltradas.forEach(arq => {
         if (!arq.dados || !Array.isArray(arq.dados)) return;
         
-        let dadosValidos = arq.dados.filter(d => d.laps && d.laps.length > 0 && (pilotosSel.length === 0 || pilotosSel.includes(d.piloto)));
+        let dadosValidos = arq.dados.filter(d => {
+            if (!d) return false;
+            let pNome = d.piloto || d.name || d.pilot;
+            if (!pNome) return false;
+            let pilotoMatch = pilotosSel.length === 0 || pilotosSel.includes(pNome);
+            let temLaps = d.laps && Array.isArray(d.laps) && d.laps.length > 0;
+            return pilotoMatch && temLaps;
+        });
+
         if (dadosValidos.length === 0) return;
 
+        // Normalizar voltas para números
+        dadosValidos.forEach(d => {
+            d.lapsNorm = (d.laps || []).map(extrairTempoNumerico).filter(t => !isNaN(t) && t > 0);
+        });
+
+        dadosValidos = dadosValidos.filter(d => d.lapsNorm.length > 0);
+
         dadosValidos.sort((a, b) => {
-            let vA = a.laps.filter(t => t > 0).length;
-            let vB = b.laps.filter(t => t > 0).length;
+            let vA = a.lapsNorm.length;
+            let vB = b.lapsNorm.length;
             if (vA !== vB) return vB - vA;
-            let m1 = Math.min(...a.laps.filter(t => t > 0));
-            let m2 = Math.min(...b.laps.filter(t => t > 0));
+            let m1 = Math.min(...a.lapsNorm);
+            let m2 = Math.min(...b.lapsNorm);
             return m1 - m2;
         });
 
         dadosValidos.forEach(d => {
-            totalVoltasGeral += (d.laps || []).filter(t => t > 0).length;
-            d.laps.forEach(t => {
-                if (t > 0 && t < melhorVoltaGlobal) {
+            totalVoltasGeral += d.lapsNorm.length;
+            d.lapsNorm.forEach(t => {
+                if (t < melhorVoltaGlobal) {
                     melhorVoltaGlobal = t;
-                    melhorVoltaPiloto = d.piloto;
+                    melhorVoltaPiloto = d.piloto || d.name;
                 }
             });
         });
 
-        let sessaoNomeFormatada = formatarNomeSessao(arq.sessao || (arq.dados[0] ? arq.dados[0].sessao : arq.firebaseKey));
+        let sessaoNomeFormatada = formatarNomeSessao(arq.sessao || (arq.dados[0] ? (arq.dados[0].sessao || arq.dados[0].session) : arq.firebaseKey));
 
         let linhasTabela = dadosValidos.map((d, index) => {
-            let melhorT = d.melhorVoltaTxt || (Math.min(...d.laps.filter(t => t > 0)).toFixed(3) + 's');
-            let voltasTot = d.laps.filter(t => t > 0).length;
+            let melhorTVal = Math.min(...d.lapsNorm);
+            let melhorT = melhorTVal.toFixed(3).replace('.', ',') + 's';
+            let voltasTot = d.lapsNorm.length;
+            let nomeP = d.piloto || d.name || "Piloto";
             return `
                 <tr>
                     <td><span class="pos-badge">${index + 1}º</span></td>
-                    <td><strong>${escapeHtml(d.piloto)}</strong></td>
+                    <td><strong>${escapeHtml(nomeP)}</strong></td>
                     <td>${voltasTot}</td>
                     <td style="color: var(--accent-green); font-weight: 700;">${melhorT}</td>
                 </tr>
@@ -126,6 +149,9 @@ function atualizarDashboard() {
     if (melhorVoltaGlobal !== Infinity) {
         document.getElementById('kpi-melhor-volta').innerText = melhorVoltaGlobal.toFixed(3).replace('.', ',') + 's';
         document.getElementById('kpi-melhor-volta-sub').innerText = `Piloto: ${melhorVoltaPiloto}`;
+    } else {
+        document.getElementById('kpi-melhor-volta').innerText = "--";
+        document.getElementById('kpi-melhor-volta-sub').innerText = "--";
     }
 }
 
@@ -138,7 +164,8 @@ function gerarFiltrosDinamicos() {
     listaJsonsCache.forEach(arq => {
         if (arq.dados && Array.isArray(arq.dados)) {
             arq.dados.forEach(d => { 
-                if (d.piloto && d.laps && d.laps.length > 0) pilotosSet.add(d.piloto); 
+                let p = d.piloto || d.name || d.pilot;
+                if (p && d.laps && d.laps.length > 0) pilotosSet.add(p); 
             });
         }
     });
@@ -151,7 +178,7 @@ function gerarFiltrosDinamicos() {
 
     batContainer.innerHTML = listaJsonsCache.map(arq => {
         let key = arq.firebaseKey;
-        let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
+        let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? (arq.dados[0].sessao || arq.dados[0].session) : key);
         return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" checked> ${formatarNomeSessao(sessaoOriginal)}</label>`;
     }).join('');
 
@@ -163,11 +190,14 @@ function gerarFiltrosDinamicos() {
         el.onchange = atualizarDashboard;
     });
 
-    document.getElementById('btn-limpar-bateria').onclick = () => {
+    const btnLimparBat = document.getElementById('btn-limpar-bateria');
+    if (btnLimparBat) btnLimparBat.onclick = () => {
         document.querySelectorAll('.filter-bateria').forEach(cb => cb.checked = false);
         atualizarDashboard();
     };
-    document.getElementById('btn-limpar-piloto').onclick = () => {
+
+    const btnLimparPil = document.getElementById('btn-limpar-piloto');
+    if (btnLimparPil) btnLimparPil.onclick = () => {
         document.querySelectorAll('.filter-piloto').forEach(cb => cb.checked = false);
         atualizarDashboard();
     };
@@ -202,16 +232,25 @@ document.addEventListener("DOMContentLoaded", () => {
         dbInstancia.ref('comprasColetivas').on('value', snapshot => { setComprasColetivasCache(snapshot.val() || {}); renderizarListaComprasColetivas(); });
     }
 
-    document.getElementById('btn-abrir-upload').onclick = () => document.getElementById('upload-modal').style.display = 'flex';
-    document.getElementById('btn-fechar-upload').onclick = () => document.getElementById('upload-modal').style.display = 'none';
+    const bUpload = document.getElementById('btn-abrir-upload');
+    if (bUpload) bUpload.onclick = () => document.getElementById('upload-modal').style.display = 'flex';
+    const bCloseUp = document.getElementById('btn-fechar-upload');
+    if (bCloseUp) bCloseUp.onclick = () => document.getElementById('upload-modal').style.display = 'none';
 
-    document.getElementById('btn-abrir-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'flex';
-    document.getElementById('btn-fechar-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'none';
-    document.getElementById('btn-criar-campeonato').onclick = criarCampeonatoProtegido;
+    const bCamp = document.getElementById('btn-abrir-campeonatos');
+    if (bCamp) bCamp.onclick = () => document.getElementById('campeonatos-modal').style.display = 'flex';
+    const bCloseCamp = document.getElementById('btn-fechar-campeonatos');
+    if (bCloseCamp) bCloseCamp.onclick = () => document.getElementById('campeonatos-modal').style.display = 'none';
+    const bCriarCamp = document.getElementById('btn-criar-campeonato');
+    if (bCriarCamp) bCriarCamp.onclick = criarCampeonatoProtegido;
 
-    document.getElementById('btn-abrir-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'flex';
-    document.getElementById('btn-fechar-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'none';
-    document.getElementById('btn-criar-cc').onclick = criarCompraColetiva;
+    const bCc = document.getElementById('btn-abrir-cc');
+    if (bCc) bCc.onclick = () => document.getElementById('campeonatos2-modal').style.display = 'flex';
+    const bCloseCc = document.getElementById('btn-fechar-cc');
+    if (bCloseCc) bCloseCc.onclick = () => document.getElementById('campeonatos2-modal').style.display = 'none';
+    const bCriarCc = document.getElementById('btn-criar-cc');
+    if (bCriarCc) bCriarCc.onclick = criarCompraColetiva;
 
-    document.getElementById('btn-gerar-pdf').onclick = () => window.print();
+    const bPdf = document.getElementById('btn-gerar-pdf');
+    if (bPdf) bPdf.onclick = () => window.print();
 });
