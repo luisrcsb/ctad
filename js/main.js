@@ -54,7 +54,7 @@ function atualizarDashboard() {
     let melhorVoltaGlobal = Infinity;
     let melhorVoltaPiloto = "--";
 
-    let bateriasFiltradas = listaJsonsCache.filter(arq => bateriasSel.includes(arq.firebaseKey));
+    let bateriasFiltradas = (listaJsonsCache || []).filter(arq => bateriasSel.includes(arq.firebaseKey));
 
     if (bateriasFiltradas.length === 0) {
         container.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted);">Nenhuma bateria selecionada.</div>`;
@@ -72,7 +72,7 @@ function atualizarDashboard() {
             if (!pNomeBruto || !d.laps || !Array.isArray(d.laps) || d.laps.length === 0) return;
 
             let safeKey = pNomeBruto.replace(/[.#$\/\[\]]/g, "_");
-            let pNomeReal = mesclagensCache[safeKey] || pNomeBruto;
+            let pNomeReal = (mesclagensCache || {})[safeKey] || pNomeBruto;
 
             if (!mapaPilotosBateria[pNomeReal]) {
                 mapaPilotosBateria[pNomeReal] = { piloto: pNomeReal, laps: [] };
@@ -155,24 +155,29 @@ function atualizarDashboard() {
         container.innerHTML += blocoHtml;
     });
 
-    document.getElementById('kpi-total-voltas').innerText = totalVoltasGeral;
+    const elTotalVoltas = document.getElementById('kpi-total-voltas');
+    if (elTotalVoltas) elTotalVoltas.innerText = totalVoltasGeral;
+
+    const elMelhorVolta = document.getElementById('kpi-melhor-volta');
+    const elMelhorVoltaSub = document.getElementById('kpi-melhor-volta-sub');
     if (melhorVoltaGlobal !== Infinity) {
-        document.getElementById('kpi-melhor-volta').innerText = melhorVoltaGlobal.toFixed(3).replace('.', ',') + 's';
-        document.getElementById('kpi-melhor-volta-sub').innerText = `Piloto: ${melhorVoltaPiloto}`;
+        if (elMelhorVolta) elMelhorVolta.innerText = melhorVoltaGlobal.toFixed(3).replace('.', ',') + 's';
+        if (elMelhorVoltaSub) elMelhorVoltaSub.innerText = `Piloto: ${melhorVoltaPiloto}`;
     } else {
-        document.getElementById('kpi-melhor-volta').innerText = "--";
-        document.getElementById('kpi-melhor-volta-sub').innerText = "--";
+        if (elMelhorVolta) elMelhorVolta.innerText = "--";
+        if (elMelhorVoltaSub) elMelhorVoltaSub.innerText = "--";
     }
 }
 
 function renderizarListaUploadModal() {
     const ul = document.getElementById('upload-lista-historico');
     if (!ul) return;
-    if (listaJsonsCache.length === 0) {
+    let lista = listaJsonsCache || [];
+    if (lista.length === 0) {
         ul.innerHTML = `<li>Nenhum arquivo no histórico.</li>`;
         return;
     }
-    ul.innerHTML = listaJsonsCache.map(arq => {
+    ul.innerHTML = lista.map(arq => {
         let nome = arq.sessao || arq.nomeArquivoOriginal || arq.firebaseKey;
         return `
             <li>
@@ -187,7 +192,7 @@ function renderizarListaUploadModal() {
 }
 
 window.inspecionarJsonUpload = (key) => {
-    let arq = listaJsonsCache.find(a => a.firebaseKey === key);
+    let arq = (listaJsonsCache || []).find(a => a.firebaseKey === key);
     const viewer = document.getElementById('upload-json-viewer');
     if (viewer && arq) {
         viewer.innerText = JSON.stringify(arq, null, 2);
@@ -206,7 +211,7 @@ window.excluirArquivoUpload = async (key) => {
 function renderizarTabelaPilotosMetadados() {
     const tbody = document.getElementById('tabela-pilotos-metadados');
     if (!tbody) return;
-    let keys = Object.keys(pilotosMetadadosCache);
+    let keys = Object.keys(pilotosMetadadosCache || {});
     if (keys.length === 0) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum apelido cadastrado.</td></tr>`;
         return;
@@ -230,7 +235,7 @@ function renderizarTabelaMesclagens() {
     if (!tbody || !selOrigem || !selDestino) return;
 
     let todosPilotos = new Set();
-    listaJsonsCache.forEach(arq => {
+    (listaJsonsCache || []).forEach(arq => {
         if (arq.dados && Array.isArray(arq.dados)) {
             arq.dados.forEach(d => {
                 let p = d.piloto || d.name || d.pilot;
@@ -238,7 +243,7 @@ function renderizarTabelaMesclagens() {
             });
         }
     });
-    Object.keys(pilotosMetadadosCache).forEach(p => todosPilotos.add(p));
+    Object.keys(pilotosMetadadosCache || {}).forEach(p => todosPilotos.add(p));
 
     let listaOrdenada = Array.from(todosPilotos).sort();
     let optionsHtml = `<option value="">Selecione um piloto...</option>`;
@@ -248,7 +253,7 @@ function renderizarTabelaMesclagens() {
     selOrigem.innerHTML = optionsHtml;
     selDestino.innerHTML = optionsHtml;
 
-    let mesclagensSalvas = Object.keys(mesclagensCache).filter(k => !ALIAS_EDGARD_DJ_DEFAULTS[k]);
+    let mesclagensSalvas = Object.keys(mesclagensCache || {}).filter(k => !ALIAS_EDGARD_DJ_DEFAULTS[k]);
     if (mesclagensSalvas.length === 0) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhuma mesclagem ativa.</td></tr>`;
         return;
@@ -292,26 +297,26 @@ function gerarFiltrosDinamicos() {
     if (!batContainer || !pilContainer) return;
 
     const pilotosSet = new Set();
-    listaJsonsCache.forEach(arq => {
+    (listaJsonsCache || []).forEach(arq => {
         if (arq.dados && Array.isArray(arq.dados)) {
             arq.dados.forEach(d => { 
                 let p = d.piloto || d.name || d.pilot;
                 if (p && d.laps && d.laps.length > 0) {
                     let safeKey = p.replace(/[.#$\/\[\]]/g, "_");
-                    let pReal = mesclagensCache[safeKey] || p;
+                    let pReal = (mesclagensCache || {})[safeKey] || p;
                     pilotosSet.add(pReal); 
                 } 
             });
         }
     });
 
-    Object.keys(pilotosMetadadosCache).forEach(p => {
+    Object.keys(pilotosMetadadosCache || {}).forEach(p => {
         let safeKey = p.replace(/[.#$\/\[\]]/g, "_");
-        let pReal = mesclagensCache[safeKey] || p;
+        let pReal = (mesclagensCache || {})[safeKey] || p;
         pilotosSet.add(pReal);
     });
 
-    if (listaJsonsCache.length === 0) {
+    if ((listaJsonsCache || []).length === 0) {
         batContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--accent-gold);">ℹ️ Nenhum arquivo encontrado.</span>`;
         pilContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--text-muted);">Aguardando...</span>`;
         return;
@@ -462,26 +467,79 @@ document.addEventListener("DOMContentLoaded", () => {
         };
     }
 
-    // Abertura e Fechamento de Modais
-    document.getElementById('btn-abrir-upload').onclick = () => {
-        document.getElementById('upload-modal').style.display = 'flex';
-        renderizarListaUploadModal();
-    };
-    document.getElementById('btn-fechar-upload').onclick = () => document.getElementById('upload-modal').style.display = 'none';
+    // Abertura e Fechamento de Modais com atualização imediata da lista
+    const btnAbrirUp = document.getElementById('btn-abrir-upload');
+    if (btnAbrirUp) {
+        btnAbrirUp.onclick = () => {
+            const modal = document.getElementById('upload-modal');
+            if (modal) modal.style.display = 'flex';
+            renderizarListaUploadModal();
+        };
+    }
 
-    document.getElementById('btn-abrir-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'flex';
-    document.getElementById('btn-fechar-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'none';
-    document.getElementById('btn-criar-campeonato').onclick = criarCampeonatoProtegido;
+    const btnFecharUp = document.getElementById('btn-fechar-upload');
+    if (btnFecharUp) {
+        btnFecharUp.onclick = () => {
+            const modal = document.getElementById('upload-modal');
+            if (modal) modal.style.display = 'none';
+        };
+    }
 
-    document.getElementById('btn-abrir-pilotos').onclick = () => {
-        document.getElementById('pilotos-modal').style.display = 'flex';
-        renderizarTabelaMesclagens();
-    };
-    document.getElementById('btn-fechar-pilotos').onclick = () => document.getElementById('pilotos-modal').style.display = 'none';
+    const btnAbrirCamp = document.getElementById('btn-abrir-campeonatos');
+    if (btnAbrirCamp) {
+        btnAbrirCamp.onclick = () => {
+            const modal = document.getElementById('campeonatos-modal');
+            if (modal) modal.style.display = 'flex';
+        };
+    }
 
-    document.getElementById('btn-abrir-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'flex';
-    document.getElementById('btn-fechar-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'none';
-    document.getElementById('btn-criar-cc').onclick = criarCompraColetiva;
+    const btnFecharCamp = document.getElementById('btn-fechar-campeonatos');
+    if (btnFecharCamp) {
+        btnFecharCamp.onclick = () => {
+            const modal = document.getElementById('campeonatos-modal');
+            if (modal) modal.style.display = 'none';
+        };
+    }
 
-    document.getElementById('btn-gerar-pdf').onclick = () => window.print();
+    const btnCriarCamp = document.getElementById('btn-criar-campeonato');
+    if (btnCriarCamp) btnCriarCamp.onclick = criarCampeonatoProtegido;
+
+    const btnAbrirPil = document.getElementById('btn-abrir-pilotos');
+    if (btnAbrirPil) {
+        btnAbrirPil.onclick = () => {
+            const modal = document.getElementById('pilotos-modal');
+            if (modal) modal.style.display = 'flex';
+            renderizarTabelaMesclagens();
+        };
+    }
+
+    const btnFecharPil = document.getElementById('btn-fechar-pilotos');
+    if (btnFecharPil) {
+        btnFecharPil.onclick = () => {
+            const modal = document.getElementById('pilotos-modal');
+            if (modal) modal.style.display = 'none';
+        };
+    }
+
+    const btnAbrirCc = document.getElementById('btn-abrir-cc');
+    if (btnAbrirCc) {
+        btnAbrirCc.onclick = () => {
+            const modal = document.getElementById('campeonatos2-modal');
+            if (modal) modal.style.display = 'flex';
+        };
+    }
+
+    const btnFecharCc = document.getElementById('btn-fechar-cc');
+    if (btnFecharCc) {
+        btnFecharCc.onclick = () => {
+            const modal = document.getElementById('campeonatos2-modal');
+            if (modal) modal.style.display = 'none';
+        };
+    }
+
+    const btnCriarCc = document.getElementById('btn-criar-cc');
+    if (btnCriarCc) btnCriarCc.onclick = criarCompraColetiva;
+
+    const btnGerarPdf = document.getElementById('btn-gerar-pdf');
+    if (btnGerarPdf) btnGerarPdf.onclick = () => window.print();
 });
