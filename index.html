@@ -1,233 +1,46 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CTAD - Central de Telemetria e Análise de Desempenho (NASCAR Edition)</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    </script>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-    <!-- Ficha do Piloto -->
-    <div id="piloto-modal" class="custom-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title" id="modal-piloto-nome">🏎️ Ficha do Piloto</div>
-                <button class="modal-close" id="btn-fechar-dossie">&times;</button>
-            </div>
-            <div class="modal-body" id="modal-piloto-corpo"></div>
-        </div>
-    </div>
-
-    <!-- Central de Uploads -->
-    <div id="upload-modal" class="custom-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">📤 Central de Upload de Relatórios (Banco Principal)</div>
-                <button class="modal-close" id="btn-fechar-upload">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="upload-grid-manager">
-                    <div class="upload-box">
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Selecione relatórios PDF ou HTML oficiais do ZRound.</p>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            <input type="file" id="input-pdf-upload" accept=".pdf,.html,.htm" multiple style="background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.85rem;">
-                            <button class="btn btn-upload-modal-trigger" id="btn-processar-upload">Converter e Enviar</button>
-                        </div>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Arquivos Carregados</span>
-                        <ul id="upload-lista-historico"><li>Carregando arquivos...</li></ul>
-                    </div>
-                </div>
-                <div>
-                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Inspetor de Estrutura JSON</span>
-                    <pre id="upload-json-viewer">Selecione "Inspecionar" em um arquivo ao lado...</pre>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Championship Manager -->
-    <div id="campeonatos-modal" class="custom-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">🏆 Championship Manager</div>
-                <button class="modal-close" id="btn-fechar-campeonatos">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div style="display: flex; flex-direction: column; gap: 20px;">
-                    <div class="upload-box">
-                        <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">🔒 Criar Novo Campeonato</span>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa NASCAR CTAD)">
-                            <button class="btn-action-primary" id="btn-criar-campeonato">Criar Campeonato</button>
-                        </div>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Campeonatos Cadastrados</span>
-                        <ul id="campeonatos-lista-modal" style="list-style: none; display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto;">
-                            <li>Carregando campeonatos...</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Gestão de Pilotos e Apelidos -->
+<!-- Gestão de Pilotos e Apelidos -->
     <div id="pilotos-modal" class="custom-modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
-                <div class="modal-title">👤 Configuração e Gestão de Pilotos</div>
+                <div class="modal-title">👤 Configuração, Gestão e Mesclagem de Pilotos</div>
                 <button class="modal-close" id="btn-fechar-pilotos">&times;</button>
             </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
                 <div class="config-panel">
                     <div class="config-panel-title">Cadastrar Apelido / Ajustar Nome</div>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                         <input type="text" id="input-piloto-original" class="config-input" placeholder="Nome exato no ZRound (Ex: EDGARD)">
                         <input type="text" id="input-piloto-apelido" class="config-input" placeholder="Apelido / Nome de Exibição (Ex: Edgard Camilo)">
-                        <button class="btn-action-primary" id="btn-salvar-meta-piloto">Salvar Configuração</button>
+                        <button class="btn-action-primary" id="btn-salvar-meta-piloto">Salvar Apelido</button>
                     </div>
                 </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Piloto Original</th>
-                                <th>Apelido / Exibição</th>
-                                <th style="text-align: right;">Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-pilotos-metadados">
-                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum piloto configurado.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Gestão de Peças / Compras Coletivas -->
-    <div id="campeonatos2-modal" class="custom-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">🛒 Gestão de Peças e Insumos da Equipe</div>
-                <button class="modal-close" id="btn-fechar-cc">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="lista-compras-coletivas-view" style="display: flex; flex-direction: column; gap: 16px;">
-                    <ul id="cc-lista-cadastradas" style="list-style: none; display: flex; flex-direction: column; gap: 12px;"></ul>
-                    <div class="config-panel" style="border-color: var(--accent-cc);">
-                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-cc); text-transform: uppercase;">🔒 Criar Nova Lista de Peças</span>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            <input type="text" id="cc-input-nova-compra" class="config-input" style="flex:1;" placeholder="Nome da Lista (Ex: Peças Motor NASCAR)">
-                            <button class="btn-action-primary" id="btn-criar-cc" style="background: var(--accent-cc);">Criar</button>
-                        </div>
+                <div class="config-panel" style="border-color: var(--accent-gold);">
+                    <div class="config-panel-title" style="color: var(--accent-gold);">🔀 Gerenciar e Mesclar Pilotos (Unificar Histórico)</div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Selecione um piloto secundário (origem) para ser absorvido pelo piloto principal (destino). Todas as voltas e estatísticas serão somadas na conta principal.</p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
+                        <select id="select-piloto-origem" class="config-select"><option value="">Piloto Origem (absorvido)...</option></select>
+                        <select id="select-piloto-destino" class="config-select"><option value="">Piloto Destino (principal)...</option></select>
+                        <button class="btn-action-primary" id="btn-executar-mesclagem" style="background: var(--accent-gold); color: #000; font-weight: 700;">Executar Mesclagem</button>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="table-container">
+                        <h4 style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Apelidos Cadastrados</h4>
+                        <table>
+                            <thead><tr><th>Original</th><th>Apelido</th><th style="text-align: right;">Ação</th></tr></thead>
+                            <tbody id="tabela-pilotos-metadados"><tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum.</td></tr></tbody>
+                        </table>
+                    </div>
+                    <div class="table-container">
+                        <h4 style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Mesclagens Ativas</h4>
+                        <table>
+                            <thead><tr><th>Origem</th><th>Destino Principal</th><th style="text-align: right;">Ação</th></tr></thead>
+                            <tbody id="tabela-mesclagens-ativas"><tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhuma mesclagem.</td></tr></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Dashboard Principal -->
-    <div class="dashboard-container">
-        <header class="header">
-            <div class="brand-title">
-                <h1>🏁 CTAD</h1>
-                <p>Central de Telemetria e Análise de Desempenho — NASCAR Edition</p>
-            </div>
-            <div class="header-actions">
-                <button class="btn btn-upload-modal-trigger" id="btn-abrir-upload">📤 Uploads</button>
-                <button class="btn btn-campeonatos-trigger" id="btn-abrir-campeonatos">🏆 Championship Manager</button>
-                <button class="btn btn-compras-coletivas-trigger" id="btn-abrir-cc">🛒 Gestão de Peças</button>
-                <button class="btn btn-pilotos-trigger" id="btn-abrir-pilotos">👤 Pilotos</button>
-                <button class="btn btn-pdf-global" id="btn-gerar-pdf">📄 Gerar relatório</button>
-            </div>
-        </header>
-
-        <div id="tab-telemetria" class="tab-content">
-            <section class="filters-card">
-                <div class="filters-grid">
-                    <div class="filter-group">
-                        <div class="filter-group-header">
-                            <label class="group-title">SESSÕES / BATERIAS</label>
-                            <button class="btn-text-action" id="btn-limpar-bateria">🗑️ Limpar</button>
-                        </div>
-                        <div class="checkbox-container" id="filtro-baterias-container">Carregando baterias...</div>
-                    </div>
-
-                    <div class="filter-group">
-                        <div class="filter-group-header">
-                            <label class="group-title">PILOTOS</label>
-                            <button class="btn-text-action" id="btn-limpar-piloto">🗑️ Limpar</button>
-                        </div>
-                        <div class="checkbox-container" id="filtro-pilotos-container">Carregando pilotos...</div>
-                    </div>
-
-                    <div class="filter-group">
-                        <div class="filter-group-header">
-                            <label class="group-title">MÓDULOS VISÍVEIS</label>
-                            <button class="btn-text-action" id="btn-limpar-modulo">🗑️ Limpar</button>
-                        </div>
-                        <div class="checkbox-container">
-                            <label class="checkbox-item"><input type="checkbox" value="mod-grafico" class="filter-modulo" checked> 📈 Evolução de Ritmo</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-grafico-posicao" class="filter-modulo" checked> 📊 Posição Volta a Volta</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-log-posicao" class="filter-modulo" checked> 📝 Relatório de Ultrapassagens</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-classificacao-analise" class="filter-modulo" checked> 📋 Laudo Técnico</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked> ⏱️ Tabela Geral com Gaps</label>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="kpi-grid">
-                <div class="kpi-card">
-                    <span class="kpi-label">Piloto com Mais Vitórias</span>
-                    <div class="kpi-value" id="kpi-vencedor">--</div>
-                    <span class="kpi-subtext" id="kpi-vencedor-sub">Aguardando dados</span>
-                </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">Melhor Volta Geral</span>
-                    <div class="kpi-value green" id="kpi-melhor-volta">--</div>
-                    <span class="kpi-subtext" id="kpi-melhor-volta-sub">--</span>
-                </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">Voltas Válidas Analisadas</span>
-                    <div class="kpi-value" id="kpi-total-voltas">0</div>
-                    <span class="kpi-subtext">Total nas sessões</span>
-                </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">Média Global do Grid</span>
-                    <div class="kpi-value" id="kpi-media-global">--</div>
-                    <span class="kpi-subtext">Média geral</span>
-                </div>
-            </section>
-
-            <div id="sessions-container" class="session-blocks-container" style="margin-top: 20px;"></div>
-        </div>
-
-        <footer class="footer-container">
-            <div class="footer-meta-info">
-                <span>📌 Projeto: <strong>CTAD (Central de Telemetria e Análise de Desempenho)</strong></span><span>•</span><span id="db-status-badge">🟢 Status: <strong>NASCAR Track Mode Ativo</strong></span>
-            </div>
-            <div class="footer-logos">
-                <span style="font-size: 0.85rem; font-weight: 900; color: #ffb703; letter-spacing: 2px;">OFFICIAL TELEMETRY PARTNER</span>
-            </div>
-            <div class="footer-copyright">&copy; 2026 CTAD - Central de Telemetria e Análise de Desempenho. Todos os direitos reservados.</div>
-        </footer>
-    </div>
-
-    <!-- Script Principal como Módulo -->
-    <script type="module" src="./js/main.js"></script>
-</body>
-</html>
