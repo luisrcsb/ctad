@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CTAD - Central de Telemetria e Análise de Desempenho</title>
+    <title>CTAD - Central de Telemetria e Análise de Desempenho (NASCAR Edition)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -220,24 +220,6 @@
         </div>
     </div>
 
-    <!-- Modal de Senha Segura -->
-    <div id="modal-senha-segura" class="custom-modal" style="z-index: 20000;">
-        <div class="modal-content" style="max-width: 380px;">
-            <div class="modal-header">
-                <div class="modal-title" style="font-size: 1rem;">🔒 Confirmação de Segurança</div>
-                <button class="modal-close" id="btn-fechar-senha">&times;</button>
-            </div>
-            <div class="modal-body" style="gap: 14px; text-align: center;">
-                <p id="modal-senha-mensagem" style="font-size: 0.85rem; color: var(--text-main);">Digite a senha:</p>
-                <input type="password" id="modal-senha-input" class="config-input" style="width: 100%; text-align: center; font-size: 1.1rem; letter-spacing: 2px;" placeholder="••••">
-                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px;">
-                    <button class="btn-action-danger" id="btn-cancelar-senha" style="padding: 6px 14px; font-size: 0.8rem;">Cancelar</button>
-                    <button class="btn-action-primary" id="btn-confirmar-senha" style="background: var(--accent-cc); padding: 6px 16px; font-size: 0.8rem;">Confirmar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Gestão de Peças / Compras Coletivas -->
     <div id="campeonatos2-modal" class="custom-modal">
         <div class="modal-content">
@@ -275,10 +257,6 @@
                             </table>
                         </div>
                         <button class="btn-action-primary" id="btn-adicionar-item-cc" style="background: var(--accent-cc); width: max-content;">➕ Adicionar Item</button>
-                        <div id="cc-aviso-nao-atribuidos" style="display: none; background: rgba(217, 4, 41, 0.1); border: 1px dashed var(--accent-red); padding: 10px; border-radius: 6px; margin-top: 8px;">
-                            <span style="font-size: 0.78rem; font-weight: bold; color: var(--accent-red);">⚠️ Itens pendentes de atribuição:</span>
-                            <div id="cc-lista-nao-atribuidos" style="margin-top: 6px; font-size: 0.8rem;"></div>
-                        </div>
                     </div>
                     <div class="config-panel">
                         <div class="config-panel-title">3. Informações Financeiras e Fiscais</div>
@@ -295,41 +273,9 @@
                             <div id="cc-form-total-global" style="font-size: 1.15rem; font-weight: 900; color: var(--accent-gold);">R$ 0,00</div>
                         </div>
                     </div>
-                    <div class="config-panel">
-                        <div class="config-panel-title">4. Gestão de Participantes e Rateio</div>
-                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
-                            <input type="text" id="cc-input-novo-participante" class="config-input" placeholder="Novo participante" style="max-width: 280px;">
-                            <button type="button" class="btn-action-primary" id="btn-adicionar-participante-cc" style="background: var(--accent-cc); padding: 8px 14px;">➕ Adicionar</button>
-                        </div>
-                        <div class="table-container">
-                            <table>
-                                <thead><tr><th style="width: 45px; text-align: center;">Ativo</th><th>Participante</th><th style="width: 120px; text-align: center;">Comprador</th><th>Devido</th><th style="text-align: center; width: 80px;">Pago</th><th>Recibo Pix</th><th style="text-align: center; width: 60px;">Ação</th></tr></thead>
-                                <tbody id="cc-tabela-cotistas-rateio"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="config-panel">
-                        <div class="config-panel-title">5. Chave Pix do Comprador (<span id="cc-label-nome-comprador">Nenhum</span>)</div>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            <input type="text" id="cc-form-pix" class="config-input" style="flex: 1;" placeholder="Chave Pix ou Payload Copia e Cola">
-                            <label class="btn-action-primary" style="background: #480ca8; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin: 0;">
-                                📄 Upload PDF do Pix
-                                <input type="file" id="cc-input-pdf-pix" accept="application/pdf" style="display: none;">
-                            </label>
-                        </div>
-                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 6px;">
-                            <img id="cc-pix-qrcode" class="pix-clickable" src="" alt="QR Code Pix" style="width: 120px; height: 120px; background: #fff; padding: 4px; border-radius: 6px; display: none;">
-                            <span id="cc-pix-placeholder" style="font-size: 0.75rem; color: var(--text-muted);">Insira a chave Pix ou faça upload do PDF.</span>
-                        </div>
-                    </div>
-                    <div class="config-panel" style="border-color: #3f37c9;">
-                        <div class="config-panel-title" style="color: #3f37c9;">6. Código de Rastreio</div>
-                        <input type="text" id="cc-form-rastreio" class="config-input" style="width: 100%; font-weight: bold;" placeholder="Ex: NL123456789BR">
-                    </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <button class="btn-action-danger" id="btn-excluir-cc">🗑️ Excluir Lista</button>
                         <div style="display: flex; gap: 10px;">
-                            <button id="btn-finalizar-compra-ui" class="btn-action-finalize">✅ Finalizar Lista</button>
                             <button class="btn-action-primary" id="btn-salvar-cc" style="background: var(--accent-cc); padding: 10px 20px;">💾 Salvar Alterações</button>
                         </div>
                     </div>
@@ -361,7 +307,7 @@
                             <label class="group-title">SESSÕES / BATERIAS</label>
                             <button class="btn-text-action" id="btn-limpar-bateria">🗑️ Limpar</button>
                         </div>
-                        <div class="checkbox-container" id="filtro-baterias-container"></div>
+                        <div class="checkbox-container" id="filtro-baterias-container">Carregando baterias...</div>
                     </div>
 
                     <div class="filter-group">
@@ -369,7 +315,7 @@
                             <label class="group-title">PILOTOS</label>
                             <button class="btn-text-action" id="btn-limpar-piloto">🗑️ Limpar</button>
                         </div>
-                        <div class="checkbox-container" id="filtro-pilotos-container"></div>
+                        <div class="checkbox-container" id="filtro-pilotos-container">Carregando pilotos...</div>
                     </div>
 
                     <div class="filter-group">
@@ -383,8 +329,6 @@
                             <label class="checkbox-item"><input type="checkbox" value="mod-log-posicao" class="filter-modulo" checked> 📝 Relatório de Ultrapassagens</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-classificacao-analise" class="filter-modulo" checked> 📋 Laudo Técnico</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked> ⏱️ Tabela Geral com Gaps</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-replay" class="filter-modulo" checked> 🎬 Replay Animado</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-comentarios" class="filter-modulo" checked> 💬 Comentários</label>
                         </div>
                     </div>
                 </div>
@@ -399,7 +343,6 @@
                 <div class="kpi-card">
                     <span class="kpi-label">Melhor Volta Geral</span>
                     <div class="kpi-value green" id="kpi-melhor-volta">--</div>
-                    <div class="kpi-value" id="kpi-melhor-volta-vel" style="color: var(--accent-gold); margin-top: 2px;">--</div>
                     <span class="kpi-subtext" id="kpi-melhor-volta-sub">--</span>
                 </div>
                 <div class="kpi-card">
@@ -410,7 +353,6 @@
                 <div class="kpi-card">
                     <span class="kpi-label">Média Global do Grid</span>
                     <div class="kpi-value" id="kpi-media-global">--</div>
-                    <div class="kpi-value" id="kpi-media-global-vel" style="color: var(--accent-gold); margin-top: 2px;">--</div>
                     <span class="kpi-subtext">Média geral</span>
                 </div>
             </section>
