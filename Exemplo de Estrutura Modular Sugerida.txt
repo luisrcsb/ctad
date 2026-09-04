@@ -1,4 +1,4 @@
-/krathus-racing/
+/ctad/
 ├── index.html
 ├── style.css
 └── js/
