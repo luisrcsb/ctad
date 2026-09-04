@@ -4,15 +4,9 @@ import {
     mesclagensCache, setMesclagensCache, ALIAS_EDGARD_DJ_DEFAULTS 
 } from './state.js';
 
-import { formatarNomeSessao, extrairPesoOrdenacao, obterTodosDadosConsolidados } from './telemetria.js';
-import { 
-    renderizarListaCampeonatosModal, criarCampeonatoProtegido, fecharPainelZRoundCamp, 
-    mudarAbaZRound, salvarAba1ConfigGeral, excluirCampeonatoAtual, processarTreinoParaGrid, 
-    uploadProvasBancoSeparado, excluirProvaBancoSeparado, finalizarCampeonatoAtual, 
-    importarPilotoBancoGeral, adicionarPilotoManualZRound, removerPilotoCampeonatoZRound, 
-    fecharModalParticipar, adicionarPilotoPorModalParticipar, removerPilotoParticipar 
-} from './campeonatos.js';
-import { renderizarListaComprasColetivas, criarCompraColetiva } from './compras-coletivas.js';
+import { formatarNomeSessao, extrairPesoOrdenacao } from './telemetria.js';
+import { criarCampeonatoProtegido, renderizarListaCampeonatosModal } from './campeonatos.js';
+import { criarCompraColetiva, renderizarListaComprasColetivas } from './compras-coletivas.js';
 
 const firebaseConfig = {
     apiKey: "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",
@@ -33,14 +27,8 @@ try {
         setDb(window.firebase.database());
     }
 } catch (e) {
-    console.error("Erro crítico ao inicializar o Firebase:", e);
+    console.error("Erro Firebase:", e);
 }
-
-window.removerPilotoCampZRound = removerPilotoCampeonatoZRound;
-window.excluirProvaSep = excluirProvaBancoSeparado;
-window.removerPilotoPart = removerPilotoParticipar;
-window.abrirResumoFiscalModal = (key) => { document.getElementById('resumo-fiscal-modal').style.display = 'flex'; };
-window.abrirGerenciadorCompraModal = (key) => { document.getElementById('campeonatos2-modal').style.display = 'flex'; };
 
 function gerarFiltrosDinamicos() {
     const batContainer = document.getElementById('filtro-baterias-container');
@@ -51,25 +39,14 @@ function gerarFiltrosDinamicos() {
     listaJsonsCache.forEach(arq => {
         if (arq.dados && Array.isArray(arq.dados)) {
             arq.dados.forEach(d => { 
-                if (d.piloto && d.laps && d.laps.length > 0) {
-                    let pReal = d.piloto;
-                    let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
-                    if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
-                    pilotosSet.add(pReal); 
-                } 
+                if (d.piloto && d.laps && d.laps.length > 0) pilotosSet.add(d.piloto); 
             });
         }
     });
 
-    Object.keys(pilotosMetadadosCache).forEach(p => {
-        let safeKey = p.replace(/[.#$\/\[\]]/g, "_");
-        let pReal = mesclagensCache[safeKey] || p;
-        pilotosSet.add(pReal);
-    });
-
     if (listaJsonsCache.length === 0) {
-        batContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--accent-gold);">ℹ️ Conectado, mas nenhum arquivo encontrado no nó 'baterias'.</span>`;
-        pilContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--text-muted);">Nenhum piloto.</span>`;
+        batContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--accent-gold);">ℹ️ Conectado, buscando dados...</span>`;
+        pilContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--text-muted);">Aguardando...</span>`;
         return;
     }
 
@@ -80,9 +57,7 @@ function gerarFiltrosDinamicos() {
     }).join('');
 
     pilContainer.innerHTML = Array.from(pilotosSet).sort().map(piloto => {
-        let meta = pilotosMetadadosCache[piloto] || {};
-        let labelExib = meta.apelido ? `${piloto} (${meta.apelido})` : piloto;
-        return `<label class="checkbox-item"><input type="checkbox" value="${piloto}" class="filter-piloto" checked> ${labelExib}</label>`;
+        return `<label class="checkbox-item"><input type="checkbox" value="${piloto}" class="filter-piloto" checked> ${piloto}</label>`;
     }).join('');
 }
 
@@ -106,99 +81,24 @@ document.addEventListener("DOMContentLoaded", () => {
             novaLista.sort((a, b) => extrairPesoOrdenacao(b.sessao) - extrairPesoOrdenacao(a.sessao));
             setListaJsonsCache(novaLista);
             gerarFiltrosDinamicos();
-        }, err => {
-            console.error("Erro ao ler baterias:", err);
-            const batContainer = document.getElementById('filtro-baterias-container');
-            if (batContainer) batContainer.innerHTML = `<span style="color: var(--accent-red); font-size: 0.8rem;">❌ Erro Firebase: ${err.message}</span>`;
         });
 
-        dbInstancia.ref('pilotosMetadados').on('value', snapshot => { 
-            setPilotosMetadadosCache(snapshot.val() || {}); 
-            gerarFiltrosDinamicos(); 
-        });
-
-        dbInstancia.ref('mesclagensPilotos').on('value', snapshot => { 
-            let servidorMesclagens = snapshot.val() || {};
-            setMesclagensCache(Object.assign({}, ALIAS_EDGARD_DJ_DEFAULTS, servidorMesclagens)); 
-            gerarFiltrosDinamicos(); 
-        });
-
-        dbInstancia.ref('campeonatos').on('value', snapshot => { 
-            setCampeonatosCache(snapshot.val() || {}); 
-            renderizarListaCampeonatosModal(); 
-        });
-
-        dbInstancia.ref('comprasColetivas').on('value', snapshot => { 
-            setComprasColetivasCache(snapshot.val() || {}); 
-            renderizarListaComprasColetivas(); 
-        });
-    } else {
-        const batContainer = document.getElementById('filtro-baterias-container');
-        if (batContainer) batContainer.innerHTML = `<span style="color: var(--accent-red); font-size: 0.8rem;">❌ Erro: Instância do banco Firebase nula.</span>`;
+        dbInstancia.ref('pilotosMetadados').on('value', snapshot => { setPilotosMetadadosCache(snapshot.val() || {}); });
+        dbInstancia.ref('campeonatos').on('value', snapshot => { setCampeonatosCache(snapshot.val() || {}); renderizarListaCampeonatosModal(); });
+        dbInstancia.ref('comprasColetivas').on('value', snapshot => { setComprasColetivasCache(snapshot.val() || {}); renderizarListaComprasColetivas(); });
     }
 
-    // Eventos dos Botões
-    const btnUpload = document.getElementById('btn-abrir-upload');
-    if (btnUpload) btnUpload.onclick = () => document.getElementById('upload-modal').style.display = 'flex';
-    
-    const btnCloseUpload = document.getElementById('btn-fechar-upload');
-    if (btnCloseUpload) btnCloseUpload.onclick = () => document.getElementById('upload-modal').style.display = 'none';
+    // Abertura de Modais
+    document.getElementById('btn-abrir-upload').onclick = () => document.getElementById('upload-modal').style.display = 'flex';
+    document.getElementById('btn-fechar-upload').onclick = () => document.getElementById('upload-modal').style.display = 'none';
 
-    const btnCamp = document.getElementById('btn-abrir-campeonatos');
-    if (btnCamp) btnCamp.onclick = () => document.getElementById('campeonatos-modal').style.display = 'flex';
+    document.getElementById('btn-abrir-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'flex';
+    document.getElementById('btn-fechar-campeonatos').onclick = () => document.getElementById('campeonatos-modal').style.display = 'none';
+    document.getElementById('btn-criar-campeonato').onclick = criarCampeonatoProtegido;
 
-    const btnCloseCamp = document.getElementById('btn-fechar-campeonatos');
-    if (btnCloseCamp) btnCloseCamp.onclick = () => document.getElementById('campeonatos-modal').style.display = 'none';
+    document.getElementById('btn-abrir-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'flex';
+    document.getElementById('btn-fechar-cc').onclick = () => document.getElementById('campeonatos2-modal').style.display = 'none';
+    document.getElementById('btn-criar-cc').onclick = criarCompraColetiva;
 
-    const btnCriarCamp = document.getElementById('btn-criar-campeonato');
-    if (btnCriarCamp) btnCriarCamp.onclick = criarCampeonatoProtegido;
-
-    const btnFecharZ = document.getElementById('btn-fechar-painel-zround');
-    if (btnFecharZ) btnFecharZ.onclick = fecharPainelZRoundCamp;
-
-    const btnSalvarAba1 = document.getElementById('btn-salvar-aba1');
-    if (btnSalvarAba1) btnSalvarAba1.onclick = salvarAba1ConfigGeral;
-
-    const btnExcluirCamp = document.getElementById('btn-excluir-campeonato');
-    if (btnExcluirCamp) btnExcluirCamp.onclick = excluirCampeonatoAtual;
-
-    const btnProcTreino = document.getElementById('btn-processar-treino-grid');
-    if (btnProcTreino) btnProcTreino.onclick = processarTreinoParaGrid;
-
-    const btnUploadProva = document.getElementById('btn-upload-prova-separada');
-    if (btnUploadProva) btnUploadProva.onclick = uploadProvasBancoSeparado;
-
-    const btnFinalizarCamp = document.getElementById('btn-finalizar-campeonato');
-    if (btnFinalizarCamp) btnFinalizarCamp.onclick = finalizarCampeonatoAtual;
-
-    const btnImpPiloto = document.getElementById('btn-importar-piloto-geral');
-    if (btnImpPiloto) btnImpPiloto.onclick = importarPilotoBancoGeral;
-
-    const btnCadMan = document.getElementById('btn-cadastrar-piloto-manual');
-    if (btnCadMan) btnCadMan.onclick = adicionarPilotoManualZRound;
-
-    document.querySelectorAll('#campeonatos-modal .zround-tab-btn').forEach((btn, idx) => {
-        btn.onclick = () => mudarAbaZRound(idx + 1);
-    });
-
-    const btnClosePart = document.getElementById('btn-fechar-participar');
-    if (btnClosePart) btnClosePart.onclick = fecharModalParticipar;
-
-    const btnInsPart = document.getElementById('btn-inscrever-participar');
-    if (btnInsPart) btnInsPart.onclick = adicionarPilotoPorModalParticipar;
-
-    const btnCc = document.getElementById('btn-abrir-cc');
-    if (btnCc) btnCc.onclick = () => document.getElementById('campeonatos2-modal').style.display = 'flex';
-
-    const btnCloseCc = document.getElementById('btn-fechar-cc');
-    if (btnCloseCc) btnCloseCc.onclick = () => document.getElementById('campeonatos2-modal').style.display = 'none';
-
-    const btnCriarCc = document.getElementById('btn-criar-cc');
-    if (btnCriarCc) btnCriarCc.onclick = criarCompraColetiva;
-
-    const btnCloseRes = document.getElementById('btn-fechar-resumo-fiscal');
-    if (btnCloseRes) btnCloseRes.onclick = () => document.getElementById('resumo-fiscal-modal').style.display = 'none';
-
-    const btnPdf = document.getElementById('btn-gerar-pdf');
-    if (btnPdf) btnPdf.onclick = () => window.print();
+    document.getElementById('btn-gerar-pdf').onclick = () => window.print();
 });
