@@ -4,7 +4,7 @@ import {
     mesclagensCache, setMesclagensCache, ALIAS_EDGARD_DJ_DEFAULTS 
 } from './state.js';
 
-import { formatarNomeSessao, extrairPesoOrdenacao } from './telemetria.js';
+import { formatarNomeSessao, extrairPesoOrdenacao, converterPdfParaTexto, parsearTextoConvertido, arquivoParaBase64 } from './telemetria.js';
 import { criarCampeonatoProtegido, renderizarListaCampeonatosModal } from './campeonatos.js';
 import { criarCompraColetiva, renderizarListaComprasColetivas } from './compras-coletivas.js';
 
@@ -75,7 +75,6 @@ function atualizarDashboard() {
 
         if (dadosValidos.length === 0) return;
 
-        // Normalizar voltas para números
         dadosValidos.forEach(d => {
             d.lapsNorm = (d.laps || []).map(extrairTempoNumerico).filter(t => !isNaN(t) && t > 0);
         });
@@ -155,6 +154,44 @@ function atualizarDashboard() {
     }
 }
 
+function renderizarListaUploadModal() {
+    const ul = document.getElementById('upload-lista-historico');
+    if (!ul) return;
+    if (listaJsonsCache.length === 0) {
+        ul.innerHTML = `<li>Nenhum arquivo no histórico.</li>`;
+        return;
+    }
+    ul.innerHTML = listaJsonsCache.map(arq => {
+        let nome = arq.sessao || arq.nomeArquivoOriginal || arq.firebaseKey;
+        return `
+            <li>
+                <span>📄 ${escapeHtml(nome)}</span>
+                <div style="display: flex; gap: 6px;">
+                    <button class="btn-text-action" onclick="window.inspecionarJsonUpload('${arq.firebaseKey}')">Inspecionar</button>
+                    <button class="btn-text-action" style="color: var(--accent-red);" onclick="window.excluirArquivoUpload('${arq.firebaseKey}')">Excluir</button>
+                </div>
+            </li>
+        `;
+    }).join('');
+}
+
+window.inspecionarJsonUpload = (key) => {
+    let arq = listaJsonsCache.find(a => a.firebaseKey === key);
+    const viewer = document.getElementById('upload-json-viewer');
+    if (viewer && arq) {
+        viewer.innerText = JSON.stringify(arq, null, 2);
+    }
+};
+
+window.excluirArquivoUpload = async (key) => {
+    if (confirm("Deseja realmente excluir este arquivo do banco de dados?")) {
+        if (db) {
+            await db.ref('baterias/' + key).remove();
+            alert("Arquivo excluído com sucesso!");
+        }
+    }
+};
+
 function gerarFiltrosDinamicos() {
     const batContainer = document.getElementById('filtro-baterias-container');
     const pilContainer = document.getElementById('filtro-pilotos-container');
@@ -171,7 +208,7 @@ function gerarFiltrosDinamicos() {
     });
 
     if (listaJsonsCache.length === 0) {
-        batContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--accent-gold);">ℹ️ Conectado, buscando dados...</span>`;
+        batContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--accent-gold);">ℹ️ Nenhum arquivo encontrado.</span>`;
         pilContainer.innerHTML = `<span style="font-size:0.82rem; color: var(--text-muted);">Aguardando...</span>`;
         return;
     }
@@ -202,6 +239,7 @@ function gerarFiltrosDinamicos() {
         atualizarDashboard();
     };
 
+    renderizarListaUploadModal();
     atualizarDashboard();
 }
 
@@ -230,6 +268,65 @@ document.addEventListener("DOMContentLoaded", () => {
         dbInstancia.ref('pilotosMetadados').on('value', snapshot => { setPilotosMetadadosCache(snapshot.val() || {}); });
         dbInstancia.ref('campeonatos').on('value', snapshot => { setCampeonatosCache(snapshot.val() || {}); renderizarListaCampeonatosModal(); });
         dbInstancia.ref('comprasColetivas').on('value', snapshot => { setComprasColetivasCache(snapshot.val() || {}); renderizarListaComprasColetivas(); });
+    }
+
+    // Botão de Processar Upload de Arquivos
+    const btnProcUpload = document.getElementById('btn-processar-upload');
+    if (btnProcUpload) {
+        btnProcUpload.onclick = async () => {
+            const inputEl = document.getElementById('input-pdf-upload');
+            if (!inputEl || !inputEl.files || inputEl.files.length === 0) {
+                alert("Selecione pelo menos um arquivo PDF ou HTML.");
+                return;
+            }
+            if (!db) {
+                alert("Erro: Banco de dados não conectado.");
+                return;
+            }
+
+            for (let file of inputEl.files) {
+                try {
+                    let textoExtraido = "";
+                    const extensao = file.name.split('.').pop().toLowerCase();
+                    if (extensao === 'html' || extensao === 'htm') {
+                        const htmlText = await file.text();
+                        const parser = new DOMParser();
+                        const docHtml = parser.parseFromString(htmlText, 'text/html');
+                        textoExtraido = docHtml.body.innerText;
+                    } else {
+                        textoExtraido = await converterPdfParaTexto(file);
+                    }
+
+                    let sessaoNome = file.name.replace(/\.[^/.]+$/, "").trim();
+                    let dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, "bat_" + Date.now());
+                    
+                    if (!dadosExtraidos || dadosExtraidos.length === 0) {
+                        alert(`Aviso: Não foi possível extrair dados válidos do arquivo ${file.name}`);
+                        continue;
+                    }
+
+                    let pdfBase64 = await arquivoParaBase64(file);
+                    let batKey = "bat_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+                    let novoRegistro = {
+                        bateriaKey: batKey,
+                        sessao: sessaoNome,
+                        id: Date.now(),
+                        dados: dadosExtraidos,
+                        pdfBase64: pdfBase64,
+                        nomeArquivoOriginal: file.name
+                    };
+
+                    await db.ref('baterias/' + batKey).set(novoRegistro);
+                } catch (err) {
+                    console.error("Erro ao processar arquivo:", err);
+                    alert(`Erro ao processar ${file.name}: ${err.message}`);
+                }
+            }
+
+            inputEl.value = "";
+            alert("Upload(s) processado(s) e salvos com sucesso no Firebase!");
+            document.getElementById('upload-modal').style.display = 'none';
+        };
     }
 
     const bUpload = document.getElementById('btn-abrir-upload');
