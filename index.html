@@ -488,7 +488,7 @@
                             <label class="checkbox-item"><input type="checkbox" value="mod-grafico-posicao" class="filter-modulo" checked onchange="atualizarDashboard()"> 📊 Posição Volta a Volta</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-log-posicao" class="filter-modulo" checked onchange="atualizarDashboard()"> 📝 Relatório de Ultrapassagens</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-classificacao-analise" class="filter-modulo" checked onchange="atualizarDashboard()"> 📋 Laudo Técnico</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked onchange="atualizarDashboard()"> ⏱️ Tabela Geral com Gaps</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked onchange="atualizarDashboard()"> ⏱️ Tabela Geral Volta a Volta com Gaps</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-comentarios" class="filter-modulo" checked onchange="atualizarDashboard()"> 💬 Comentários e Reações</label>
                         </div>
                     </div>
@@ -525,7 +525,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.55.0 (Tabela Geral com Todas as Voltas e Gaps)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.56.0 (Tabela Geral Volta a Volta com Gaps e Liderança por Volta)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -2019,7 +2019,7 @@
                     let cardTabela = document.createElement('div');
                     cardTabela.className = 'card';
                     cardTabela.innerHTML = `
-                        <div class="card-header">⏱️ Tabela Geral com Valores de Todas as Voltas e Gaps</div>
+                        <div class="card-header">⏱️ Tabela Geral Volta a Volta (com Gaps e Liderança por Volta)</div>
                         <div class="table-container">${tabelaGeralHtml}</div>
                     `;
                     cardConteudoGrid.appendChild(cardTabela);
@@ -2159,50 +2159,74 @@
         function gerarTabelaGeralSessao(ordenados) {
             if (!ordenados || ordenados.length === 0) return "<div>Sem dados.</div>";
             
-            // Encontrar a melhor volta absoluta de todas as voltas de todos os pilotos para servir de referência para o líder
-            let melhorVoltaAbsoluta = 999999;
+            let maxVoltas = 0;
             ordenados.forEach(p => {
-                if (p.laps) {
-                    p.laps.forEach(l => {
-                        let t = typeof l === 'object' ? Number(l.tempo) : Number(l);
-                        if (!isNaN(t) && t > 0 && t < melhorVoltaAbsoluta) {
-                            melhorVoltaAbsoluta = t;
-                        }
-                    });
-                }
+                if (p.laps && p.laps.length > maxVoltas) maxVoltas = p.laps.length;
             });
+
+            // Encontrar o melhor tempo para cada volta individual
+            let melhoresTemposPorVolta = [];
+            for (let v = 0; v < maxVoltas; v++) {
+                let melhor = 999999;
+                ordenados.forEach(p => {
+                    let l = p.laps ? p.laps[v] : null;
+                    let t = (l !== undefined && l !== null && !isNaN(l) && l > 0) ? (typeof l === 'object' ? Number(l.tempo) : Number(l)) : null;
+                    if (t !== null && t < melhor) melhor = t;
+                });
+                melhoresTemposPorVolta[v] = melhor < 999999 ? melhor : null;
+            }
+
+            let thVoltasHtml = '';
+            for (let i = 1; i <= maxVoltas; i++) {
+                thVoltasHtml += `<th style="text-align: center;">V${i}</th>`;
+            }
 
             let linhas = ordenados.map((p, idx) => {
                 let meta = pilotosMetadadosCache[p.piloto] || {};
                 let nomeExib = meta.apelido ? `${p.piloto} (${meta.apelido})` : p.piloto;
                 
-                let lapsHtml = '';
-                if (p.laps && p.laps.length > 0) {
-                    let voltasItens = p.laps.map((l, vIdx) => {
-                        let t = typeof l === 'object' ? Number(l.tempo) : Number(l);
-                        if (isNaN(t) || t <= 0) return `<span style="color: var(--text-muted);">V${vIdx+1}: --</span>`;
-                        
+                let validLaps = (p.laps || []).map(l => (l !== undefined && l !== null && !isNaN(l) && l > 0) ? (typeof l === 'object' ? Number(l.tempo) : Number(l)) : 0).filter(t => t > 0);
+                let totalLapsCount = validLaps.length;
+                let totalTimeSum = validLaps.reduce((a, b) => a + b, 0);
+
+                let totalHtml = `<div style="display: flex; flex-direction: column; gap: 2px;">
+                    <strong style="color: var(--accent-gold);">${totalLapsCount}v</strong>
+                    <span style="color: var(--text-muted); font-size: 0.78rem;">(${totalTimeSum.toFixed(3)}s)</span>
+                </div>`;
+
+                let voltasCelulasHtml = '';
+                for (let v = 0; v < maxVoltas; v++) {
+                    let l = p.laps ? p.laps[v] : null;
+                    let t = (l !== undefined && l !== null && !isNaN(l) && l > 0) ? (typeof l === 'object' ? Number(l.tempo) : Number(l)) : null;
+                    
+                    if (t === null) {
+                        voltasCelulasHtml += `<td style="text-align: center; color: var(--text-muted);">--</td>`;
+                    } else {
                         let tStr = t.toFixed(3).replace('.', ',') + 's';
-                        if (Math.abs(t - melhorVoltaAbsoluta) < 0.0005) {
-                            return `<span><strong>V${vIdx+1}:</strong> ${tStr} (<span style="color: var(--accent-gold); font-weight: 700;">Líder</span>)</span>`;
+                        let melhorVoltaDessaVolta = melhoresTemposPorVolta[v];
+                        
+                        if (melhorVoltaDessaVolta !== null && Math.abs(t - melhorVoltaDessaVolta) < 0.0005) {
+                            voltasCelulasHtml += `<td style="text-align: center; white-space: nowrap;">
+                                <div>${tStr}</div>
+                                <div style="color: var(--accent-gold); font-weight: 700; font-size: 0.78rem; margin-top: 2px;">LÍDER</div>
+                            </td>`;
+                        } else if (melhorVoltaDessaVolta !== null) {
+                            let gap = t - melhorVoltaDessaVolta;
+                            voltasCelulasHtml += `<td style="text-align: center; white-space: nowrap;">
+                                <div>${tStr}</div>
+                                <div style="color: var(--accent-gap); font-weight: 700; font-size: 0.78rem; margin-top: 2px;">+${gap.toFixed(3).replace('.', ',')}s</div>
+                            </td>`;
                         } else {
-                            let gap = t - melhorVoltaAbsoluta;
-                            return `<span><strong>V${vIdx+1}:</strong> ${tStr} (<span style="color: var(--accent-red); font-weight: 700;">+${gap.toFixed(3).replace('.', ',')}s</span>)</span>`;
+                            voltasCelulasHtml += `<td style="text-align: center; white-space: nowrap;">${tStr}</td>`;
                         }
-                    });
-                    lapsHtml = `<div style="display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto;">${voltasItens.join('<br>')}</div>`;
-                } else {
-                    lapsHtml = '<span style="color: var(--text-muted);">Sem voltas registradas</span>';
+                    }
                 }
 
                 return `
                     <tr>
-                        <td><span class="pos-badge">${p.pos || (idx + 1) + 'º'}</span></td>
                         <td><strong><a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p.piloto)}')">${escapeHtml(nomeExib)}</a></strong></td>
-                        <td>${p.voltasTotais || (p.laps ? p.laps.length : 0)}</td>
-                        <td>${lapsHtml}</td>
-                        <td>${p.mediaTxt || '--'}</td>
-                        <td>${p.desvio || '±0,000s'}</td>
+                        <td>${totalHtml}</td>
+                        ${voltasCelulasHtml}
                     </tr>
                 `;
             }).join('');
@@ -2211,12 +2235,9 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Pos</th>
-                            <th>Piloto</th>
-                            <th>Voltas</th>
-                            <th>Valores de Todas as Voltas (Gap / Líder)</th>
-                            <th>Média</th>
-                            <th>Consistência</th>
+                            <th>PILOTO</th>
+                            <th>TOTAL</th>
+                            ${thVoltasHtml}
                         </tr>
                     </thead>
                     <tbody>${linhas}</tbody>
