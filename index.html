@@ -525,7 +525,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.53.0 (Módulo de Ultrapassagens Ativo)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.54.0 (Laudo Técnico Detalhado por Piloto e Evolução)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -2102,15 +2102,58 @@
 
         function gerarLaudoTecnicoSessao(ordenados) {
             if (!ordenados || ordenados.length === 0) return "Sem dados suficientes para gerar laudo.";
-            let lider = ordenados[0];
-            let metaLider = pilotosMetadadosCache[lider.piloto] || {};
-            let nomeLiderExib = metaLider.apelido ? `${lider.piloto} (${metaLider.apelido})` : lider.piloto;
-            return `
-                <div class="analysis-section-block">
-                    <div class="analysis-section-title">🏆 Vencedor da Sessão</div>
-                    <div class="analysis-section-content"><strong>${escapeHtml(nomeLiderExib)}</strong> dominou o ritmo com melhor volta de ${lider.melhorVoltaTxt || '--'} e média constante de ${lider.mediaTxt || '--'}.</div>
-                </div>
-            `;
+            
+            let dadosGerais = obterTodosDadosConsolidados();
+            let historicoPilotos = {};
+            dadosGerais.forEach(d => {
+                if (d.mediaVal && d.mediaVal > 0) {
+                    if (!historicoPilotos[d.piloto]) historicoPilotos[d.piloto] = [];
+                    historicoPilotos[d.piloto].push(d.mediaVal);
+                }
+            });
+
+            let blocosPilotosHtml = ordenados.map((p, idx) => {
+                let nomePiloto = p.piloto;
+                let meta = pilotosMetadadosCache[nomePiloto] || {};
+                let nomeExib = meta.apelido ? `${nomePiloto} (${meta.apelido})` : nomePiloto;
+                
+                let historico = historicoPilotos[nomePiloto] || [];
+                let analiseEvolucao = "";
+                
+                if (historico.length > 1) {
+                    let somaTotal = historico.reduce((a, b) => a + b, 0);
+                    let mediaHistoricaGeral = somaTotal / historico.length;
+                    let historicoAnterior = historico.filter(t => t !== p.mediaVal);
+                    let baseComparacao = historicoAnterior.length > 0 ? (historicoAnterior.reduce((a,b)=>a+b,0) / historicoAnterior.length) : mediaHistoricaGeral;
+                    
+                    if (baseComparacao > 0 && p.mediaVal > 0) {
+                        let ratio = (baseComparacao / p.mediaVal) * 100;
+                        
+                        if (ratio >= 100) {
+                            let pctMelhora = (ratio - 100).toFixed(1).replace('.', ',');
+                            analiseEvolucao = `📈 <strong>Evolução:</strong> Apresentou melhora de <strong>${pctMelhora}%</strong> no rendimento em relação ao seu histórico.`;
+                        } else {
+                            analiseEvolucao = `📉 <strong>Evolução:</strong> O rendimento foi abaixo de 100%, inferior ao seu histórico (o piloto piorou o ritmo médio).`;
+                        }
+                    } else {
+                        analiseEvolucao = `📌 <strong>Evolução:</strong> Primeira participação registrada ou dados insuficientes para comparativo histórico.`;
+                    }
+                } else {
+                    analiseEvolucao = `📌 <strong>Evolução:</strong> Piloto com única participação registrada no sistema.`;
+                }
+
+                return `
+                    <div class="analysis-section-block" style="margin-bottom: 8px;">
+                        <div class="analysis-section-title">🏎️ ${idx + 1}º Lugar - <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(nomePiloto)}')">${escapeHtml(nomeExib)}</a></div>
+                        <div class="analysis-section-content" style="display: flex; flex-direction: column; gap: 3px; margin-top: 4px;">
+                            <span>⏱️ <strong>Corrida:</strong> Melhor volta: <strong>${p.melhorVoltaTxt || '--'}</strong> | Média: <strong>${p.mediaTxt || '--'}</strong> (${p.voltasTotais || 0} voltas).</span>
+                            <span>${analiseEvolucao}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `<div style="display: flex; flex-direction: column; gap: 8px;">${blocosPilotosHtml}</div>`;
         }
 
         function gerarTabelaGeralSessao(ordenados) {
