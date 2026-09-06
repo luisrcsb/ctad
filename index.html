@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CTAD - Central de Telemetria e Análise de Desempenho (NASCAR Edition)</title>
+    <title>Krathus Racing - Central de Telemetria</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -12,34 +12,233 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --bg-body: #0d111a;
+            --bg-card: #151c28;
+            --bg-card-header: #1c2638;
+            --bg-input: #1c263b;
+            --border-card: #222d42;
+            --text-title: #ffffff;
+            --text-main: #d0d7e3;
+            --text-muted: #8492a6;
+            --accent-red: #e63946;
+            --accent-green: #2ec4b6;
+            --accent-gold: #ffb703;
+            --accent-silver: #c0c0c0;
+            --accent-bronze: #cd7f32;
+            --accent-blue: #3a86ff;
+            --accent-gap: #ff006e;
+            --accent-cc: #2a9d8f;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); padding: 24px; }
+        
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
+        .dashboard-container { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 20px 24px; border-radius: 12px; border: 1px solid var(--border-card); flex-wrap: wrap; gap: 15px; }
+        .brand-title h1 { font-size: 1.5rem; color: var(--text-title); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .brand-title p { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+
+        .header-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .btn { padding: 10px 18px; border-radius: 8px; border: none; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .btn-text-action { background: transparent; border: none; color: var(--accent-blue); font-size: 0.78rem; font-weight: 600; cursor: pointer; padding: 0; text-align: left; }
+        .btn-text-action:hover { text-decoration: underline; }
+
+        .btn-pdf-global { background: linear-gradient(135deg, #ff5722 0%, #e63946 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; }
+        .btn-upload-modal-trigger { background: linear-gradient(135deg, #3a86ff 0%, #2ec4b6 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-campeonatos-trigger { background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%); color: #000; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-compras-coletivas-trigger { background: linear-gradient(135deg, #2a9d8f 0%, #264653 100%); color: #fff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        
+        .btn-share { background: rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+        .btn-like { background: rgba(230, 57, 70, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+
+        .piloto-link { color: var(--accent-blue); text-decoration: none; font-weight: 700; cursor: pointer; }
+        .piloto-link:hover { color: var(--accent-gold); text-decoration: underline; }
+
+        .custom-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(13, 17, 26, 0.88); z-index: 10000; justify-content: center; align-items: center; padding: 20px; overflow-y: auto;
+        }
+        .modal-content {
+            background: var(--bg-card); border: 1px solid var(--border-card); border-top: 5px solid var(--accent-gold); border-radius: 14px; width: 100%; max-width: 1100px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+        .modal-header { padding: 20px 24px; background: var(--bg-card-header); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); }
+        .modal-title { font-size: 1.25rem; font-weight: 700; color: var(--text-title); display: flex; align-items: center; gap: 10px; }
+        .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; font-weight: bold; }
+        .modal-body { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+        .dossier-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .dossier-kpi { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 4px; text-align: center; }
+        .dossier-kpi-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .dossier-kpi-value { font-size: 1.25rem; font-weight: 700; color: var(--accent-gold); }
+
+        .config-box-trigger { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+        .btn-config-open { background: var(--bg-input); border: 1px solid var(--border-card); color: var(--accent-gold); padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .btn-config-open:hover { background: rgba(255, 183, 3, 0.1); }
+        .btn-merge-open { background: var(--bg-input); border: 1px solid var(--border-card); color: var(--accent-green); padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .btn-merge-open:hover { background: rgba(46, 196, 182, 0.1); }
+
+        .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+        .config-panel-title { font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-card); padding-bottom: 8px; }
+        
+        .config-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .config-input { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); padding: 8px 12px; border-radius: 6px; flex: 1; font-size: 0.85rem; }
+        .config-select { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); padding: 8px 12px; border-radius: 6px; flex: 1; font-size: 0.85rem; }
+
+        .btn-action-primary { background: var(--accent-blue); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+        .btn-action-primary:hover { background: #2b6cb0; }
+        .btn-action-danger { background: var(--accent-red); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+        .btn-action-danger:hover { background: #c53030; }
+
+        .zround-tabs-header { display: flex; gap: 6px; border-bottom: 2px solid var(--border-card); padding-bottom: 8px; flex-wrap: wrap; }
+        .zround-tab-btn { background: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-muted); padding: 8px 14px; border-radius: 6px; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
+        .zround-tab-btn.active { background: var(--accent-gold); color: #000; border-color: var(--accent-gold); }
+
+        .filters-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 18px; }
+        .filters-grid { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 20px; }
+        .filter-group { display: flex; flex-direction: column; gap: 12px; }
+        .filter-group-header { display: flex; justify-content: space-between; align-items: center; }
+        .filter-group label.group-title { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        
+        .checkbox-container { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; max-height: 150px; overflow-y: auto; }
+        .checkbox-item { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--text-main); cursor: pointer; }
+        .checkbox-item input[type="checkbox"] { accent-color: var(--accent-red); width: 16px; height: 16px; cursor: pointer; }
+
+        .upload-grid-manager { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .upload-box { background: var(--bg-input); border: 1px dashed var(--border-card); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        ul#upload-lista-historico { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 4px; }
+        ul#upload-lista-historico li { background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+        pre#upload-json-viewer { background: var(--bg-body); color: var(--accent-green); padding: 12px; border-radius: 6px; font-size: 0.75rem; max-height: 200px; overflow: auto; border: 1px solid var(--border-card); line-height: 1.4; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .kpi-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; }
+        .kpi-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--text-title); margin: 8px 0 4px 0; }
+        .kpi-value.green { color: var(--accent-green); }
+        .kpi-subtext { font-size: 0.8rem; color: var(--text-muted); }
+
+        .session-block-header { background: linear-gradient(135deg, var(--bg-card-header) 0%, var(--bg-card) 100%); border: 1px solid var(--border-card); border-left: 5px solid var(--accent-red); border-radius: 10px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; flex-wrap: wrap; gap: 10px; }
+        .session-block-title { font-size: 1.15rem; font-weight: 700; color: var(--text-title); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .session-block-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        
+        .session-podium-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 0.80rem; border: 1px solid; }
+        .podium-gold { background: rgba(255, 183, 3, 0.15); color: var(--accent-gold); border-color: var(--accent-gold); }
+        .podium-silver { background: rgba(192, 192, 192, 0.15); color: var(--accent-silver); border-color: var(--accent-silver); }
+        .podium-bronze { background: rgba(205, 127, 50, 0.15); color: var(--accent-bronze); border-color: var(--accent-bronze); }
+
+        .session-blocks-container { display: flex; flex-direction: column; gap: 30px; }
+        .session-block { display: flex; flex-direction: column; gap: 20px; background: rgba(21, 28, 40, 0.4); border: 1px solid var(--border-card); border-radius: 14px; padding: 20px; }
+        .card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px; }
+        .card-header { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 700; color: var(--text-title); margin-bottom: 16px; }
+        .card-header::before { content: ''; width: 4px; height: 16px; background-color: var(--accent-red); border-radius: 2px; }
+        .chart-container { position: relative; height: 280px; width: 100%; }
+
+        .position-analysis-container { margin-top: 20px; background: var(--bg-input); border-left: 4px solid var(--accent-gold); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .position-analysis-title { font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; }
+        .position-log-list { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; line-height: 1.5; max-height: 220px; overflow-y: auto; }
+        .position-log-item { background: rgba(21, 28, 40, 0.5); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-card); }
+        .tag-gain { color: var(--accent-green); font-weight: 700; }
+        .tag-loss { color: var(--accent-red); font-weight: 700; }
+
+        .comments-section { margin-top: 15px; background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .comments-title { font-size: 0.85rem; font-weight: 700; color: var(--accent-blue); text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+        .comments-list { display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; }
+        .comment-item { background: rgba(21, 28, 40, 0.6); padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border-card); font-size: 0.85rem; display: flex; flex-direction: column; gap: 6px; }
+        .comment-header-row { display: flex; justify-content: space-between; align-items: center; }
+        .comment-author { font-weight: 700; color: var(--accent-gold); }
+        .comment-text { color: var(--text-main); word-break: break-word; line-height: 1.4; }
+        .comment-reactions { display: flex; gap: 12px; margin-top: 4px; align-items: center; }
+        .btn-comment-reaction { background: rgba(28, 38, 59, 0.8); border: 1px solid var(--border-card); color: var(--text-muted); padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+        
+        .comment-form { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+        .comment-input-name { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 12px; color: var(--text-main); font-size: 0.85rem; width: 160px; }
+        .comment-input-text { flex: 1; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 12px; color: var(--text-main); font-size: 0.85rem; min-width: 200px; }
+        .btn-comment { background: var(--accent-blue); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+
+        .table-container { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        th { background-color: var(--bg-card-header); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; padding: 12px 16px; font-weight: 700; border-bottom: 1px solid var(--border-card); }
+        td { padding: 12px 16px; border-bottom: 1px solid var(--border-card); vertical-align: middle; }
+
+        .pos-badge { background: var(--accent-gold); color: #000; font-weight: bold; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+        .session-badge { background: #1d3557; color: var(--accent-blue); padding: 4px 10px; border-radius: 4px; font-size: 0.80rem; font-weight: 600; display: inline-block; }
+        .text-green { color: var(--accent-green); font-weight: 700; }
+        
+        .analysis-subrow-box { background: rgba(28, 38, 59, 0.6); border-left: 4px solid var(--accent-blue); border-radius: 6px; padding: 16px 20px; font-size: 0.88rem; color: var(--text-main); line-height: 1.7; display: flex; flex-direction: column; gap: 12px; }
+        .analysis-section-block { display: flex; flex-direction: column; gap: 4px; background: rgba(13, 17, 26, 0.4); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-card); }
+        .analysis-section-title { color: var(--accent-gold); text-transform: uppercase; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        .analysis-section-content { color: var(--text-main); font-size: 0.86rem; }
+        
+        .lap-cell-inline { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+        .leader-badge { background: var(--accent-gold); color: #000; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px; display: inline-block; text-transform: uppercase; }
+        .lap-gap { color: var(--accent-gap); font-size: 0.8rem; font-weight: 600; margin-left: 4px; }
+
+        .footer-container { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 10px; }
+        .footer-meta-info { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; font-size: 0.82rem; color: var(--text-muted); background: var(--bg-input); padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border-card); }
+        .footer-logos { display: flex; align-items: center; justify-content: center; gap: 28px; }
+        .footer-logo-img { height: 36px; width: auto; object-fit: contain; border-radius: 4px; padding: 3px 6px; background: #ffffff; }
+        .footer-copyright { font-size: 0.85rem; color: var(--text-muted); text-align: center; border-top: 1px solid var(--border-card); padding-top: 12px; width: 100%; }
+
+        @media print {
+            body, body * { color: #000000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { background-color: #ffffff !important; padding: 10px !important; font-size: 11px !important; }
+            .header-actions, .filters-card, .btn-pdf-global, .comments-section, .custom-modal { display: none !important; }
+        }
+    </style>
 </head>
 <body>
+
+    <!-- Modais do Sistema -->
+    
+    <!-- Ficha do Piloto -->
+    <div id="piloto-modal" class="custom-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-piloto-nome">🏎️ Ficha do Piloto</div>
+                <button class="modal-close" onclick="fecharDossiePiloto()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-piloto-corpo"></div>
+        </div>
+    </div>
 
     <!-- Central de Uploads -->
     <div id="upload-modal" class="custom-modal">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">📤 Central de Upload de Relatórios (Banco Principal)</div>
-                <button class="modal-close" id="btn-fechar-upload">&times;</button>
+                <button class="modal-close" onclick="fecharModalUpload()">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="upload-grid-manager">
                     <div class="upload-box">
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Selecione relatórios PDF ou HTML oficiais do ZRound.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Selecione relatórios PDF ou HTML oficiais do ZRound. O sistema converte automaticamente, evita duplicidades e atualiza o painel principal.</p>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                             <input type="file" id="input-pdf-upload" accept=".pdf,.html,.htm" multiple style="background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.85rem;">
-                            <button class="btn btn-upload-modal-trigger" id="btn-processar-upload">Converter e Enviar</button>
+                            <button class="btn btn-upload-modal-trigger" onclick="processarUploadEEnviarNuvemPrincipal()">Converter e Enviar</button>
                         </div>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Arquivos Carregados</span>
-                        <ul id="upload-lista-historico"><li>Carregando arquivos...</li></ul>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Arquivos Carregados (Banco Principal)</span>
+                        <ul id="upload-lista-historico">
+                            <li>Carregando arquivos...</li>
+                        </ul>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                            <button class="btn-action-danger" style="padding: 6px 12px; font-size: 0.8rem;" onclick="excluirArquivosSelecionadosPrincipal()">🗑️ Excluir Selecionados</button>
+                        </div>
                     </div>
                 </div>
                 <div>
                     <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Inspetor de Estrutura JSON</span>
-                    <pre id="upload-json-viewer">Selecione "Inspecionar" em um arquivo ao lado...</pre>
+                    <pre id="upload-json-viewer">Selecione "Inspecionar" em um arquivo ao lado para visualizar os dados...</pre>
                 </div>
             </div>
         </div>
@@ -50,110 +249,220 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">🏆 Championship Manager</div>
-                <button class="modal-close" id="btn-fechar-campeonatos">&times;</button>
+                <button class="modal-close" onclick="fecharModalCampeonatos()">&times;</button>
             </div>
             <div class="modal-body">
                 <div style="display: flex; flex-direction: column; gap: 20px;">
                     <div class="upload-box">
-                        <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">🔒 Criar Novo Campeonato</span>
+                        <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">🔒 Criar Novo Campeonato (Protegido por Senha Unificada)</span>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa NASCAR CTAD)">
-                            <button class="btn-action-primary" id="btn-criar-campeonato">Criar Campeonato</button>
+                            <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa Krathus 2026)">
+                            <button class="btn-action-primary" onclick="criarCampeonatoProtegido()">Criar Campeonato</button>
                         </div>
                     </div>
+
                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Campeonatos Cadastrados</span>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Campeonatos Cadastrados (Clique em Gerenciar para alterar dados, pilotos e provas)</span>
                         <ul id="campeonatos-lista-modal" style="list-style: none; display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto;">
                             <li>Carregando campeonatos...</li>
                         </ul>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Gestão de Pilotos e Mesclagem -->
-    <div id="pilotos-modal" class="custom-modal">
-        <div class="modal-content" style="max-width: 900px;">
-            <div class="modal-header">
-                <div class="modal-title">👤 Configuração, Gestão e Mesclagem de Pilotos</div>
-                <button class="modal-close" id="btn-fechar-pilotos">&times;</button>
-            </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
-                <div class="config-panel">
-                    <div class="config-panel-title">Cadastrar Apelido / Ajustar Nome</div>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        <input type="text" id="input-piloto-original" class="config-input" placeholder="Nome exato no ZRound (Ex: EDGARD)">
-                        <input type="text" id="input-piloto-apelido" class="config-input" placeholder="Apelido / Nome de Exibição (Ex: Edgard Camilo)">
-                        <button class="btn-action-primary" id="btn-salvar-meta-piloto">Salvar Apelido</button>
-                    </div>
-                </div>
-
-                <div class="config-panel" style="border-color: var(--accent-gold);">
-                    <div class="config-panel-title" style="color: var(--accent-gold);">🔀 Gerenciar e Mesclar Pilotos (Unificar Histórico)</div>
-                    <p style="font-size: 0.8rem; color: var(--text-muted);">Selecione um piloto secundário (origem) para ser absorvido pelo piloto principal (destino). Todas as voltas e estatísticas serão somadas na conta principal.</p>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
-                        <select id="select-piloto-origem" class="config-select"><option value="">Piloto Origem (absorvido)...</option></select>
-                        <select id="select-piloto-destino" class="config-select"><option value="">Piloto Destino (principal)...</option></select>
-                        <button class="btn-action-primary" id="btn-executar-mesclagem" style="background: var(--accent-gold); color: #000; font-weight: 700;">Executar Mesclagem</button>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="table-container">
-                        <h4 style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Apelidos Cadastrados</h4>
-                        <table>
-                            <thead><tr><th>Original</th><th>Apelido</th><th style="text-align: right;">Ação</th></tr></thead>
-                            <tbody id="tabela-pilotos-metadados"><tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum.</td></tr></tbody>
-                        </table>
-                    </div>
-                    <div class="table-container">
-                        <h4 style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase;">Mesclagens Ativas</h4>
-                        <table>
-                            <thead><tr><th>Origem</th><th>Destino Principal</th><th style="text-align: right;">Ação</th></tr></thead>
-                            <tbody id="tabela-mesclagens-ativas"><tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhuma mesclagem.</td></tr></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Gestão de Peças / Compras Coletivas -->
-    <div id="campeonatos2-modal" class="custom-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">🛒 Gestão de Peças e Insumos da Equipe</div>
-                <button class="modal-close" id="btn-fechar-cc">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="lista-compras-coletivas-view" style="display: flex; flex-direction: column; gap: 16px;">
-                    <ul id="cc-lista-cadastradas" style="list-style: none; display: flex; flex-direction: column; gap: 12px;"></ul>
-                    <div class="config-panel" style="border-color: var(--accent-cc);">
-                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-cc); text-transform: uppercase;">🔒 Criar Nova Lista de Peças</span>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                            <input type="text" id="cc-input-nova-compra" class="config-input" style="flex:1;" placeholder="Nome da Lista (Ex: Peças Motor NASCAR)">
-                            <button class="btn-action-primary" id="btn-criar-cc" style="background: var(--accent-cc);">Criar</button>
+                    <!-- Painel ZRound com 5 Abas -->
+                    <div id="container-zround-campeonato" style="display: none; flex-direction: column; gap: 15px; border-top: 2px solid var(--border-card); padding-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <h3 id="zround-camp-titulo-ativo" style="font-size: 1.1rem; color: var(--accent-gold);">Configurando: --</h3>
+                            <button class="btn-action-danger" style="padding: 4px 10px; font-size: 0.78rem;" onclick="fecharPainelZRoundCamp()">Fechar Painel</button>
                         </div>
+
+                        <div class="zround-tabs-header">
+                            <button class="zround-tab-btn active" onclick="mudarAbaZRound(1)">📂 1. Nome, Visão Geral & Configs</button>
+                            <button class="zround-tab-btn" onclick="mudarAbaZRound(2)">🏎️ 2. Inclusão de Pilotos</button>
+                            <button class="zround-tab-btn" onclick="mudarAbaZRound(3)">📤 3. Gestão de Provas</button>
+                            <button class="zround-tab-btn" onclick="mudarAbaZRound(4)">🔄 4. Grid de Largada</button>
+                            <button class="zround-tab-btn" onclick="mudarAbaZRound(5)">📊 5. Classificação Geral</button>
+                        </div>
+
+                        <!-- Aba 1 -->
+                        <div id="zround-aba-1" class="zround-aba-content" style="display: flex; flex-direction: column; gap: 12px;">
+                            <div class="config-panel">
+                                <div class="config-panel-title">Alterar Nome do Campeonato</div>
+                                <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+                                    <input type="text" id="zround-edit-nome-camp" class="config-input" placeholder="Nome do Campeonato">
+                                    <button class="btn-action-primary" onclick="salvarNomeCampeonatoAtual()">Salvar Nome</button>
+                                </div>
+                            </div>
+                            <div class="config-panel">
+                                <div class="config-panel-title">Parâmetros Gerais e Sistema de Pontuação</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label style="font-size: 0.75rem; color: var(--text-muted);">Número de Provas Previstas</label>
+                                        <input type="number" id="zround-num-provas" class="config-input" style="width:100%; margin-top:4px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.75rem; color: var(--text-muted);">Pilotos Máximos por Prova</label>
+                                        <input type="number" id="zround-pilotos-prova" class="config-input" style="width:100%; margin-top:4px;">
+                                    </div>
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Tabela de Pontuação (1º ao 10º)</label>
+                                    <input type="text" id="zround-tabela-pontos-input" class="config-input" style="width:100%; margin-top:4px;" value="25, 18, 15, 12, 10, 8, 6, 4, 2, 1">
+                                </div>
+                                <div style="margin-top: 12px; background: rgba(58, 134, 255, 0.08); padding: 12px; border-radius: 8px; border: 1px solid var(--border-card);">
+                                    <label class="checkbox-item" style="font-weight: 600;">
+                                        <input type="checkbox" id="zround-usa-grid-treino" style="width: 18px; height: 18px;">
+                                        Formar grid a partir de treino (pega os 3 melhores tempos de cada piloto e descarta o pior)
+                                    </label>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+                                    <button class="btn-action-danger" onclick="excluirCampeonatoAtual()">🗑️ Excluir Campeonato</button>
+                                    <button class="btn-action-primary" onclick="salvarAba1ConfigGeral()">Salvar Configurações</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aba 2 -->
+                        <div id="zround-aba-2" class="zround-aba-content" style="display: none; flex-direction: column; gap: 12px;">
+                            <div class="config-panel">
+                                <div class="config-panel-title">Inscrição Manual ou Importação de Pilotos do Banco Geral</div>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                                    <select id="zround-select-piloto-geral" class="config-select">
+                                        <option value="">Selecione um piloto já cadastrado no site...</option>
+                                    </select>
+                                    <button class="btn-action-primary" onclick="importarPilotoBancoGeral()">Adicionar do Banco Geral</button>
+                                </div>
+                                <div class="config-row" style="margin-top: 6px;">
+                                    <input type="text" id="zround-novo-piloto-manual" class="config-input" placeholder="Ou digite o nome de um novo piloto">
+                                    <button class="btn-action-primary" onclick="adicionarPilotoManualZRound()">Cadastrar Novo Piloto</button>
+                                </div>
+                                <div class="table-container" style="margin-top: 10px;">
+                                    <table>
+                                        <thead><tr><th>Piloto Inscrito no Campeonato</th><th style="text-align: right;">Ações</th></tr></thead>
+                                        <tbody id="zround-tabela-pilotos-inscritos">
+                                            <tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum piloto inscrito.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aba 3 -->
+                        <div id="zround-aba-3" class="zround-aba-content" style="display: none; flex-direction: column; gap: 12px;">
+                            <div class="upload-box" style="border-color: var(--accent-gold); background: rgba(255, 183, 3, 0.04);">
+                                <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">⏱️ Sessão de Treino Exclusiva para Grid (Regra: 3 Melhores Voltas, descarta a pior)</span>
+                                <p style="font-size: 0.82rem; color: var(--text-muted);">Envie um relatório de treino oficial para o cálculo automático do grid de largada inicial da primeira prova.</p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
+                                    <input type="file" id="zround-input-file-treino-grid" accept=".pdf,.html,.htm" style="background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.85rem;">
+                                    <button class="btn-action-primary" style="background: var(--accent-gold); color: #000; font-weight: 700;" onclick="processarTreinoParaGrid()">Processar Treino p/ Grid</button>
+                                </div>
+                                <div id="status-treino-grid-info" style="font-size: 0.8rem; color: var(--accent-green); margin-top: 4px;">Nenhum treino de grid processado.</div>
+                            </div>
+
+                            <div class="upload-box" style="border-style: solid; border-color: var(--border-card);">
+                                <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📥 Importar Provas Existentes do Banco Principal do Site</span>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
+                                    <select id="zround-select-prova-banco-principal" class="config-select">
+                                        <option value="">Selecione uma prova do banco principal...</option>
+                                    </select>
+                                    <button class="btn-action-primary" onclick="importarProvaDoBancoPrincipalParaCampeonato()">Importar para o Banco Separado</button>
+                                </div>
+                            </div>
+
+                            <div class="upload-box">
+                                <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-blue); text-transform: uppercase;">📤 Upload e Seleção de Provas (Banco de Dados Separado)</span>
+                                <p style="font-size: 0.82rem; color: var(--text-muted);">Adicione novos arquivos de provas (PDF/HTML) para o banco dedicado deste campeonato.</p>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
+                                    <input type="file" id="zround-input-file-prova" accept=".pdf,.html,.htm" multiple style="background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.85rem;">
+                                    <button class="btn btn-upload-modal-trigger" onclick="uploadProvasBancoSeparado()">Enviar Prova (Banco Separado)</button>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Provas Registradas no Banco Separado deste Campeonato</span>
+                                <ul id="zround-lista-provas-banco-separado" style="list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
+                                    <li>Nenhuma prova registrada no banco separado.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Aba 4 -->
+                        <div id="zround-aba-4" class="zround-aba-content" style="display: none; flex-direction: column; gap: 12px;">
+                            <div class="config-panel">
+                                <div class="config-panel-title">Formação dos Grids de Largada</div>
+                                <div style="margin-bottom: 6px;">
+                                    <label class="checkbox-item"><input type="checkbox" id="zround-inverter-segunda" onchange="atualizarInterfacePainelZRound()"> Inverter automaticamente a ordem da bateria seguinte com base no resultado da prova anterior</label>
+                                </div>
+                                <div id="container-todos-grids-gerados" style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">
+                                    <div style="text-align: center; color: var(--text-muted);">Envie ou selecione provas no banco separado para gerar os grids.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aba 5 -->
+                        <div id="zround-aba-5" class="zround-aba-content" style="display: none; flex-direction: column; gap: 12px;">
+                            <div class="config-panel">
+                                <div class="config-panel-title">Classificação Geral do Campeonato</div>
+                                <div class="table-container" style="margin-top: 6px;">
+                                    <table>
+                                        <thead><tr><th>Pos</th><th>Piloto</th><th style="text-align: right;">Pontos Totais</th></tr></thead>
+                                        <tbody id="zround-tabela-classificacao-geral">
+                                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pontuação computada.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                                    <button class="btn-action-danger" style="background: linear-gradient(135deg, #2ec4b6 0%, #3a86ff 100%); color: #fff; font-weight: 700; padding: 12px 24px;" onclick="finalizarCampeonatoAtual()">🏁 Finalizar Campeonato</button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Dashboard Principal -->
+    <!-- Participar do Campeonato -->
+    <div id="participar-campeonato-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 600px; border-top-color: var(--accent-gold);">
+            <div class="modal-header" style="background: var(--bg-card-header);">
+                <div class="modal-title" id="participar-modal-titulo">🏎️ Participar do Campeonato</div>
+                <button class="modal-close" onclick="fecharModalParticipar()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Selecione um piloto para inscrever neste campeonato:</p>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <select id="participar-select-piloto" class="config-select">
+                        <option value="">Selecione um piloto do banco geral...</option>
+                    </select>
+                    <button class="btn-action-primary" onclick="adicionarPilotoPorModalParticipar()">Inscrever Piloto</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pilotos Inscritos no Campeonato</span>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Piloto</th><th style="text-align: right;">Ação</th></tr></thead>
+                            <tbody id="participar-tabela-inscritos">
+                                <tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum piloto inscrito.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estrutura Principal do Dashboard -->
     <div class="dashboard-container">
         <header class="header">
             <div class="brand-title">
-                <h1>🏁 CTAD</h1>
-                <p>Central de Telemetria e Análise de Desempenho — NASCAR Edition</p>
+                <h1>🏁 KRATHUS RACING</h1>
+                <p>Central de Telemetria e Análise de Desempenho</p>
             </div>
             <div class="header-actions">
-                <button class="btn btn-upload-modal-trigger" id="btn-abrir-upload">📤 Uploads</button>
-                <button class="btn btn-campeonatos-trigger" id="btn-abrir-campeonatos">🏆 Championship Manager</button>
-                <button class="btn btn-compras-coletivas-trigger" id="btn-abrir-cc">🛒 Gestão de Peças</button>
-                <button class="btn btn-pilotos-trigger" id="btn-abrir-pilotos">👤 Pilotos</button>
-                <button class="btn btn-pdf-global" id="btn-gerar-pdf">📄 Gerar relatório</button>
+                <button class="btn btn-upload-modal-trigger" onclick="abrirModalUpload()">📤 Uploads</button>
+                <button class="btn btn-campeonatos-trigger" onclick="abrirModalCampeonatos()">🏆 Championship Manager</button>
+                <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
             </div>
         </header>
 
@@ -162,31 +471,33 @@
                 <div class="filters-grid">
                     <div class="filter-group">
                         <div class="filter-group-header">
-                            <label class="group-title">SESSÕES / BATERIAS</label>
-                            <button class="btn-text-action" id="btn-limpar-bateria">🗑️ Limpar</button>
+                            <label class="group-title">SESSÕES / BATERIAS (Mais recentes no topo)</label>
+                            <button class="btn-text-action" onclick="limparSelecao('filter-bateria')">🗑️ Limpar</button>
                         </div>
-                        <div class="checkbox-container" id="filtro-baterias-container">Carregando baterias...</div>
+                        <div class="checkbox-container" id="filtro-baterias-container"></div>
                     </div>
 
                     <div class="filter-group">
                         <div class="filter-group-header">
                             <label class="group-title">PILOTOS</label>
-                            <button class="btn-text-action" id="btn-limpar-piloto">🗑️ Limpar</button>
+                            <button class="btn-text-action" onclick="limparSelecao('filter-piloto')">🗑️ Limpar</button>
                         </div>
-                        <div class="checkbox-container" id="filtro-pilotos-container">Carregando pilotos...</div>
+                        <div class="checkbox-container" id="filtro-pilotos-container"></div>
                     </div>
 
                     <div class="filter-group">
                         <div class="filter-group-header">
                             <label class="group-title">MÓDULOS VISÍVEIS</label>
-                            <button class="btn-text-action" id="btn-limpar-modulo">🗑️ Limpar</button>
+                            <button class="btn-text-action" onclick="limparSelecao('filter-modulo')">🗑️ Limpar</button>
                         </div>
                         <div class="checkbox-container">
-                            <label class="checkbox-item"><input type="checkbox" value="mod-grafico" class="filter-modulo" checked> 📈 Evolução de Ritmo</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-grafico-posicao" class="filter-modulo" checked> 📊 Posição Volta a Volta</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-log-posicao" class="filter-modulo" checked> 📝 Relatório de Ultrapassagens</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-classificacao-analise" class="filter-modulo" checked> 📋 Laudo Técnico</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked> ⏱️ Tabela Geral com Gaps</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-grafico" class="filter-modulo" checked onchange="atualizarDashboard()"> 📈 Evolução de Ritmo</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-grafico-posicao" class="filter-modulo" checked onchange="atualizarDashboard()"> 📊 Posição Volta a Volta</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-log-posicao" class="filter-modulo" checked onchange="atualizarDashboard()"> 📝 Relatório de Ultrapassagens</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-classificacao-analise" class="filter-modulo" checked onchange="atualizarDashboard()"> 📋 Laudo Técnico</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked onchange="atualizarDashboard()"> ⏱️ Tabela Geral com Gaps</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-replay" class="filter-modulo" checked onchange="atualizarDashboard()"> 🎬 Replay Animado da Corrida</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-comentarios" class="filter-modulo" checked onchange="atualizarDashboard()"> 💬 Comentários e Reações</label>
                         </div>
                     </div>
                 </div>
@@ -201,16 +512,18 @@
                 <div class="kpi-card">
                     <span class="kpi-label">Melhor Volta Geral</span>
                     <div class="kpi-value green" id="kpi-melhor-volta">--</div>
+                    <div class="kpi-value" id="kpi-melhor-volta-vel" style="color: var(--accent-gold); margin-top: 2px;">--</div>
                     <span class="kpi-subtext" id="kpi-melhor-volta-sub">--</span>
                 </div>
                 <div class="kpi-card">
                     <span class="kpi-label">Voltas Válidas Analisadas</span>
                     <div class="kpi-value" id="kpi-total-voltas">0</div>
-                    <span class="kpi-subtext">Total nas sessões</span>
+                    <span class="kpi-subtext">Total nas sessões marcadas</span>
                 </div>
                 <div class="kpi-card">
                     <span class="kpi-label">Média Global do Grid</span>
                     <div class="kpi-value" id="kpi-media-global">--</div>
+                    <div class="kpi-value" id="kpi-media-global-vel" style="color: var(--accent-gold); margin-top: 2px;">--</div>
                     <span class="kpi-subtext">Média geral</span>
                 </div>
             </section>
@@ -220,16 +533,1672 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Projeto: <strong>CTAD (Central de Telemetria e Análise de Desempenho)</strong></span><span>•</span><span id="db-status-badge">🟢 Status: <strong>NASCAR Track Mode Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.52.0 (Gestão de Campeonatos Completa)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
-                <span style="font-size: 0.85rem; font-weight: 900; color: #ffb703; letter-spacing: 2px;">OFFICIAL TELEMETRY PARTNER</span>
+                <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
+                <img src="https://www.zround.com/wp-content/uploads/2020/05/zround_logo_web.png" alt="ZRound" class="footer-logo-img">
             </div>
-            <div class="footer-copyright">&copy; 2026 CTAD - Central de Telemetria e Análise de Desempenho. Todos os direitos reservados.</div>
+            <div class="footer-copyright">&copy; 2026 Krathus Racing - Central de Telemetria e Gestão. Todos os direitos reservados.</div>
         </footer>
     </div>
 
-    <!-- Script Principal como Módulo -->
-    <script type="module" src="./js/main.js"></script>
+    <script>
+        const SENHA_UNIFICADA = "1234";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",
+            authDomain: "krathus-telemetria.firebaseapp.com",
+            projectId: "krathus-telemetria",
+            storageBucket: "krathus-telemetria.firebasestorage.app",
+            messagingSenderId: "1051581039922",
+            appId: "1:1051581039922:web:d8ae00eb4ab45fa3d5432b",
+            measurementId: "G-JPR41S7CZ3",
+            databaseURL: "https://krathus-telemetria-default-rtdb.firebaseio.com"
+        };
+
+        let db = null;
+        let listaJsonsCache = [];
+        let campeonatosCache = {};
+
+        let chartInstances = [];
+        let pilotosMetadadosCache = {};
+        let mesclagensCache = {};
+        let campeonatoAtivoKey = null;
+        let campeonatoParticiparKey = null;
+        let replayStates = {};
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+        } catch (e) {
+            console.warn("Erro Firebase:", e);
+        }
+
+        const ALIAS_EDGARD_DJ_DEFAULTS = {
+            "edgard": "Edgard Camilo (DJ)",
+            "Edgard": "Edgard Camilo (DJ)",
+            "edgar": "Edgard Camilo (DJ)",
+            "Edgar": "Edgard Camilo (DJ)",
+            "Dj_Edgar": "Edgard Camilo (DJ)",
+            "DJ": "Edgard Camilo (DJ)"
+        };
+
+        function formatarNomeSessao(sessaoStr) {
+            if (!sessaoStr) return "Bateria";
+            let match = sessaoStr.match(/(\d{2})[-/](\d{2})[-/](\d{2}).*?\((\d+)\)/);
+            if (match) {
+                let dia = match[1], mes = match[2], anoCompleto = "20" + match[3];
+                let numBateria = match[4].padStart(2, '0');
+                return `Bateria ${numBateria} (${dia}/${mes}/${anoCompleto})`;
+            }
+            let matchSeq = sessaoStr.match(/\((\d+)\)/);
+            if (matchSeq) {
+                let numBateria = matchSeq[1].padStart(2, '0');
+                return `Bateria ${numBateria} - ${sessaoStr.replace(/\(?\d+[-/]\d+[-/]\d+\)?/, '').trim()}`;
+            }
+            return sessaoStr;
+        }
+
+        function extrairPesoOrdenacao(sessaoStr) {
+            if (!sessaoStr) return 0;
+            let matchData = sessaoStr.match(/(\d{2})[-/](\d{2})[-/](\d{2})/);
+            let timestampData = 0;
+            if (matchData) {
+                let dia = parseInt(matchData[1], 10);
+                let mes = parseInt(matchData[2], 10) - 1;
+                let ano = parseInt(matchData[3], 10) + 2000;
+                timestampData = new Date(ano, mes, dia).getTime();
+            }
+            let matchSeq = sessaoStr.match(/\((\d+)\)/) || sessaoStr.match(/bateria\s*(\d+)/i) || sessaoStr.match(/(\d+)/);
+            let sequencial = matchSeq ? parseInt(matchSeq[1], 10) : 0;
+            return timestampData + sequencial;
+        }
+
+        function ordenarParticipantesBateria(participantesValidos) {
+            if (!participantesValidos || participantesValidos.length === 0) return [];
+            const valorTempo = (l) => {
+                if (l && typeof l === 'object') return Number(l.tempo);
+                return Number(l);
+            };
+            const totalValido = (p) => (p.laps || [])
+                .map(valorTempo)
+                .filter(t => Number.isFinite(t) && t > 0)
+                .reduce((acc, t) => acc + t, 0);
+
+            return [...participantesValidos].sort((a, b) => {
+                const voltasA = (a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+                const voltasB = (b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+                if (voltasA !== voltasB) return voltasB - voltasA;
+                const tempoA = totalValido(a);
+                const tempoB = totalValido(b);
+                if (tempoA !== tempoB) return tempoA - tempoB;
+                const melhorA = Math.min(...((a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+                const melhorB = Math.min(...((b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+                return melhorA - melhorB;
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (db) {
+                db.ref('pilotos').on('value', snap => {
+                    let novaLista = [];
+                    if (snap.exists()) {
+                        snap.forEach(child => {
+                            let pData = child.val();
+                            let pNome = typeof pData === 'string' ? pData : (pData.nome || child.key);
+                            if (pNome && !novaLista.includes(pNome)) novaLista.push(pNome);
+                        });
+                    }
+                });
+
+                db.ref('pilotosMetadados').on('value', snapshot => {
+                    pilotosMetadadosCache = snapshot.val() || {};
+                    gerarFiltrosDinamicos();
+                    atualizarDashboard();
+                    preencherSelectPilotosGerais();
+                });
+
+                db.ref('mesclagensPilotos').on('value', snapshot => {
+                    let servidorMesclagens = snapshot.val() || {};
+                    mesclagensCache = Object.assign({}, ALIAS_EDGARD_DJ_DEFAULTS, servidorMesclagens);
+                    gerarFiltrosDinamicos();
+                    atualizarDashboard();
+                });
+
+                db.ref('campeonatos').on('value', snapshot => {
+                    campeonatosCache = snapshot.val() || {};
+                    renderizarListaCampeonatosModal();
+                    if (campeonatoAtivoKey && campeonatosCache[campeonatoAtivoKey]) {
+                        atualizarInterfacePainelZRound();
+                    }
+                    if (campeonatoParticiparKey && campeonatosCache[campeonatoParticiparKey]) {
+                        renderizarTabelaInscritosParticipar();
+                    }
+                });
+
+                db.ref('baterias').on('value', snapshot => {
+                    listaJsonsCache = [];
+                    snapshot.forEach(childSnapshot => {
+                        let val = childSnapshot.val();
+                        if (val && val.dados && val.dados.length > 0) {
+                            if (!val.historicoNomesOriginais) val.historicoNomesOriginais = {};
+                            listaJsonsCache.push({ firebaseKey: childSnapshot.key, ...val });
+                        }
+                    });
+                    
+                    listaJsonsCache.sort((a, b) => {
+                        let nomeA = a.sessao || (a.dados && a.dados[0] ? a.dados[0].sessao : '') || '';
+                        let nomeB = b.sessao || (b.dados && b.dados[0] ? b.dados[0].sessao : '') || '';
+                        return extrairPesoOrdenacao(nomeB) - extrairPesoOrdenacao(nomeA);
+                    });
+
+                    gerarFiltrosDinamicos();
+                    atualizarListaUploadHistoricoPrincipal();
+                    preencherSelectProvasBancoPrincipal();
+                    atualizarDashboard();
+                });
+            }
+        });
+
+        window.abrirModalUpload = function() { document.getElementById('upload-modal').style.display = 'flex'; };
+        window.fecharModalUpload = function() { document.getElementById('upload-modal').style.display = 'none'; };
+
+        window.abrirModalCampeonatos = function() {
+            document.getElementById('campeonatos-modal').style.display = 'flex';
+            renderizarListaCampeonatosModal();
+            preencherSelectPilotosGerais();
+            preencherSelectProvasBancoPrincipal();
+        };
+        window.fecharModalCampeonatos = function() { document.getElementById('campeonatos-modal').style.display = 'none'; };
+
+        window.abrirModalParticipar = function(key) {
+            campeonatoParticiparKey = key;
+            let camp = campeonatosCache[key];
+            if (!camp) return;
+
+            document.getElementById('participar-modal-titulo').innerHTML = `🏎️ Participar: <span style="color: var(--accent-gold);">${escapeHtml(camp.nome)}</span>`;
+            
+            let select = document.getElementById('participar-select-piloto');
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set();
+            dadosBase.forEach(d => { if(d.piloto) pilotosSet.add(d.piloto); });
+            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+
+            let optionsHtml = `<option value="">Selecione um piloto já cadastrado no site...</option>`;
+            Array.from(pilotosSet).sort().forEach(p => {
+                let meta = pilotosMetadadosCache[p] || {};
+                let label = meta.apelido ? `${p} (${meta.apelido})` : p;
+                optionsHtml += `<option value="${escapeHtml(p)}">${escapeHtml(label)}</option>`;
+            });
+            select.innerHTML = optionsHtml;
+
+            renderizarTabelaInscritosParticipar();
+            document.getElementById('participar-campeonato-modal').style.display = 'flex';
+        };
+
+        window.fecharModalParticipar = function() {
+            document.getElementById('participar-campeonato-modal').style.display = 'none';
+            campeonatoParticiparKey = null;
+        };
+
+        function renderizarTabelaInscritosParticipar() {
+            if (!campeonatoParticiparKey || !campeonatosCache[campeonatoParticiparKey]) return;
+            let camp = campeonatosCache[campeonatoParticiparKey];
+            let tbody = document.getElementById('participar-tabela-inscritos');
+            let pilotosInscritos = camp.pilotosInscritos || {};
+            let pKeys = Object.keys(pilotosInscritos);
+
+            if (pKeys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum piloto inscrito.</td></tr>`;
+            } else {
+                tbody.innerHTML = pKeys.map(pk => `
+                    <tr>
+                        <td><strong>${escapeHtml(pilotosInscritos[pk].nome)}</strong></td>
+                        <td style="text-align: right;"><button class="btn-text-action" style="color: var(--accent-red);" onclick="removerPilotoParticipar('${pk}')">Remover</button></td>
+                    </tr>`).join('');
+            }
+        }
+
+        window.adicionarPilotoPorModalParticipar = async function() {
+            if (!campeonatoParticiparKey || !db) return;
+            let select = document.getElementById('participar-select-piloto');
+            let nomeP = select.value;
+            if (!nomeP) { alert("Selecione um piloto."); return; }
+
+            let camp = campeonatosCache[campeonatoParticiparKey];
+            let inscritos = camp.pilotosInscritos || {};
+            let jaInscrito = Object.values(inscritos).some(p => p.nome === nomeP);
+            if (jaInscrito) { alert("Este piloto já está inscrito neste campeonato."); return; }
+
+            let pKey = "pil_" + nomeP.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+            try {
+                await db.ref(`campeonatos/${campeonatoParticiparKey}/pilotosInscritos/${pKey}`).set({ nome: nomeP });
+                select.value = "";
+                renderizarTabelaInscritosParticipar();
+                if (campeonatoAtivoKey === campeonatoParticiparKey) {
+                    atualizarInterfacePainelZRound();
+                }
+                alert(`Piloto "${nomeP}" inscrito com sucesso!`);
+            } catch (err) { alert("Erro ao inscrever piloto: " + err.message); }
+        };
+
+        window.removerPilotoParticipar = async function(pk) {
+            if (!campeonatoParticiparKey || !db) return;
+            if (confirm("Deseja remover este piloto do campeonato?")) {
+                try {
+                    await db.ref(`campeonatos/${campeonatoParticiparKey}/pilotosInscritos/${pk}`).remove();
+                    renderizarTabelaInscritosParticipar();
+                    if (campeonatoAtivoKey === campeonatoParticiparKey) {
+                        atualizarInterfacePainelZRound();
+                    }
+                } catch (err) { alert("Erro ao remover piloto: " + err.message); }
+            }
+        };
+
+        function persistirDados(path, valor, callback) {
+            if (db) {
+                db.ref(path).set(valor).then(() => {
+                    if (callback) callback();
+                }).catch(err => {
+                    console.error("Erro ao salvar no Firebase:", err);
+                    alert("⚠️ Erro ao salvar no banco de dados online.");
+                });
+            }
+        }
+
+        window.criarCampeonatoProtegido = async function() {
+            let senha = prompt("🔒 Digite a senha unificada de segurança (1234) para criar um novo campeonato:");
+            if (senha === null) return;
+            if (senha !== SENHA_UNIFICADA) { alert("❌ Senha incorreta!"); return; }
+
+            let nomeCamp = document.getElementById('input-nome-campeonato').value.trim();
+            if (!nomeCamp) { alert("Digite o nome do campeonato."); return; }
+            if (!db) { alert("Erro: Firebase não conectado."); return; }
+
+            let campKey = "camp_" + nomeCamp.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+            let novoCamp = {
+                chave: campKey, nome: nomeCamp, status: "Em andamento",
+                configuracoes: { numeroProvas: 4, pilotosPorProva: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+                pilotosInscritos: {}, bateriasBancoSeparado: {}, gridTreinoDados: null
+            };
+
+            await db.ref('campeonatos/' + campKey).set(novoCamp);
+            document.getElementById('input-nome-campeonato').value = "";
+            alert(`Campeonato "${nomeCamp}" criado com sucesso!`);
+            renderizarListaCampeonatosModal();
+        };
+
+        function renderizarListaCampeonatosModal() {
+            const ul = document.getElementById('campeonatos-lista-modal');
+            if (!ul) return;
+            ul.innerHTML = "";
+            let keys = Object.keys(campeonatosCache);
+            if (keys.length === 0) {
+                ul.innerHTML = `<li style="color: var(--text-muted); text-align: center; padding: 6px;">Nenhum campeonato cadastrado. Crie um acima.</li>`;
+                return;
+            }
+
+            keys.forEach(key => {
+                let camp = campeonatosCache[key];
+                let statusCamp = camp.status || "Em andamento";
+                const li = document.createElement('li');
+                li.style.background = "var(--bg-input)";
+                li.style.padding = "12px 16px";
+                li.style.borderRadius = "8px";
+                li.style.border = "1px solid var(--border-card)";
+                li.style.display = "flex";
+                li.style.flexDirection = "column";
+                li.style.gap = "8px";
+
+                let topoHtml = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <span style="font-size: 1rem; font-weight: 700; color: var(--text-title);">🏆 ${escapeHtml(camp.nome)}</span>
+                            <span style="font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-left: 8px; background: ${statusCamp === 'Finalizada' ? 'rgba(46,196,182,0.15); color: var(--accent-green);' : 'rgba(255,183,3,0.15); color: var(--accent-gold);'}">${statusCamp}</span>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn-action-primary" style="padding: 5px 14px; font-size: 0.8rem; background: var(--accent-gold); color: #000;" onclick="abrirModalParticipar('${key}')">Participar</button>
+                            <button class="btn-action-primary" style="padding: 5px 14px; font-size: 0.8rem;" onclick="selecionarCampeonatoZRound('${key}')">⚙️ Gerenciar / Alterar</button>
+                        </div>
+                    </div>`;
+
+                let podiumHtml = "";
+                if (statusCamp === "Finalizada") {
+                    let ranking = calcularClassificacaoBancoSeparado(camp);
+                    let top3 = ranking.slice(0, 3);
+                    if (top3.length > 0) {
+                        let medals = [{ color: "var(--accent-gold)", icon: "🏆", label: "1º" }, { color: "var(--accent-silver)", icon: "🥈", label: "2º" }, { color: "var(--accent-bronze)", icon: "🥉", label: "3º" }];
+                        let badgesStr = top3.map((r, idx) => `
+                            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; background: var(--bg-card); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-card);">
+                                <span>${medals[idx].icon}</span><strong style="color: ${medals[idx].color};">${medals[idx].label}</strong>
+                                <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(r.piloto)}')">${escapeHtml(r.piloto)}</a><span style="color: var(--accent-gold); font-size: 0.78rem;">(${r.pontos} pts)</span>
+                            </div>`).join('');
+                        podiumHtml = `<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px;">${badgesStr}</div>`;
+                    }
+                }
+                li.innerHTML = topoHtml + podiumHtml;
+                ul.appendChild(li);
+            });
+        }
+
+        window.selecionarCampeonatoZRound = function(key) {
+            campeonatoAtivoKey = key;
+            let camp = campeonatosCache[key];
+            if (!camp) return;
+
+            document.getElementById('zround-camp-titulo-ativo').innerText = `Configurando: ${camp.nome}`;
+            document.getElementById('container-zround-campeonato').style.display = 'flex';
+            document.getElementById('zround-edit-nome-camp').value = camp.nome || "";
+
+            let conf = camp.configuracoes || { numeroProvas: 4, pilotosPorProva: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] };
+            document.getElementById('zround-num-provas').value = conf.numeroProvas;
+            document.getElementById('zround-pilotos-prova').value = conf.pilotosPorProva;
+            document.getElementById('zround-inverter-segunda').checked = conf.inverterSegundaBateria;
+            document.getElementById('zround-usa-grid-treino').checked = conf.usaGridTreino || false;
+            if (conf.pontuacaoTabela) document.getElementById('zround-tabela-pontos-input').value = conf.pontuacaoTabela.join(', ');
+
+            if (camp.gridTreinoDados) {
+                document.getElementById('status-treino-grid-info').innerText = `✅ Treino de grid carregado com ${camp.gridTreinoDados.length} pilotos processados.`;
+            } else {
+                document.getElementById('status-treino-grid-info').innerText = `Nenhum treino de grid processado.`;
+            }
+
+            atualizarInterfacePainelZRound();
+            mudarAbaZRound(1);
+        };
+
+        window.fecharPainelZRoundCamp = function() {
+            campeonatoAtivoKey = null;
+            document.getElementById('container-zround-campeonato').style.display = 'none';
+        };
+
+        window.mudarAbaZRound = function(numAba) {
+            document.querySelectorAll('#campeonatos-modal .zround-tab-btn').forEach((b, idx) => {
+                if (idx === numAba - 1) b.classList.add('active'); else b.classList.remove('active');
+            });
+            document.querySelectorAll('#campeonatos-modal .zround-aba-content').forEach((c, idx) => {
+                if (idx === numAba - 1) c.style.display = 'flex'; else c.style.display = 'none';
+            });
+        };
+
+        function preencherSelectPilotosGerais() {
+            let select = document.getElementById('zround-select-piloto-geral');
+            if (!select) return;
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set();
+            dadosBase.forEach(d => { if(d.piloto) pilotosSet.add(d.piloto); });
+            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+
+            let optionsHtml = `<option value="">Selecione um piloto já cadastrado no site...</option>`;
+            Array.from(pilotosSet).sort().forEach(p => {
+                let meta = pilotosMetadadosCache[p] || {};
+                let label = meta.apelido ? `${p} (${meta.apelido})` : p;
+                optionsHtml += `<option value="${escapeHtml(p)}">${escapeHtml(label)}</option>`;
+            });
+            select.innerHTML = optionsHtml;
+        }
+
+        function preencherSelectProvasBancoPrincipal() {
+            let select = document.getElementById('zround-select-prova-banco-principal');
+            if (!select) return;
+            let optionsHtml = `<option value="">Selecione uma prova do banco principal...</option>`;
+            listaJsonsCache.forEach(arq => {
+                let nomeExib = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : arq.bateriaKey);
+                optionsHtml += `<option value="${arq.firebaseKey}">${escapeHtml(formatarNomeSessao(nomeExib))}</option>`;
+            });
+            select.innerHTML = optionsHtml;
+        }
+
+        window.salvarNomeCampeonatoAtual = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let novoNome = document.getElementById('zround-edit-nome-camp').value.trim();
+            if (!novoNome) { alert("Digite o novo nome do campeonato."); return; }
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/nome`).set(novoNome);
+                alert("Nome do campeonato alterado com sucesso!");
+                document.getElementById('zround-camp-titulo-ativo').innerText = `Configurando: ${novoNome}`;
+                renderizarListaCampeonatosModal();
+            } catch (err) { alert("Erro ao alterar nome: " + err.message); }
+        };
+
+        window.importarPilotoBancoGeral = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let select = document.getElementById('zround-select-piloto-geral');
+            let nomeP = select.value;
+            if (!nomeP) { alert("Selecione um piloto do banco geral."); return; }
+            let pKey = "pil_" + nomeP.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/pilotosInscritos/${pKey}`).set({ nome: nomeP });
+                alert(`Piloto "${nomeP}" importado com sucesso para o campeonato!`);
+                select.value = "";
+            } catch (err) { alert("Erro ao importar piloto: " + err.message); }
+        };
+
+        window.adicionarPilotoManualZRound = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let nomeP = document.getElementById('zround-novo-piloto-manual').value.trim();
+            if (!nomeP) { alert("Digite o nome do piloto."); return; }
+            let pKey = "pil_" + nomeP.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/pilotosInscritos/${pKey}`).set({ nome: nomeP });
+                document.getElementById('zround-novo-piloto-manual').value = "";
+                alert(`Piloto "${nomeP}" cadastrado com sucesso!`);
+            } catch (err) { alert("Erro ao cadastrar piloto: " + err.message); }
+        };
+
+        window.removerPilotoCampeonatoZRound = async function(pKey) {
+            if (!campeonatoAtivoKey || !db) return;
+            if (confirm("Deseja remover este piloto do campeonato?")) {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/pilotosInscritos/${pKey}`).remove();
+            }
+        };
+
+        window.salvarAba1ConfigGeral = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let numProvas = parseInt(document.getElementById('zround-num-provas').value, 10) || 4;
+            let pilotosProva = parseInt(document.getElementById('zround-pilotos-prova').value, 10) || 10;
+            let inverter = document.getElementById('zround-inverter-segunda').checked;
+            let usaGridTreino = document.getElementById('zround-usa-grid-treino').checked;
+            let pontosStr = document.getElementById('zround-tabela-pontos-input').value;
+            let pontosArr = pontosStr.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/configuracoes`).set({
+                    numeroProvas: numProvas, pilotosPorProva: pilotosProva, inverterSegundaBateria: inverter,
+                    usaGridTreino: usaGridTreino, pontuacaoTabela: pontosArr.length > 0 ? pontosArr : [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
+                });
+                alert("Configurações gerais salvas com sucesso!");
+                atualizarInterfacePainelZRound();
+            } catch (err) { alert("Erro ao salvar: " + err.message); }
+        };
+
+        window.excluirCampeonatoAtual = async function() {
+            if (!campeonatoAtivoKey || !db) { alert("Nenhum campeonato selecionado."); return; }
+            let senha = prompt("🔒 Digite a senha unificada de segurança (1234) para EXCLUIR este campeonato:");
+            if (senha === null) return;
+            if (senha !== SENHA_UNIFICADA) { alert("❌ Senha incorreta!"); return; }
+            let camp = campeonatosCache[campeonatoAtivoKey];
+            let nomeCamp = camp ? camp.nome : "este campeonato";
+
+            if (confirm(`Tem certeza absoluta que deseja excluir o campeonato "${nomeCamp}"? Todos os dados, provas e inscrições vinculadas serão perdidos.`)) {
+                try {
+                    await db.ref(`campeonatos/${campeonatoAtivoKey}`).remove();
+                    alert("Campeonato excluído com sucesso!");
+                    fecharPainelZRoundCamp();
+                    renderizarListaCampeonatosModal();
+                } catch (err) { alert("Erro ao excluir campeonato: " + err.message); }
+            }
+        };
+
+        window.processarTreinoParaGrid = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let inputEl = document.getElementById('zround-input-file-treino-grid');
+            if (!inputEl || !inputEl.files || inputEl.files.length === 0) { alert("Selecione um arquivo de treino (PDF ou HTML)."); return; }
+            let file = inputEl.files[0];
+            try {
+                let textoExtraido = "";
+                const extensao = file.name.split('.').pop().toLowerCase();
+                if (extensao === 'html' || extensao === 'htm') {
+                    const htmlText = await file.text();
+                    const parser = new DOMParser();
+                    const docHtml = parser.parseFromString(htmlText, 'text/html');
+                    textoExtraido = docHtml.body.innerText;
+                } else {
+                    textoExtraido = await converterPdfParaTexto(file);
+                }
+
+                let dadosTreino = parsearTextoConvertido(textoExtraido, "Treino Grid", "treino_grid");
+                let rankingGridTreino = [];
+                dadosTreino.forEach(d => {
+                    let laps = (d.laps || []).filter(t => !isNaN(t) && t > 0).sort((a,b) => a - b);
+                    if (laps.length > 0) {
+                        let top3 = laps.slice(0, 3);
+                        let melhorTempoDefinitivo = top3[0];
+                        if (top3.length >= 3) {
+                            let tresMelhores = [...top3].sort((a,b) => a - b);
+                            tresMelhores.pop();
+                            melhorTempoDefinitivo = Math.min(...tresMelhores);
+                        } else if (top3.length === 2) {
+                            let tresMelhores = [...top3];
+                            tresMelhores.pop();
+                            melhorTempoDefinitivo = Math.min(...tresMelhores);
+                        }
+                        rankingGridTreino.push({ piloto: d.piloto, melhorTempo: melhorTempoDefinitivo });
+                    }
+                });
+
+                rankingGridTreino.sort((a, b) => a.melhorTempo - b.melhorTempo);
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/gridTreinoDados`).set(rankingGridTreino);
+                document.getElementById('status-treino-grid-info').innerText = `✅ Treino processado! Grid inicial formado com ${rankingGridTreino.length} pilotos.`;
+                inputEl.value = "";
+                alert("Treino processado com sucesso para formação do grid!");
+                atualizarInterfacePainelZRound();
+            } catch (err) { alert("Erro ao processar treino: " + err.message); }
+        };
+
+        window.uploadProvasBancoSeparado = async function() {
+            if (!campeonatoAtivoKey || !db) { alert("Nenhum campeonato selecionado."); return; }
+            let inputEl = document.getElementById('zround-input-file-prova');
+            if (!inputEl || !inputEl.files || !inputEl.files.length) { alert("Selecione ao menos um arquivo PDF ou HTML."); return; }
+
+            for (let file of inputEl.files) {
+                let nomeArq = file.name;
+                let sessaoNome = nomeArq.replace(/\.[^/.]+$/, "").trim();
+                let batKey = "bat_sep_" + sessaoNome.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+
+                try {
+                    let textoExtraido = "";
+                    const extensao = nomeArq.split('.').pop().toLowerCase();
+                    if (extensao === 'html' || extensao === 'htm') {
+                        const htmlText = await file.text();
+                        const parser = new DOMParser();
+                        const docHtml = parser.parseFromString(htmlText, 'text/html');
+                        textoExtraido = docHtml.body.innerText;
+                    } else {
+                        textoExtraido = await converterPdfParaTexto(file);
+                    }
+
+                    const dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, batKey);
+                    if (!dadosExtraidos || dadosExtraidos.length === 0) throw new Error("Nenhum dado válido extraído deste arquivo.");
+
+                    let pdfBase64 = await arquivoParaBase64(file);
+                    let novoRegistro = { bateriaKey: batKey, sessao: sessaoNome, id: Date.now(), dados: dadosExtraidos, pdfBase64: pdfBase64, nomeArquivoOriginal: nomeArq };
+                    await db.ref(`campeonatos/${campeonatoAtivoKey}/bateriasBancoSeparado/${batKey}`).set(novoRegistro);
+                } catch (err) { alert("Erro ao processar arquivo " + nomeArq + ": " + err.message); }
+            }
+            inputEl.value = "";
+            alert("Prova(s) convertida(s) e salva(s) com sucesso no BANCO SEPARADO do campeonato!");
+            atualizarInterfacePainelZRound();
+        };
+
+        window.importarProvaDoBancoPrincipalParaCampeonato = async function() {
+            if (!campeonatoAtivoKey || !db) { alert("Nenhum campeonato selecionado."); return; }
+            let select = document.getElementById('zround-select-prova-banco-principal');
+            let firebaseKey = select.value;
+            if (!firebaseKey) { alert("Selecione uma prova do banco principal."); return; }
+
+            let provaObj = listaJsonsCache.find(item => item.firebaseKey === firebaseKey);
+            if (!provaObj) { alert("Prova não encontrada no cache do banco principal."); return; }
+
+            let batKey = "bat_sep_imp_" + Date.now();
+            let registroCopia = {
+                bateriaKey: batKey, sessao: provaObj.sessao || "Prova Importada", id: Date.now(),
+                dados: provaObj.dados || [], pdfBase64: provaObj.pdfBase64 || "", nomeArquivoOriginal: provaObj.nomeArquivoOriginal || "relatorio.pdf"
+            };
+
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/bateriasBancoSeparado/${batKey}`).set(registroCopia);
+                alert("Prova importada com sucesso do banco principal para o banco separado deste campeonato!");
+                select.value = "";
+                atualizarInterfacePainelZRound();
+            } catch (err) { alert("Erro ao importar prova: " + err.message); }
+        };
+
+        window.excluirProvaBancoSeparado = async function(batKey) {
+            if (!campeonatoAtivoKey || !db) return;
+            if (confirm("Deseja excluir esta prova do banco de dados separado?")) {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/bateriasBancoSeparado/${batKey}`).remove();
+                atualizarInterfacePainelZRound();
+            }
+        };
+
+        window.finalizarCampeonatoAtual = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            if (confirm("Deseja realmente finalizar este campeonato? O status será alterado para 'Finalizada' e o pódio será exibido na listagem.")) {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/status`).set("Finalizada");
+                alert("Campeonato finalizado com sucesso!");
+                fecharPainelZRoundCamp();
+                renderizarListaCampeonatosModal();
+            }
+        };
+
+        function atualizarInterfacePainelZRound() {
+            if (!campeonatoAtivoKey || !campeonatosCache[campeonatoAtivoKey]) return;
+            let camp = campeonatosCache[campeonatoAtivoKey];
+            let tbodyPilotos = document.getElementById('zround-tabela-pilotos-inscritos');
+            let pilotosInscritos = camp.pilotosInscritos || {};
+            let pKeys = Object.keys(pilotosInscritos);
+            
+            if (pKeys.length === 0) {
+                tbodyPilotos.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum piloto inscrito.</td></tr>`;
+            } else {
+                tbodyPilotos.innerHTML = pKeys.map(pk => `
+                    <tr>
+                        <td><strong><a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(pilotosInscritos[pk].nome)}')">${escapeHtml(pilotosInscritos[pk].nome)}</a></strong></td>
+                        <td style="text-align: right;"><button class="btn-text-action" style="color: var(--accent-red);" onclick="removerPilotoCampeonatoZRound('${pk}')">Remover</button></td>
+                    </tr>`).join('');
+            }
+
+            let ulProvas = document.getElementById('zround-lista-provas-banco-separado');
+            let provasSep = camp.bateriasBancoSeparado || {};
+            let provKeys = Object.keys(provasSep);
+            if (provKeys.length === 0) {
+                ulProvas.innerHTML = `<li>Nenhuma prova registrada no banco separado.</li>`;
+            } else {
+                ulProvas.innerHTML = provKeys.map(pk => {
+                    let pObj = provasSep[pk];
+                    let nomeP = pObj.sessao || pk;
+                    return `
+                        <li style="background: var(--bg-card); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                            <span>📄 <strong>${escapeHtml(nomeP)}</strong></span>
+                            <button class="btn-text-action" style="color: var(--accent-red);" onclick="excluirProvaBancoSeparado('${pk}')">Excluir do Banco Separado</button>
+                        </li>`;
+                }).join('');
+            }
+
+            let containerGrids = document.getElementById('container-todos-grids-gerados');
+            let numProvasPrevistas = camp.configuracoes?.numeroProvas || 4;
+            let inverterAtivo = camp.configuracoes?.inverterSegundaBateria ?? true;
+            let usaGridTreino = camp.configuracoes?.usaGridTreino ?? false;
+
+            let gridBaseInicial = [];
+            if (usaGridTreino && camp.gridTreinoDados && camp.gridTreinoDados.length > 0) {
+                gridBaseInicial = camp.gridTreinoDados.map(d => d.piloto);
+            } else {
+                let inscritosArr = Object.values(pilotosInscritos).map(p => p.nome);
+                if (inscritosArr.length === 0 && provKeys.length > 0) {
+                    let primeiraP = provasSep[provKeys[0]];
+                    if (primeiraP && primeiraP.dados) {
+                        inscritosArr = primeiraP.dados.filter(d => d.laps && d.laps.length > 0).map(d => d.piloto);
+                    }
+                }
+                gridBaseInicial = inscritosArr;
+            }
+
+            let gridsHtml = '';
+            let provaKeysArr = provKeys;
+
+            for (let g = 0; g < numProvasPrevistas; g++) {
+                let pilotoGridAtual = [];
+                let criterioTexto = "";
+
+                if (g === 0) {
+                    pilotoGridAtual = gridBaseInicial;
+                    criterioTexto = usaGridTreino ? "Gerado a partir do Treino (3 melhores voltas, descarta pior)" : "Ordem Padrão / Inscritos";
+                } else {
+                    let provaAnteriorKey = provaKeysArr[g - 1];
+                    if (provaAnteriorKey && provasSep[provaAnteriorKey] && provasSep[provaAnteriorKey].dados) {
+                        let dadosAnt = [...provasSep[provaAnteriorKey].dados].filter(d => d.laps && d.laps.length > 0).sort((a, b) => {
+                            let posA = parseInt(String(a.pos).replace('º', '').trim(), 10) || 99;
+                            let posB = parseInt(String(b.pos).replace('º', '').trim(), 10) || 99;
+                            return posA - posB;
+                        });
+                        let ordemAnt = dadosAnt.map(d => d.piloto);
+                        if (inverterAtivo) {
+                            pilotoGridAtual = [...ordemAnt].reverse();
+                            criterioTexto = `Invertido automaticamente com base na Prova ${g} (Anterior)`;
+                        } else {
+                            pilotoGridAtual = ordemAnt;
+                            criterioTexto = `Ordem direta da Prova ${g} (Anterior)`;
+                        }
+                    } else {
+                        pilotoGridAtual = gridBaseInicial;
+                        criterioTexto = `Aguardando resultado da Prova ${g} para formar grid`;
+                    }
+                }
+
+                let linhasGridHtml = '';
+                if (pilotoGridAtual.length === 0) {
+                    linhasGridHtml = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pilotos definidos para este grid.</td></tr>`;
+                } else {
+                    linhasGridHtml = pilotoGridAtual.map((pilotoNome, idx) => `
+                        <tr>
+                            <td><span class="pos-badge">${idx + 1}º</span></td>
+                            <td><strong><a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(pilotoNome)}')">${escapeHtml(pilotoNome)}</a></strong></td>
+                            <td><span class="category-badge">${escapeHtml(criterioTexto)}</span></td>
+                        </tr>
+                    `).join('');
+                }
+
+                gridsHtml += `
+                    <div class="card" style="padding: 14px; background: var(--bg-input);">
+                        <div class="card-header" style="margin-bottom: 10px;">🏁 Grid de Largada - Prova ${g + 1}</div>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>Pos</th><th>Piloto</th><th>Critério</th></tr></thead>
+                                <tbody>${linhasGridHtml}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            containerGrids.innerHTML = gridsHtml;
+
+            let tbodyClass = document.getElementById('zround-tabela-classificacao-geral');
+            let ranking = calcularClassificacaoBancoSeparado(camp);
+            if (ranking.length === 0) {
+                tbodyClass.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pontuação computada no banco separado.</td></tr>`;
+            } else {
+                tbodyClass.innerHTML = ranking.map((r, idx) => `
+                    <tr>
+                        <td><span class="pos-badge">${idx + 1}º</span></td>
+                        <td><strong><a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(r.piloto)}')">${escapeHtml(r.piloto)}</a></strong></td>
+                        <td style="text-align: right; color: var(--accent-gold); font-weight: 700;">${r.pontos} pts</td>
+                    </tr>`).join('');
+            }
+        }
+
+        function calcularClassificacaoBancoSeparado(camp) {
+            let provasSep = camp.bateriasBancoSeparado || {};
+            let conf = camp.configuracoes || {};
+            let tabelaPontosArr = conf.pontuacaoTabela || [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+            let pilotoPontos = {};
+
+            Object.values(provasSep).forEach(arq => {
+                if (arq && arq.dados) {
+                    arq.dados.forEach(d => {
+                        if (!d.laps || d.laps.length === 0) return;
+                        let posNum = parseInt(String(d.pos).replace('º', '').trim(), 10);
+                        let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
+                        if (pts > 0) {
+                            let pNome = d.piloto;
+                            let sKey = pNome.replace(/[.#$\/\[\]]/g, "_");
+                            if (mesclagensCache[sKey]) pNome = mesclagensCache[sKey];
+
+                            if (!pilotoPontos[pNome]) pilotoPontos[pNome] = 0;
+                            pilotoPontos[pNome] += pts;
+                        }
+                    });
+                }
+            });
+
+            let ranking = [];
+            for (let [piloto, pontos] of Object.entries(pilotoPontos)) {
+                ranking.push({ piloto, pontos });
+            }
+            ranking.sort((a, b) => b.pontos - a.pontos);
+            return ranking;
+        }
+
+        async function arquivoParaBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function converterPdfParaTexto(arquivo) {
+            const arrayBuffer = await arquivo.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdfDoc = await loadingTask.promise;
+            let textoCompleto = "";
+
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                const pagina = await pdfDoc.getPage(pageNum);
+                const tokenTextos = await pagina.getTextContent();
+                let linhasY = {};
+                
+                tokenTextos.items.forEach(item => {
+                    let y = Math.round(item.transform[5] / 3) * 3;
+                    if (!linhasY[y]) linhasY[y] = [];
+                    linhasY[y].push({ x: item.transform[4], str: item.str });
+                });
+
+                let coordenadasYOrdenadas = Object.keys(linhasY).sort((a, b) => b - a);
+                coordenadasYOrdenadas.forEach(y => {
+                    let linhaItens = linhasY[y].sort((a, b) => a.x - b.x);
+                    let linhaStr = linhaItens.map(i => i.str).join(" | ");
+                    textoCompleto += linhaStr + "\n";
+                });
+            }
+            return textoCompleto;
+        }
+
+        function parsearTextoConvertido(texto, sessaoNome, batKey) {
+            let pilotosMap = {};
+            let linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            
+            let ordemPilotos = [];
+            let capturandoResumo = false;
+            let capturandoVoltas = false;
+
+            linhas.forEach(linha => {
+                let linhaLimpa = linha.replace(/\|/g, ' ').trim();
+                let partes = linhaLimpa.split(/\s+/).filter(Boolean);
+                if (partes.length === 0) return;
+
+                let linhaLower = linhaLimpa.toLowerCase();
+                if (linhaLower.startsWith("top ") || linhaLower.includes("top 10") || linhaLower.includes("top 5")) {
+                    capturandoResumo = false;
+                    capturandoVoltas = false;
+                    return;
+                }
+
+                if ((linhaLimpa.includes("Piloto") || linhaLimpa.includes("Pos")) && (linhaLimpa.includes("Voltas") || linhaLimpa.includes("Tempo") || linhaLimpa.includes("Melhor"))) {
+                    capturandoResumo = true;
+                    capturandoVoltas = false;
+                    return;
+                }
+
+                if (linhaLower.includes("volta por piloto") || linhaLower.includes("voltas por piloto") || linhaLower.includes("lap by lap") || (partes[0] === "Num." && capturandoResumo)) {
+                    capturandoResumo = false;
+                    capturandoVoltas = true;
+                    return;
+                }
+
+                if (capturandoResumo) {
+                    let posDetectada = null;
+                    let startIndex = 0;
+
+                    if (/^\d{1,2}º?$/.test(partes[0])) {
+                        posDetectada = partes[0].includes('º') ? partes[0] : partes[0] + 'º';
+                        startIndex = 1;
+                        if (/^\d+$/.test(partes[1])) startIndex = 2;
+                    } else if (partes.length >= 2 && /^\d+$/.test(partes[0]) && /^\d{1,2}º?$/.test(partes[1])) {
+                        posDetectada = partes[1].includes('º') ? partes[1] : partes[1] + 'º';
+                        startIndex = 2;
+                    } else if (partes.length >= 1 && /^\d{1,2}$/.test(partes[0].replace('º', ''))) {
+                        posDetectada = partes[0].includes('º') ? partes[0] : partes[0] + 'º';
+                        startIndex = 1;
+                        if (/^\d+$/.test(partes[1])) startIndex = 2;
+                    }
+
+                    if (!posDetectada && partes.length >= 1 && !/\d+:\d+/.test(partes[0]) && isNaN(partes[0])) {
+                        startIndex = 0;
+                        posDetectada = (ordemPilotos.length + 1) + 'º';
+                    }
+
+                    if (posDetectada || startIndex >= 0) {
+                        let nomePartes = [];
+                        for (let i = startIndex; i < partes.length; i++) {
+                            let p = partes[i];
+                            if (/^\d+$/.test(p) && i > startIndex + 1) break;
+                            if (/^\d+[:.,]\d+/.test(p)) break;
+                            if (p.includes('s') && /^\d+[,.]\d+s?$/.test(p)) break;
+                            if (p === 'º' || p === '°') continue;
+                            nomePartes.push(p);
+                        }
+
+                        if (nomePartes.length > 0) {
+                            let pilotoNome = nomePartes.join(' ');
+                            pilotoNome = pilotoNome.replace(/\s+\d+$/, '').trim();
+
+                            if (pilotoNome && !pilotosMap[pilotoNome]) {
+                                pilotosMap[pilotoNome] = {
+                                    pos: posDetectada || ((ordemPilotos.length + 1) + 'º'),
+                                    piloto: pilotoNome,
+                                    bateriaKey: batKey,
+                                    sessao: sessaoNome,
+                                    voltasTotais: 0,
+                                    tempoTotal: "00:00,000",
+                                    melhorVoltaVal: 0,
+                                    melhorVoltaTxt: "00,000s",
+                                    mediaVal: 0,
+                                    mediaTxt: "00,000s",
+                                    desvioVal: 0,
+                                    desvio: "±0,000s",
+                                    badgeColor: "#ffb703",
+                                    laps: []
+                                };
+                                ordemPilotos.push(pilotoNome);
+                            }
+                        }
+                    }
+                }
+
+                if (capturandoVoltas && (/^\d+$/.test(partes[0]) || /^\d+[º°]?$/.test(partes[0]))) {
+                    let numVolta = parseInt(partes[0].replace(/[º°]/g, ''), 10);
+                    if (isNaN(numVolta)) return;
+                    let temposLinha = [];
+
+                    for (let i = 1; i < partes.length; i++) {
+                        let token = partes[i].split('-')[0].trim();
+                        token = token.replace(/[^\d:,.]/g, '');
+                        
+                        if (token && (/\d+[,.]\d+/.test(token) || /\d+:\d+[,.]\d+/.test(token))) {
+                            let tempoNum = 0;
+                            if (token.includes(':')) {
+                                let partesTempo = token.split(':');
+                                let minutos = parseInt(partesTempo[0], 10);
+                                let segundos = parseFloat(partesTempo[1].replace(',', '.'));
+                                tempoNum = (minutos * 60) + segundos;
+                            } else {
+                                tempoNum = parseFloat(token.replace(',', '.'));
+                            }
+                            if (!isNaN(tempoNum) && tempoNum > 0) temposLinha.push(parseFloat(tempoNum.toFixed(3)));
+                        }
+                    }
+
+                    temposLinha.forEach((tempoVal, idx) => {
+                        if (ordemPilotos[idx]) {
+                            let pName = ordemPilotos[idx];
+                            if (!pilotosMap[pName].laps) pilotosMap[pName].laps = [];
+                            pilotosMap[pName].laps[numVolta - 1] = tempoVal;
+                        }
+                    });
+                }
+            });
+
+            let resultadoFinal = [];
+            let coresBadge = ["#ffb703", "#e76f51", "#2ec4b6", "#3a86ff", "#ff006e", "#8338ec"];
+            let contador = 0;
+
+            Object.keys(pilotosMap).forEach(pName => {
+                let pObj = pilotosMap[pName];
+                let lapsLimpos = [];
+                if (Array.isArray(pObj.laps)) {
+                    for (let i = 0; i < pObj.laps.length; i++) {
+                        if (pObj.laps[i] !== undefined && !isNaN(pObj.laps[i])) {
+                            lapsLimpos.push(pObj.laps[i]);
+                        }
+                    }
+                }
+                pObj.laps = lapsLimpos;
+
+                if (pObj.laps.length === 0) return; 
+
+                if (pObj.laps.length > 0) {
+                    let melhor = Math.min(...pObj.laps);
+                    let soma = pObj.laps.reduce((a, b) => a + b, 0);
+                    let media = soma / pObj.laps.length;
+                    let variancia = pObj.laps.reduce((sum, t) => sum + Math.pow(t - media, 2), 0) / pObj.laps.length;
+                    let desvio = Math.sqrt(variancia);
+
+                    pObj.melhorVoltaVal = parseFloat(melhor.toFixed(3));
+                    pObj.melhorVoltaTxt = melhor.toFixed(3).replace('.', ',') + 's';
+                    pObj.mediaVal = parseFloat(media.toFixed(3));
+                    pObj.mediaTxt = media.toFixed(3).replace('.', ',') + 's';
+                    pObj.desvioVal = parseFloat(desvio.toFixed(3));
+                    pObj.desvio = `±${desvio.toFixed(3).replace('.', ',')}s`;
+                    pObj.voltasTotais = pObj.laps.length;
+                }
+
+                pObj.badgeColor = coresBadge[contador % coresBadge.length];
+                contador++;
+                resultadoFinal.push(pObj);
+            });
+
+            return resultadoFinal;
+        }
+
+        window.processarUploadEEnviarNuvemPrincipal = async function() {
+            let inputEl = document.getElementById('input-pdf-upload');
+            if (!inputEl || !inputEl.files || inputEl.files.length === 0) { alert("Selecione arquivos."); return; }
+            if (!db) return;
+
+            for (let file of inputEl.files) {
+                let nomeArq = file.name;
+                let sessaoNome = nomeArq.replace(/\.[^/.]+$/, "").trim();
+                let batKey = "bat_" + sessaoNome.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+
+                try {
+                    let textoExtraido = "";
+                    const extensao = nomeArq.split('.').pop().toLowerCase();
+                    if (extensao === 'html' || extensao === 'htm') {
+                        const htmlText = await file.text();
+                        const parser = new DOMParser();
+                        const docHtml = parser.parseFromString(htmlText, 'text/html');
+                        textoExtraido = docHtml.body.innerText;
+                    } else {
+                        textoExtraido = await converterPdfParaTexto(file);
+                    }
+
+                    const dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, batKey);
+                    if (!dadosExtraidos || dadosExtraidos.length === 0) throw new Error("Nenhum dado válido extraído do arquivo " + nomeArq);
+
+                    let pdfBase64 = await arquivoParaBase64(file);
+                    let historicoOriginal = {};
+                    dadosExtraidos.forEach(d => { historicoOriginal[d.piloto] = d.piloto; });
+
+                    let novoRegistro = {
+                        bateriaKey: batKey, sessao: sessaoNome, id: Date.now(), dados: dadosExtraidos,
+                        pdfBase64: pdfBase64, nomeArquivoOriginal: nomeArq, historicoNomesOriginais: historicoOriginal
+                    };
+
+                    await db.ref('baterias/' + batKey).set(novoRegistro);
+                } catch (err) { alert("Erro ao enviar arquivo principal (" + nomeArq + "): " + err.message); }
+            }
+            inputEl.value = "";
+            alert("Arquivos processados e enviados com sucesso para o banco principal!");
+            fecharModalUpload();
+        };
+
+        function atualizarListaUploadHistoricoPrincipal() {
+            const ul = document.getElementById('upload-lista-historico');
+            if (!ul) return;
+            ul.innerHTML = "";
+            if (!listaJsonsCache || listaJsonsCache.length === 0) {
+                ul.innerHTML = `<li style="color: var(--text-muted); text-align: center; padding: 6px;">Nenhum arquivo na nuvem principal.</li>`;
+                return;
+            }
+            listaJsonsCache.forEach((item, index) => {
+                let nomeExibicao = item.sessao || `ID ${item.id}`;
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                        <input type="checkbox" class="checkbox-excluir-lote-principal" value="${item.firebaseKey}" style="accent-color: var(--accent-red); width: 16px; height: 16px; cursor: pointer;">
+                        <span>📄 <strong>${escapeHtml(nomeExibicao)}</strong></span>
+                    </div>
+                    <button class="btn-text-action" onclick="inspecionarJsonUploadPrincipal(${index})">Inspecionar</button>
+                `;
+                ul.appendChild(li);
+            });
+        }
+
+        window.excluirArquivosSelecionadosPrincipal = async function() {
+            let checkboxes = document.querySelectorAll('.checkbox-excluir-lote-principal:checked');
+            if (checkboxes.length === 0) { alert("Selecione pelo menos um arquivo na lista para excluir."); return; }
+            if (!db) return;
+
+            if (confirm(`Deseja realmente excluir os ${checkboxes.length} arquivo(s) selecionado(s) do banco principal?`)) {
+                try {
+                    let promessas = Array.from(checkboxes).map(cb => db.ref('baterias/' + cb.value).remove());
+                    await Promise.all(promessas);
+                    alert("Arquivos selecionados excluídos com sucesso!");
+                } catch (err) { alert("Erro ao excluir arquivos: " + err.message); }
+            }
+        };
+
+        window.inspecionarJsonUploadPrincipal = function(index) {
+            const item = listaJsonsCache[index];
+            if (item) document.getElementById('upload-json-viewer').textContent = JSON.stringify(item, null, 4);
+        };
+
+        function obterTodosDadosConsolidados() {
+            let consolidado = [];
+            if (listaJsonsCache && Array.isArray(listaJsonsCache)) {
+                listaJsonsCache.forEach(arq => {
+                    if (arq.dados && Array.isArray(arq.dados)) {
+                        arq.dados.forEach(d => {
+                            if (!d.laps || d.laps.length === 0) return;
+                            let pilotoReal = d.piloto;
+                            let safeNomeKey = pilotoReal.replace(/[.#$\/\[\]]/g, "_");
+                            if (mesclagensCache[safeNomeKey]) pilotoReal = mesclagensCache[safeNomeKey];
+                            let metaKey = pilotoReal;
+                            let meta = pilotosMetadadosCache[metaKey] || {};
+                            consolidado.push({ ...d, piloto: pilotoReal, pilotoOriginal: d.piloto, bateriaKey: arq.firebaseKey, pilotoExibicao: meta.apelido ? `${pilotoReal} (${meta.apelido})` : pilotoReal, apelido: meta.apelido || '' });
+                        });
+                    }
+                });
+            }
+            return consolidado;
+        }
+
+        function gerarFiltrosDinamicos() {
+            const batContainer = document.getElementById('filtro-baterias-container');
+            const pilContainer = document.getElementById('filtro-pilotos-container');
+            if (!batContainer || !pilContainer) return;
+
+            const pilotosSet = new Set();
+            listaJsonsCache.forEach(arq => {
+                if (arq.dados && Array.isArray(arq.dados)) {
+                    arq.dados.forEach(d => { 
+                        if (d.piloto && d.laps && d.laps.length > 0) {
+                            let pReal = d.piloto;
+                            let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                            if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
+                            pilotosSet.add(pReal); 
+                        } 
+                    });
+                }
+            });
+
+            Object.keys(pilotosMetadadosCache).forEach(p => {
+                let safeKey = p.replace(/[.#$\/\[\]]/g, "_");
+                let pReal = mesclagensCache[safeKey] || p;
+                pilotosSet.add(pReal);
+            });
+
+            if (listaJsonsCache.length === 0) {
+                batContainer.innerHTML = `<span style="font-size:0.85rem; color: var(--text-muted);">Nenhum arquivo.</span>`;
+                pilContainer.innerHTML = `<span style="font-size:0.85rem; color: var(--text-muted);">Nenhum piloto.</span>`;
+                return;
+            }
+
+            let bateriasSelecionadasAntigas = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
+            let pilotosSelecionadosAntigos = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
+            let primeiraVezBat = bateriasSelecionadasAntigas.length === 0;
+            let primeiraVezPil = pilotosSelecionadosAntigos.length === 0;
+
+            batContainer.innerHTML = listaJsonsCache.map(arq => {
+                let key = arq.firebaseKey;
+                let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
+                let sessaoFormatada = formatarNomeSessao(sessaoOriginal);
+                let marcado = (primeiraVezBat || bateriasSelecionadasAntigas.includes(key)) ? 'checked' : '';
+                return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(sessaoFormatada)}</label>`;
+            }).join('');
+
+            let listaNomesUnicos = Array.from(pilotosSet).filter(p => {
+                let sKey = p.replace(/[.#$\/\[\]]/g, "_");
+                if (mesclagensCache[sKey]) return false;
+                let isNomeCurtoIsolado = Array.from(pilotosSet).some(outroP => outroP !== p && outroP.includes(p) && outroP.length > p.length);
+                if (isNomeCurtoIsolado && (p.length <= 8 && !pilotosMetadadosCache[p]?.apelido)) return false;
+                return true;
+            });
+
+            pilContainer.innerHTML = listaNomesUnicos.sort().map(piloto => {
+                let meta = pilotosMetadadosCache[piloto] || {};
+                let labelExib = meta.apelido ? `${piloto} (${meta.apelido})` : piloto;
+                let marcado = primeiraVezPil || pilotosSelecionadosAntigos.includes(piloto) ? 'checked' : '';
+                return `<label class="checkbox-item"><input type="checkbox" value="${escapeHtml(piloto)}" class="filter-piloto" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(labelExib)}</label>`;
+            }).join('');
+        }
+
+        window.limparSelecao = function(classeFiltro) {
+            document.querySelectorAll(`.${classeFiltro}`).forEach(cb => cb.checked = false);
+            atualizarDashboard();
+        };
+
+        window.abrirDossiePiloto = function(nomePiloto) {
+            const modal = document.getElementById('piloto-modal');
+            let meta = pilotosMetadadosCache[nomePiloto] || {};
+            let tituloNome = meta.apelido ? `${nomePiloto} (${meta.apelido})` : nomePiloto;
+            document.getElementById('modal-piloto-nome').innerHTML = `🏎️ Ficha do Piloto: <span style="color: var(--accent-gold);">${escapeHtml(tituloNome)}</span>`;
+            
+            let dadosBase = obterTodosDadosConsolidados();
+            let participacoes = dadosBase.filter(d => d.piloto === nomePiloto && d.laps && d.laps.length > 0);
+            let bodyEl = document.getElementById('modal-piloto-corpo');
+
+            if (participacoes.length === 0) {
+                bodyEl.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-muted);">Sem dados.</div>`;
+                modal.style.display = 'flex';
+                return;
+            }
+
+            let totalCorridas = participacoes.length;
+            let vitorias = 0;
+            
+            listaJsonsCache.forEach(arq => {
+                let todosBat = (arq.dados || []).map(d => {
+                    let pReal = d.piloto;
+                    let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                    if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
+                    return { ...d, piloto: pReal };
+                }).filter(d => d.laps && d.laps.length > 0);
+
+                let ordenados = ordenarParticipantesBateria(todosBat);
+                if (ordenados.length > 0 && ordenados[0].piloto === nomePiloto) vitorias++;
+            });
+
+            let melhorVoltaP = Math.min(...participacoes.map(p => p.melhorVoltaVal || 999));
+            let tabelaHtml = participacoes.map(p => `<tr><td><span class="session-badge">${formatarNomeSessao(p.sessao)}</span></td><td><span class="pos-badge">${p.pos}</span></td><td class="text-green">${p.melhorVoltaTxt || '--'}</td></tr>`).join('');
+
+            bodyEl.innerHTML = `
+                <div class="dossier-grid">
+                    <div class="dossier-kpi"><span class="dossier-kpi-label">Sessões</span><span class="dossier-kpi-value">${totalCorridas}</span></div>
+                    <div class="dossier-kpi"><span class="dossier-kpi-label">Vitórias</span><span class="dossier-kpi-value">${vitorias}</span></div>
+                    <div class="dossier-kpi"><span class="dossier-kpi-label">Melhor Pessoal</span><span class="dossier-kpi-value">${melhorVoltaP < 999 ? melhorVoltaP.toFixed(3) + 's' : '--'}</span></div>
+                </div>
+                <div class="card" style="padding: 14px; margin-top:10px;">
+                    <div class="card-header" style="margin-bottom: 10px;">📜 Histórico de Baterias</div>
+                    <div class="table-container"><table><thead><tr><th>Sessão</th><th>Pos</th><th>Melhor Volta</th></tr></thead><tbody>${tabelaHtml}</tbody></table></div>
+                </div>`;
+            modal.style.display = 'flex';
+        };
+
+        window.fecharDossiePiloto = function() { document.getElementById('piloto-modal').style.display = 'none'; };
+
+        window.onclick = function(event) {
+            if (event.target === document.getElementById('piloto-modal')) document.getElementById('piloto-modal').style.display = 'none';
+            if (event.target === document.getElementById('upload-modal')) document.getElementById('upload-modal').style.display = 'none';
+            if (event.target === document.getElementById('campeonatos-modal')) document.getElementById('campeonatos-modal').style.display = 'none';
+            if (event.target === document.getElementById('participar-campeonato-modal')) document.getElementById('participar-campeonato-modal').style.display = 'none';
+        };
+
+        window.curtirSessao = function(bateriaKey) {
+            if (!db) return;
+            let safeKey = bateriaKey.replace(/[.#$\/\[\]]/g, "_");
+            db.ref('likes/' + safeKey).transaction(c => (c || 0) + 1);
+        };
+
+        function escutarCurtidas(bateriaKey) {
+            if (!db) return;
+            let safeKey = bateriaKey.replace(/[.#$\/\[\]]/g, "_");
+            db.ref('likes/' + safeKey).on('value', snap => {
+                let el = document.getElementById(`like-count-${safeKey}`);
+                if (el) el.innerText = snap.val() || 0;
+            });
+        }
+
+        window.enviarComentario = function(bateriaKey) {
+            if (!db) return;
+            let safeKey = bateriaKey.replace(/[.#$\/\[\]]/g, "_");
+            let nomeInput = document.getElementById(`comment-name-${safeKey}`);
+            let textInput = document.getElementById(`comment-text-${safeKey}`);
+            let autor = nomeInput.value.trim() || "Convidado";
+            let texto = textInput.value.trim();
+            if (!texto) return;
+            db.ref('comments/' + safeKey).push({ autor, texto, timestamp: Date.now(), likes: 0, dislikes: 0 });
+            textInput.value = "";
+        };
+
+        window.reagirComentario = function(bateriaKey, comId, tipo) {
+            if (!db) return;
+            let safeKey = bateriaKey.replace(/[.#$\/\[\]]/g, "_");
+            db.ref(`comments/${safeKey}/${comId}/${tipo}`).transaction(c => (c || 0) + 1);
+        };
+
+        function escutarComentarios(bateriaKey) {
+            if (!db) return;
+            let safeKey = bateriaKey.replace(/[.#$\/\[\]]/g, "_");
+            let container = document.getElementById(`comments-list-${safeKey}`);
+            db.ref('comments/' + safeKey).on('value', snap => {
+                let html = '';
+                if (!snap.exists()) {
+                    container.innerHTML = `<div style="font-size:0.85rem; color: var(--text-muted); text-align:center;">Nenhum comentário.</div>`;
+                    return;
+                }
+                snap.forEach(child => {
+                    let id = child.key;
+                    let c = child.val();
+                    html += `
+                        <div class="comment-item">
+                            <div class="comment-header-row"><span class="comment-author">${escapeHtml(c.autor)}</span></div>
+                            <div class="comment-text">${escapeHtml(c.texto)}</div>
+                            <div class="comment-reactions">
+                                <button class="btn-comment-reaction" onclick="reagirComentario('${bateriaKey}', '${id}', 'likes')">👍 (${c.likes || 0})</button>
+                                <button class="btn-comment-reaction" onclick="reagirComentario('${bateriaKey}', '${id}', 'dislikes')">👎 (${c.dislikes || 0})</button>
+                            </div>
+                        </div>`;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            let map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        window.compartilharCorrida = function(bateriaKey, nomeSessao) {
+            let dadosBateria = obterTodosDadosConsolidados().filter(d => d.bateriaKey === bateriaKey && d.laps && d.laps.length > 0);
+            let ordenados = ordenarParticipantesBateria(dadosBateria);
+            let linkPainel = window.location.href.split('#')[0];
+
+            if (ordenados.length === 0) { alert("Não há dados válidos para compartilhar nesta bateria."); return; }
+
+            let textoPilotos = ordenados.map((p, idx) => {
+                let melhor = p.melhorVoltaTxt || '--';
+                return `*${idx + 1}º Lugar: ${p.piloto}* — Melhor volta: ${melhor}`;
+            }).join('\n');
+
+            let vencedorNome = ordenados[0].piloto || "Nenhum";
+            let txt = `🏁 *KRATHUS RACING - TELEMETRIA* 🏁\n🗓️ Sessão: *${nomeSessao}*\n🏆 Vencedor: *${vencedorNome}*\n\n📊 *RESULTADO DA BATERIA*\n\n${textoPilotos}\n\n🔎 Confira no painel:\n${linkPainel}`;
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(txt).then(() => { alert("📋 Relatório copiado para a área de transferência!"); });
+            } else {
+                alert(txt);
+            }
+        };
+
+        function atualizarDashboard() {
+            let dadosBase = obterTodosDadosConsolidados();
+            const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
+            const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
+            const modulosSel = Array.from(document.querySelectorAll('.filter-modulo:checked')).map(cb => cb.value);
+
+            const dadosFiltrados = dadosBase.filter(item => bateriasSel.includes(item.bateriaKey) && (pilotosSel.length === 0 || pilotosSel.includes(item.piloto)));
+
+            if (listaJsonsCache.length > 0) {
+                let vencedorContadorGlobal = {};
+                listaJsonsCache.forEach(arq => {
+                    let itensDaBateria = (arq.dados || []).map(d => {
+                        let pReal = d.piloto; let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                        if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
+                        return { ...d, piloto: pReal };
+                    });
+                    let participantesValidos = itensDaBateria.filter(d => d.laps && d.laps.length > 0);
+                    let ordenados = ordenarParticipantesBateria(participantesValidos);
+                    if (ordenados.length > 0) {
+                        let pilotoReal = ordenados[0].piloto;
+                        vencedorContadorGlobal[pilotoReal] = (vencedorContadorGlobal[pilotoReal] || 0) + 1;
+                    }
+                });
+
+                let maisVitorioso = "--", maxV = -1;
+                for (let [p, v] of Object.entries(vencedorContadorGlobal)) { if (v > maxV) { maxV = v; maisVitorioso = p; } }
+                
+                let metaVencedor = pilotosMetadadosCache[maisVitorioso] || {};
+                let nomeVencExib = metaVencedor.apelido ? `${maisVitorioso} (${metaVencedor.apelido})` : maisVitorioso;
+
+                document.getElementById('kpi-vencedor').innerHTML = maisVitorioso !== "--" && maxV > 0 ? `<a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(maisVitorioso)}')">${escapeHtml(nomeVencExib)}</a>` : "Nenhum";
+                document.getElementById('kpi-vencedor-sub').innerText = maxV > 0 ? `${maxV} vitória(s) absoluta(s)` : "Sem vitórias";
+
+                let melhorVoltaObj = null, melhorVoltaValGeral = 999999, melhorVoltaNum = 0;
+                dadosFiltrados.forEach(item => {
+                    if (item.laps) {
+                        item.laps.forEach((l, idx) => {
+                            let t = typeof l === 'object' ? l.tempo : l;
+                            if (t && t < melhorVoltaValGeral) { melhorVoltaValGeral = t; melhorVoltaObj = item; melhorVoltaNum = idx + 1; }
+                        });
+                    }
+                });
+
+                if (melhorVoltaObj) {
+                    let metaMelhor = pilotosMetadadosCache[melhorVoltaObj.piloto] || {};
+                    let nomeMelhorExib = metaMelhor.apelido ? `${melhorVoltaObj.piloto} (${metaMelhor.apelido})` : melhorVoltaObj.piloto;
+                    let velEscala = (26 / melhorVoltaValGeral) * 3.6 * 28;
+                    document.getElementById('kpi-melhor-volta').innerText = `${melhorVoltaValGeral.toFixed(3)}s`;
+                    document.getElementById('kpi-melhor-volta-vel').innerText = `${velEscala.toFixed(1)} km/h`;
+                    document.getElementById('kpi-melhor-volta-sub').innerHTML = `<a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(melhorVoltaObj.piloto)}')">${escapeHtml(nomeMelhorExib)}</a> (Volta ${melhorVoltaNum})`;
+                }
+
+                let totalV = dadosFiltrados.reduce((acc, item) => acc + (item.laps ? item.laps.length : 0), 0);
+                document.getElementById('kpi-total-voltas').innerText = totalV;
+
+                let somaTemposValidos = 0, totalVoltasValidas = 0;
+                dadosFiltrados.forEach(item => {
+                    if (item.laps && Array.isArray(item.laps)) {
+                        item.laps.forEach(l => {
+                            let t = typeof l === 'object' ? l.tempo : l;
+                            if (t && !isNaN(t) && t > 0) { somaTemposValidos += t; totalVoltasValidas++; }
+                        });
+                    }
+                });
+
+                if (totalVoltasValidas > 0) {
+                    let mediaGlobalSegundos = somaTemposValidos / totalVoltasValidas;
+                    let mediaGlobalVelKmh = (26 / mediaGlobalSegundos) * 3.6 * 28;
+                    document.getElementById('kpi-media-global').innerText = `${mediaGlobalSegundos.toFixed(3)}s`;
+                    document.getElementById('kpi-media-global-vel').innerText = `${mediaGlobalVelKmh.toFixed(1)} km/h`;
+                }
+            } else {
+                document.getElementById('kpi-vencedor').innerText = "--"; document.getElementById('kpi-vencedor-sub').innerText = "Aguardando dados";
+                document.getElementById('kpi-melhor-volta').innerText = "--"; document.getElementById('kpi-total-voltas').innerText = "0";
+                document.getElementById('kpi-media-global').innerText = "--"; document.getElementById('kpi-media-global-vel').innerText = "--";
+            }
+
+            renderizarSessõesCompletas(dadosBase, bateriasSel, pilotosSel, modulosSel);
+        }
+
+        function renderizarSessõesCompletas(dadosBase, bateriasSel, pilotosSel, modulosSel) {
+            chartInstances.forEach(c => c.destroy()); chartInstances = [];
+            const mainContainer = document.getElementById('sessions-container');
+            if (!mainContainer) return;
+            mainContainer.innerHTML = '';
+
+            if (dadosBase.length === 0 || bateriasSel.length === 0) {
+                mainContainer.innerHTML = `<div class="card" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhuma bateria selecionada.</div>`;
+                return;
+            }
+
+            bateriasSel.forEach(batKey => {
+                let sessaoObj = listaJsonsCache.find(i => i.firebaseKey === batKey);
+                let nomeSessao = sessaoObj ? (sessaoObj.sessao || sessaoObj.nomeArquivoOriginal || batKey) : batKey;
+                let nomeFormatado = formatarNomeSessao(nomeSessao);
+
+                let dadosSessao = dadosBase.filter(d => d.bateriaKey === batKey && (pilotosSel.length === 0 || pilotosSel.includes(d.piloto)));
+                if (dadosSessao.length === 0) return;
+
+                let participantesValidos = dadosSessao.filter(d => d.laps && d.laps.length > 0);
+                let ordenados = ordenarParticipantesBateria(participantesValidos);
+
+                let safeKey = batKey.replace(/[.#$\/\[\]]/g, "_");
+                setTimeout(() => {
+                    escutarCurtidas(batKey);
+                    escutarComentarios(batKey);
+                }, 100);
+
+                let blocoHtml = document.createElement('div');
+                blocoHtml.className = 'session-block';
+
+                let podiumTags = "";
+                if (ordenados.length > 0) {
+                    let p1 = ordenados[0];
+                    let meta1 = pilotosMetadadosCache[p1.piloto] || {};
+                    let nome1 = meta1.apelido ? `${p1.piloto} (${meta1.apelido})` : p1.piloto;
+                    podiumTags += `<span class="session-podium-tag podium-gold">🏆 1º <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p1.piloto)}')">${escapeHtml(nome1)}</a> (${p1.melhorVoltaTxt || '--'})</span>`;
+                }
+                if (ordenados.length > 1) {
+                    let p2 = ordenados[1];
+                    let meta2 = pilotosMetadadosCache[p2.piloto] || {};
+                    let nome2 = meta2.apelido ? `${p2.piloto} (${meta2.apelido})` : p2.piloto;
+                    podiumTags += `<span class="session-podium-tag podium-silver">🥈 2º <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p2.piloto)}')">${escapeHtml(nome2)}</a> (${p2.melhorVoltaTxt || '--'})</span>`;
+                }
+                if (ordenados.length > 2) {
+                    let p3 = ordenados[2];
+                    let meta3 = pilotosMetadadosCache[p3.piloto] || {};
+                    let nome3 = meta3.apelido ? `${p3.piloto} (${meta3.apelido})` : p3.piloto;
+                    podiumTags += `<span class="session-podium-tag podium-bronze">🥉 3º <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p3.piloto)}')">${escapeHtml(nome3)}</a> (${p3.melhorVoltaTxt || '--'})</span>`;
+                }
+
+                blocoHtml.innerHTML = `
+                    <div class="session-block-header">
+                        <div class="session-block-title">
+                            <span>🏁 ${escapeHtml(nomeFormatado)}</span>
+                        </div>
+                        <div class="session-block-meta">
+                            ${podiumTags}
+                            <button class="btn-share" onclick="compartilharCorrida('${batKey}', '${escapeHtml(nomeFormatado)}')">📤 Compartilhar</button>
+                            <button class="btn-like" onclick="curtirSessao('${batKey}')">❤️ Curtir (<span id="like-count-${safeKey}">0</span>)</button>
+                        </div>
+                    </div>
+                `;
+
+                let cardConteudoGrid = document.createElement('div');
+                cardConteudoGrid.style.display = 'flex';
+                cardConteudoGrid.style.flexDirection = 'column';
+                cardConteudoGrid.style.gap = '20px';
+
+                if (modulosSel.includes('mod-grafico')) {
+                    let cardGraf = document.createElement('div');
+                    cardGraf.className = 'card';
+                    cardGraf.innerHTML = `
+                        <div class="card-header">📈 Evolução de Ritmo (Tempo por Volta)</div>
+                        <div class="chart-container"><canvas id="chart-ritmo-${safeKey}"></canvas></div>
+                    `;
+                    cardConteudoGrid.appendChild(cardGraf);
+                }
+
+                if (modulosSel.includes('mod-grafico-posicao')) {
+                    let cardPos = document.createElement('div');
+                    cardPos.className = 'card';
+                    cardPos.innerHTML = `
+                        <div class="card-header">📊 Posição Volta a Volta</div>
+                        <div class="chart-container"><canvas id="chart-posicao-${safeKey}"></canvas></div>
+                    `;
+                    cardConteudoGrid.appendChild(cardPos);
+                }
+
+                if (modulosSel.includes('mod-classificacao-analise')) {
+                    let laudoHtml = gerarLaudoTecnicoSessao(ordenados);
+                    let cardLaudo = document.createElement('div');
+                    cardLaudo.className = 'card';
+                    cardLaudo.innerHTML = `
+                        <div class="card-header">📋 Laudo Técnico e Análise de Desempenho</div>
+                        <div class="analysis-subrow-box">${laudoHtml}</div>
+                    `;
+                    cardConteudoGrid.appendChild(cardLaudo);
+                }
+
+                if (modulosSel.includes('mod-tabela-geral')) {
+                    let tabelaGeralHtml = gerarTabelaGeralSessao(ordenados);
+                    let cardTabela = document.createElement('div');
+                    cardTabela.className = 'card';
+                    cardTabela.innerHTML = `
+                        <div class="card-header">⏱️ Tabela Geral com Gaps e Estatísticas</div>
+                        <div class="table-container">${tabelaGeralHtml}</div>
+                    `;
+                    cardConteudoGrid.appendChild(cardTabela);
+                }
+
+                if (modulosSel.includes('mod-comentarios')) {
+                    let cardComentarios = document.createElement('div');
+                    cardComentarios.className = 'card';
+                    cardComentarios.innerHTML = `
+                        <div class="card-header">💬 Comentários, Debates e Reações</div>
+                        <div class="comments-section">
+                            <div class="comments-title"><span>💬 Mural da Comunidade</span></div>
+                            <div class="comments-list" id="comments-list-${safeKey}"></div>
+                            <div class="comment-form">
+                                <input type="text" id="comment-name-${safeKey}" class="comment-input-name" placeholder="Seu Nome">
+                                <input type="text" id="comment-text-${safeKey}" class="comment-input-text" placeholder="Escreva seu comentário sobre esta bateria..." onkeydown="if(event.key === 'Enter') enviarComentario('${batKey}')">
+                                <button class="btn-comment" onclick="enviarComentario('${batKey}')">Enviar</button>
+                            </div>
+                        </div>
+                    `;
+                    cardConteudoGrid.appendChild(cardComentarios);
+                }
+
+                blocoHtml.appendChild(cardConteudoGrid);
+                mainContainer.appendChild(blocoHtml);
+
+                if (modulosSel.includes('mod-grafico')) {
+                    renderizarGraficoRitmo(batKey, safeKey, ordenados);
+                }
+                if (modulosSel.includes('mod-grafico-posicao')) {
+                    renderizarGraficoPosicao(batKey, safeKey, ordenados);
+                }
+            });
+        }
+
+        function gerarLaudoTecnicoSessao(ordenados) {
+            if (!ordenados || ordenados.length === 0) return "Sem dados suficientes para gerar laudo.";
+            let lider = ordenados[0];
+            let metaLider = pilotosMetadadosCache[lider.piloto] || {};
+            let nomeLiderExib = metaLider.apelido ? `${lider.piloto} (${metaLider.apelido})` : lider.piloto;
+            return `
+                <div class="analysis-section-block">
+                    <div class="analysis-section-title">🏆 Vencedor da Sessão</div>
+                    <div class="analysis-section-content"><strong>${escapeHtml(nomeLiderExib)}</strong> dominou o ritmo com melhor volta de ${lider.melhorVoltaTxt || '--'} e média constante de ${lider.mediaTxt || '--'}.</div>
+                </div>
+            `;
+        }
+
+        function gerarTabelaGeralSessao(ordenados) {
+            if (!ordenados || ordenados.length === 0) return "<div>Sem dados.</div>";
+            let melhorVoltaGeral = Math.min(...ordenados.map(p => p.melhorVoltaVal || 999));
+
+            let linhas = ordenados.map((p, idx) => {
+                let meta = pilotosMetadadosCache[p.piloto] || {};
+                let nomeExib = meta.apelido ? `${p.piloto} (${meta.apelido})` : p.piloto;
+                let gap = p.melhorVoltaVal && melhorVoltaGeral < 999 ? `+${(p.melhorVoltaVal - melhorVoltaGeral).toFixed(3)}s` : '--';
+                let isLider = idx === 0;
+
+                return `
+                    <tr>
+                        <td><span class="pos-badge">${p.pos || (idx + 1) + 'º'}</span></td>
+                        <td><strong><a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p.piloto)}')">${escapeHtml(nomeExib)}</a></strong></td>
+                        <td>${p.voltasTotais || (p.laps ? p.laps.length : 0)}</td>
+                        <td>
+                            <span class="lap-cell-inline">
+                                <strong class="text-green">${p.melhorVoltaTxt || '--'}</strong>
+                                ${isLider ? '<span class="leader-badge">Recorde da Sessão</span>' : `<span class="lap-gap">(${gap})</span>`}
+                            </span>
+                        </td>
+                        <td>${p.mediaTxt || '--'}</td>
+                        <td>${p.desvio || '±0,000s'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pos</th>
+                            <th>Piloto</th>
+                            <th>Voltas</th>
+                            <th>Melhor Volta</th>
+                            <th>Média</th>
+                            <th>Consistência</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhas}</tbody>
+                </table>
+            `;
+        }
+
+        function renderizarGraficoRitmo(bateriaKey, safeKey, ordenados) {
+            let canvasEl = document.getElementById(`chart-ritmo-${safeKey}`);
+            if (!canvasEl) return;
+            let ctx = canvasEl.getContext('2d');
+
+            let maxVoltas = 0;
+            ordenados.forEach(p => { if (p.laps && p.laps.length > maxVoltas) maxVoltas = p.laps.length; });
+            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
+
+            let datasets = ordenados.map((p, idx) => {
+                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
+                let meta = pilotosMetadadosCache[p.piloto] || {};
+                let nome = meta.apelido ? `${p.piloto} (${meta.apelido})` : p.piloto;
+
+                let dataVoltas = Array.from({ length: maxVoltas }, (_, i) => {
+                    let l = p.laps ? p.laps[i] : null;
+                    return (l !== undefined && l !== null && !isNaN(l) && l > 0) ? (typeof l === 'object' ? l.tempo : l) : null;
+                });
+
+                return { label: nome, data: dataVoltas, borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true };
+            });
+
+            let chart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#d0d7e3', font: { family: 'Segoe UI' } } } },
+                    scales: {
+                        x: { ticks: { color: '#8492a6' }, grid: { color: '#222d42' } },
+                        y: { ticks: { color: '#8492a6' }, grid: { color: '#222d42' } }
+                    }
+                }
+            });
+            chartInstances.push(chart);
+        }
+
+        function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
+            let canvasEl = document.getElementById(`chart-posicao-${safeKey}`);
+            if (!canvasEl) return;
+            let ctx = canvasEl.getContext('2d');
+
+            let maxVoltas = 0;
+            ordenados.forEach(p => { if (p.laps && p.laps.length > maxVoltas) maxVoltas = p.laps.length; });
+            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
+
+            let datasets = ordenados.map((p, idx) => {
+                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
+                let meta = pilotosMetadadosCache[p.piloto] || {};
+                let nome = meta.apelido ? `${p.piloto} (${meta.apelido})` : p.piloto;
+
+                let posicoesVolta = [];
+                for (let v = 0; v < maxVoltas; v++) {
+                    let mapaVoltaPilotos = [];
+                    ordenados.forEach(pilotoObj => {
+                        let somaTemp = 0;
+                        let valido = true;
+                        for (let j = 0; j <= v; j++) {
+                            let l = pilotoObj.laps ? pilotoObj.laps[j] : null;
+                            if (l === undefined || l === null || isNaN(l) || l <= 0) { valido = false; break; }
+                            somaTemp += (typeof l === 'object' ? l.tempo : l);
+                        }
+                        if (valido) mapaVoltaPilotos.push({ piloto: pilotoObj.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
+                    });
+
+                    mapaVoltaPilotos.sort((a, b) => {
+                        if (a.voltasCompletas !== b.voltasCompletas) return b.voltasCompletas - a.voltasCompletas;
+                        return a.tempoTotal - b.tempoTotal;
+                    });
+
+                    let pos = mapaVoltaPilotos.findIndex(item => item.piloto === p.piloto);
+                    posicoesVolta.push(pos !== -1 ? pos + 1 : null);
+                }
+
+                return { label: nome, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true };
+            });
+
+            let chart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#d0d7e3', font: { family: 'Segoe UI' } } } },
+                    scales: {
+                        x: { ticks: { color: '#8492a6' }, grid: { color: '#222d42' } },
+                        y: { reverse: true, min: 1, ticks: { stepSize: 1, color: '#8492a6' }, grid: { color: '#222d42' } }
+                    }
+                }
+            });
+            chartInstances.push(chart);
+        }
+
+        window.gerarRelatórioPDF = function() {
+            window.print();
+        };
+    </script>
 </body>
 </html>
