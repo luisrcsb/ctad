@@ -588,7 +588,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.64.0 (Remoção do Modulo de Compras do Dashboard Principal)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.65.0 (Correção do Cálculo de Pontuação por Desempenho Real)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -1885,11 +1885,8 @@
                 } else {
                     let provaAnteriorKey = provaKeysArr[g - 1];
                     if (provaAnteriorKey && provasSep[provaAnteriorKey] && provasSep[provaAnteriorKey].dados) {
-                        let dadosAnt = [...provasSep[provaAnteriorKey].dados].filter(d => d.laps && d.laps.length > 0).sort((a, b) => {
-                            let posA = parseInt(String(a.pos).replace('º', '').trim(), 10) || 99;
-                            let posB = parseInt(String(b.pos).replace('º', '').trim(), 10) || 99;
-                            return posA - posB;
-                        });
+                        let participantesValidosAnt = provasSep[provaAnteriorKey].dados.filter(d => d.laps && d.laps.length > 0);
+                        let dadosAnt = ordenarParticipantesBateria(participantesValidosAnt);
                         let ordemAnt = dadosAnt.map(d => d.piloto);
                         if (inverterAtivo) {
                             pilotoGridAtual = [...ordemAnt].reverse();
@@ -1964,10 +1961,12 @@
             let pilotoDados = {};
 
             provasArr.forEach((arq, provaIndex) => {
-                if (arq && arq.dados) {
-                    arq.dados.forEach(d => {
-                        if (!d.laps || d.laps.length === 0) return;
-                        let posNum = parseInt(String(d.pos).replace('º', '').trim(), 10);
+                if (arq && arq.dados && Array.isArray(arq.dados)) {
+                    let participantesValidos = arq.dados.filter(d => d.laps && d.laps.length > 0);
+                    let ordenadosBateria = ordenarParticipantesBateria(participantesValidos);
+
+                    ordenadosBateria.forEach((d, index) => {
+                        let posNum = index + 1; // Posição real calculada pelo desempenho de voltas e tempos
                         let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
                         if (pts > 0) {
                             let pNome = d.piloto;
