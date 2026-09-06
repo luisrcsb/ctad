@@ -56,7 +56,6 @@
         .btn-pdf-global { background: linear-gradient(135deg, #ff5722 0%, #e63946 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; }
         .btn-upload-modal-trigger { background: linear-gradient(135deg, #3a86ff 0%, #2ec4b6 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         .btn-campeonatos-trigger { background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%); color: #000; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-compras-coletivas-trigger { background: linear-gradient(135deg, #2a9d8f 0%, #264653 100%); color: #fff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         
         .btn-share { background: rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
         .btn-like { background: rgba(230, 57, 70, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
@@ -80,12 +79,6 @@
         .dossier-kpi { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 4px; text-align: center; }
         .dossier-kpi-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .dossier-kpi-value { font-size: 1.25rem; font-weight: 700; color: var(--accent-gold); }
-
-        .config-box-trigger { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
-        .btn-config-open { background: var(--bg-input); border: 1px solid var(--border-card); color: var(--accent-gold); padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .btn-config-open:hover { background: rgba(255, 183, 3, 0.1); }
-        .btn-merge-open { background: var(--bg-input); border: 1px solid var(--border-card); color: var(--accent-green); padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .btn-merge-open:hover { background: rgba(46, 196, 182, 0.1); }
 
         .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
         .config-panel-title { font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-card); padding-bottom: 8px; }
@@ -496,7 +489,6 @@
                             <label class="checkbox-item"><input type="checkbox" value="mod-log-posicao" class="filter-modulo" checked onchange="atualizarDashboard()"> 📝 Relatório de Ultrapassagens</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-classificacao-analise" class="filter-modulo" checked onchange="atualizarDashboard()"> 📋 Laudo Técnico</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked onchange="atualizarDashboard()"> ⏱️ Tabela Geral com Gaps</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-replay" class="filter-modulo" checked onchange="atualizarDashboard()"> 🎬 Replay Animado da Corrida</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-comentarios" class="filter-modulo" checked onchange="atualizarDashboard()"> 💬 Comentários e Reações</label>
                         </div>
                     </div>
@@ -533,7 +525,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.52.0 (Gestão de Campeonatos Completa)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.53.0 (Módulo de Ultrapassagens Ativo)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -1995,6 +1987,22 @@
                     cardConteudoGrid.appendChild(cardPos);
                 }
 
+                if (modulosSel.includes('mod-log-posicao')) {
+                    let overtakingLogs = calcularRelatorioUltrapassagens(ordenados, dadosSessao);
+                    let logHtml = overtakingLogs.length > 0 ? overtakingLogs.map(l => `<div class="position-log-item">Volta ${l.volta}: <strong>${escapeHtml(l.piloto)}</strong> ${l.tipo === 'ganho' ? 'ganhou posição' : 'perdeu posição'} <span class="${l.tipo === 'ganho' ? 'tag-gain' : 'tag-loss'}">(${l.posAnterior}º ➔ ${l.posAtual}º)</span></div>`).join('') : '<div style="color: var(--text-muted); font-size:0.85rem;">Nenhuma alteração significativa de posição registrada nas voltas.</div>';
+
+                    let cardLog = document.createElement('div');
+                    cardLog.className = 'card';
+                    cardLog.innerHTML = `
+                        <div class="card-header">📝 Relatório de Ultrapassagens e Ganho de Posições</div>
+                        <div class="position-analysis-container">
+                            <div class="position-analysis-title">Linha do Tempo de Disputas</div>
+                            <div class="position-log-list">${logHtml}</div>
+                        </div>
+                    `;
+                    cardConteudoGrid.appendChild(cardLog);
+                }
+
                 if (modulosSel.includes('mod-classificacao-analise')) {
                     let laudoHtml = gerarLaudoTecnicoSessao(ordenados);
                     let cardLaudo = document.createElement('div');
@@ -2045,6 +2053,51 @@
                     renderizarGraficoPosicao(batKey, safeKey, ordenados);
                 }
             });
+        }
+
+        function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
+            if (!dadosSessao || dadosSessao.length === 0) return [];
+            let maxVoltas = 0;
+            dadosSessao.forEach(d => { if (d.laps && d.laps.length > maxVoltas) maxVoltas = d.laps.length; });
+            
+            let logs = [];
+            let posicoesAnterior = {};
+            
+            for (let v = 0; v < maxVoltas; v++) {
+                let rankingVolta = [];
+                dadosSessao.forEach(p => {
+                    let somaTemp = 0;
+                    let valido = true;
+                    for (let j = 0; j <= v; j++) {
+                        let l = p.laps ? p.laps[j] : null;
+                        if (l === undefined || l === null || isNaN(l) || l <= 0) { valido = false; break; }
+                        somaTemp += (typeof l === 'object' ? l.tempo : l);
+                    }
+                    if (valido) {
+                        rankingVolta.push({ piloto: p.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
+                    }
+                });
+                
+                rankingVolta.sort((a, b) => {
+                    if (a.voltasCompletas !== b.voltasCompletas) return b.voltasCompletas - a.voltasCompletas;
+                    return a.tempoTotal - b.tempoTotal;
+                });
+                
+                rankingVolta.forEach((item, index) => {
+                    let posAtual = index + 1;
+                    let piloto = item.piloto;
+                    if (posicoesAnterior[piloto] !== undefined) {
+                        let posAnt = posicoesAnterior[piloto];
+                        if (posAtual < posAnt) {
+                            logs.push({ volta: v + 1, piloto: piloto, posAnterior: posAnt, posAtual: posAtual, tipo: 'ganho' });
+                        } else if (posAtual > posAnt) {
+                            logs.push({ volta: v + 1, piloto: piloto, posAnterior: posAnt, posAtual: posAtual, tipo: 'perda' });
+                        }
+                    }
+                    posicoesAnterior[piloto] = posAtual;
+                });
+            }
+            return logs;
         }
 
         function gerarLaudoTecnicoSessao(ordenados) {
