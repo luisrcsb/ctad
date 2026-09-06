@@ -463,32 +463,15 @@
         </div>
     </div>
 
-    <!-- Módulo de Compras Coletivas (Estilo Solicitado) -->
+    <!-- Módulo de Compras Coletivas (Lista & Gerenciamento Detalhado) -->
     <div id="compras-modal" class="custom-modal">
-        <div class="modal-content" style="max-width: 1050px; border-top-color: var(--accent-cc);">
+        <div class="modal-content" style="max-width: 1100px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
-                <div class="modal-title">🛒 Gestão de Compras Coletivas</div>
+                <div class="modal-title" id="compras-modal-titulo">🛒 Gestão de Compras Coletivas</div>
                 <button class="modal-close" onclick="fecharModalCompras()">&times;</button>
             </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
-                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">COMPRAS COLETIVAS CADASTRADAS</div>
-                
-                <!-- Lista de Cards de Compras Coletivas -->
-                <div id="lista-cards-compras" style="display: flex; flex-direction: column; gap: 16px;">
-                    <!-- Renderizado dinamicamente -->
-                    <div style="color: var(--text-muted); text-align: center; padding: 20px;">Carregando compras coletivas...</div>
-                </div>
-
-                <!-- Painel Criar Nova Compra -->
-                <div class="config-panel" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 18px;">
-                    <div class="config-panel-title" style="color: var(--accent-gold); border-bottom: none; padding-bottom: 0;">🔒 CRIAR NOVA COMPRA COLETIVA</div>
-                    <div style="display: flex; gap: 12px; align-items: center; margin-top: 10px; flex-wrap: wrap;">
-                        <input type="text" id="input-compra-item" class="config-input" placeholder="Nome da Compra (Ex: Peças RC AliExpress)" style="flex: 2; background: var(--bg-input);">
-                        <input type="number" step="0.01" id="input-compra-preco" class="config-input" placeholder="Preço (R$)" style="flex: 0.8; background: var(--bg-input);">
-                        <input type="number" id="input-compra-qtd-min" class="config-input" placeholder="Qtd Mínima" style="flex: 0.8; background: var(--bg-input);">
-                        <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 10px 20px;" onclick="criarCompraColetiva()">Criar Compra Coletiva</button>
-                    </div>
-                </div>
+            <div class="modal-body" id="compras-modal-body" style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Conteúdo alternado via JS: Lista ou Tela de Gerenciamento Detalhado -->
             </div>
         </div>
     </div>
@@ -606,7 +589,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.60.0 (Layout de Compras Coletivas Personalizado)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.61.0 (Gestão Avançada de Compras Coletivas)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -640,6 +623,7 @@
         let mesclagensCache = {};
         let campeonatoAtivoKey = null;
         let campeonatoParticiparKey = null;
+        let compraGerenciandoKey = null; // null = exibe lista, string = exibe tela de gerenciar compra
 
         try {
             firebase.initializeApp(firebaseConfig);
@@ -752,7 +736,7 @@
 
                 db.ref('comprasColetivas').on('value', snapshot => {
                     comprasColetivasCache = snapshot.val() || {};
-                    renderizarTabelaComprasModal();
+                    renderizarModalComprasColetivas();
                     atualizarDashboard();
                 });
 
@@ -768,7 +752,7 @@
                     
                     listaJsonsCache.sort((a, b) => {
                         let nomeA = a.sessao || (a.dados && a.dados[0] ? a.dados[0].sessao : '') || '';
-                        let nomeB = b.sessao || (b.dados && b.dados[0] ? b.dados[0].sessao : '') || '';
+                        let nomeB = sessaoStr = b.sessao || (b.dados && b.dados[0] ? b.dados[0].sessao : '') || '';
                         return extrairPesoOrdenacao(nomeB) - extrairPesoOrdenacao(nomeA);
                     });
 
@@ -800,8 +784,9 @@
         window.fecharModalCampeonatos = function() { document.getElementById('campeonatos-modal').style.display = 'none'; };
 
         window.abrirModalCompras = function() {
+            compraGerenciandoKey = null;
             document.getElementById('compras-modal').style.display = 'flex';
-            renderizarTabelaComprasModal();
+            renderizarModalComprasColetivas();
         };
         window.fecharModalCompras = function() { document.getElementById('compras-modal').style.display = 'none'; };
 
@@ -899,10 +884,24 @@
             let preco = parseFloat(document.getElementById('input-compra-preco').value) || 0;
             let qtdMin = parseInt(document.getElementById('input-compra-qtd-min').value, 10) || 1;
 
-            if (!item) { alert("Informe o nome do item ou peça."); return; }
+            if (!item) { alert("Informe o nome da compra ou peça."); return; }
             let compraKey = "compra_" + Date.now();
             let novaCompra = {
-                chave: compraKey, item: item, precoUnitario: preco, qtdMinima: qtdMin, status: "EM ANDAMENTO / PENDENTE", rastreio: "", participantes: {}, itensImagens: []
+                chave: compraKey,
+                nome: item,
+                precoUnitario: preco,
+                qtdMinima: qtdMin,
+                status: "EM ANDAMENTO / PENDENTE",
+                rastreio: "",
+                financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
+                chavePix: "",
+                itens: [
+                    { imagem: "", descricao: item, link: "", valor: preco, qtd: 1, atribuidoA: "Raphael" }
+                ],
+                participantes: {
+                    "part_raphael": { nome: "Raphael", ativo: true, comprador: true, valorDevido: 0, pago: true, reciboPix: "" },
+                    "part_dj_edgard": { nome: "DJ Edgard", ativo: true, comprador: false, valorDevido: 0, pago: true, reciboPix: "" }
+                }
             };
 
             try {
@@ -914,60 +913,341 @@
             } catch(err) { alert("Erro ao criar compra coletiva: " + err.message); }
         };
 
-        window.adicionarRastreioCompra = async function(compraKey) {
+        window.gerenciarCompraColetiva = function(compraKey) {
+            compraGerenciandoKey = compraKey;
+            renderizarModalComprasColetivas();
+        };
+
+        window.voltarParaListaCompras = function() {
+            compraGerenciandoKey = null;
+            renderizarModalComprasColetivas();
+        };
+
+        window.salvarCompraGerenciada = async function(compraKey) {
             if (!db) return;
-            let rastreioAtual = comprasColetivasCache[compraKey]?.rastreio || "";
-            let novoRastreio = prompt("Digite o código de rastreio (Ex: NN294960910BR):", rastreioAtual);
-            if (novoRastreio === null) return;
-            try {
-                await db.ref(`comprasColetivas/${compraKey}/rastreio`).set(novoRastreio.trim());
-                alert("Código de rastreio atualizado!");
-            } catch(err) { alert("Erro ao atualizar rastreio: " + err.message); }
-        };
-
-        window.gerenciarCompraColetiva = async function(compraKey) {
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
-            let novoStatus = prompt("Alterar status da compra (Ex: EM ANDAMENTO / PENDENTE ou ENTREGUE / FINALIZADA):", comp.status || "EM ANDAMENTO / PENDENTE");
-            if (novoStatus === null) return;
+
+            // Coletar dados da interface
+            let nomeInput = document.getElementById('det-nome-compra');
+            if (nomeInput) comp.nome = nomeInput.value.trim();
+
+            // Financeiro
+            comp.financeiro = {
+                subtotal: parseFloat(document.getElementById('fin-subtotal')?.value) || 0,
+                desconto: parseFloat(document.getElementById('fin-desconto')?.value) || 0,
+                frete: parseFloat(document.getElementById('fin-frete')?.value) || 0,
+                imposto: parseFloat(document.getElementById('fin-imposto')?.value) || 0,
+                icms: parseFloat(document.getElementById('fin-icms')?.value) || 0,
+                outros: parseFloat(document.getElementById('fin-outros')?.value) || 0
+            };
+
+            comp.chavePix = document.getElementById('det-chave-pix')?.value.trim() || "";
+            comp.rastreio = document.getElementById('det-rastreio')?.value.trim() || "";
+
+            // Coletar itens da tabela
+            let novasItens = [];
+            document.querySelectorAll('.det-item-row').forEach(row => {
+                let idx = row.getAttribute('data-index');
+                let desc = document.getElementById(`item-desc-${idx}`)?.value || "";
+                let link = document.getElementById(`item-link-${idx}`)?.value || "";
+                let val = parseFloat(document.getElementById(`item-val-${idx}`)?.value) || 0;
+                let qtd = parseInt(document.getElementById(`item-qtd-${idx}`)?.value, 10) || 1;
+                let atribuido = document.getElementById(`item-atr-${idx}`)?.value || "Raphael";
+                novasItens.push({ imagem: "", descricao: desc, link: link, valor: val, qtd: qtd, atribuidoA: atribuido });
+            });
+            comp.itens = novasItens;
+
+            // Coletar participantes da tabela
+            let novosParticipantes = {};
+            document.querySelectorAll('.det-part-row').forEach(row => {
+                let pKey = row.getAttribute('data-pkey');
+                let nome = row.getAttribute('data-nome');
+                let ativo = document.getElementById(`part-ativo-${pKey}`)?.checked || false;
+                let comprador = document.getElementById(`part-comprador-${pKey}`)?.checked || false;
+                let pago = document.getElementById(`part-pago-${pKey}`)?.checked || false;
+                let recibo = document.getElementById(`part-recibo-${pKey}`)?.value || "";
+                novosParticipantes[pKey] = { nome, ativo, comprador, valorDevido: 0, pago, reciboPix: recibo };
+            });
+            comp.participantes = novosParticipantes;
+
             try {
-                await db.ref(`comprasColetivas/${compraKey}/status`).set(novoStatus.trim().toUpperCase());
-                alert("Status atualizado!");
-            } catch(err) { alert("Erro ao atualizar status: " + err.message); }
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                alert("Alterações salvas com sucesso!");
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro ao salvar alterações: " + err.message); }
         };
 
-        window.resumirCompraColetiva = function(compraKey) {
+        window.adicionarItemCompra = async function(compraKey) {
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
-            let participantes = comp.participantes || {};
-            let totalCotas = Object.values(participantes).reduce((acc, p) => acc + (p.cotas || 0), 0);
-            let listaPart = Object.values(participantes).map(p => `- ${p.nome}: ${p.cotas} un`).join('\n') || 'Nenhum participante ainda.';
-            alert(`📦 RESUMO DA COMPRA: ${comp.item}\nStatus: ${comp.status}\nRastreio: ${comp.rastreio || 'Não informado'}\nPreço Unit.: R$ ${(comp.precoUnitario || 0).toFixed(2)}\nCotas Pedidas: ${totalCotas} / ${comp.qtdMinima}\n\nParticipantes:\n${listaPart}`);
+            if (!comp.itens) comp.itens = [];
+            comp.itens.push({ imagem: "", descricao: "Novo Item", link: "", valor: 0.0, qtd: 1, atribuidoA: "Raphael" });
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro ao adicionar item: " + err.message); }
+        };
+
+        window.removerItemCompra = async function(compraKey, index) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp || !comp.itens) return;
+            comp.itens.splice(index, 1);
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro ao remover item: " + err.message); }
+        };
+
+        window.adicionarParticipanteCompra = async function(compraKey) {
+            let nomeInput = document.getElementById('input-novo-participante-compra');
+            let nome = nomeInput ? nomeInput.value.trim() : "";
+            if (!nome) { alert("Digite o nome do participante."); return; }
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            if (!comp.participantes) comp.participantes = {};
+            let pKey = "part_" + nome.toLowerCase().replace(/[^a-z0-9]/g, "_");
+            comp.participantes[pKey] = { nome, ativo: true, comprador: false, valorDevido: 0, pago: false, reciboPix: "" };
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                if (nomeInput) nomeInput.value = "";
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro ao adicionar participante: " + err.message); }
+        };
+
+        window.removerParticipanteCompra = async function(compraKey, pKey) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp || !comp.participantes) return;
+            delete comp.participantes[pKey];
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro ao remover participante: " + err.message); }
+        };
+
+        window.finalizarCompraColetivaStatus = async function(compraKey) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            comp.status = "ENTREGUE / FINALIZADA";
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                alert("Compra coletiva marcada como finalizada/entregue!");
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro ao finalizar: " + err.message); }
         };
 
         window.excluirCompraColetiva = async function(compraKey) {
-            if (!db) return;
             let senha = prompt("🔒 Digite a senha unificada de segurança (1234) para excluir esta compra:");
             if (senha === null) return;
             if (senha !== SENHA_UNIFICADA) { alert("❌ Senha incorreta!"); return; }
             if (confirm("Deseja realmente excluir esta compra coletiva?")) {
                 try {
                     await db.ref(`comprasColetivas/${compraKey}`).remove();
+                    compraGerenciandoKey = null;
+                    renderizarModalComprasColetivas();
                 } catch(err) { alert("Erro ao excluir: " + err.message); }
             }
         };
 
-        function renderizarTabelaComprasModal() {
-            let container = document.getElementById('lista-cards-compras');
-            if (!container) return;
-            let keys = Object.keys(comprasColetivasCache);
+        function renderizarModalComprasColetivas() {
+            let tituloEl = document.getElementById('compras-modal-titulo');
+            let bodyEl = document.getElementById('compras-modal-body');
+            if (!bodyEl) return;
 
-            if (keys.length === 0) {
-                container.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 20px;">Nenhuma compra coletiva cadastrada no momento.</div>`;
+            // Se estiver gerenciando uma compra específica, exibe as 6 seções detalhadas idênticas aos prints
+            if (compraGerenciandoKey && comprasColetivasCache[compraGerenciandoKey]) {
+                let comp = comprasColetivasCache[compraGerenciandoKey];
+                if (tituloEl) tituloEl.innerHTML = `🛒 Gestão de Compras Coletivas`;
+
+                let itens = comp.itens || [];
+                let participantes = comp.participantes || {};
+                let fin = comp.financeiro || { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 };
+
+                // Calcular subtotal com base nos itens
+                let calcSubtotal = itens.reduce((acc, it) => acc + ((it.valor || 0) * (it.qtd || 1)), 0);
+                let valorGlobalFinal = calcSubtotal - (fin.desconto || 0) + (fin.frete || 0) + (fin.imposto || 0) + (fin.icms || 0) + (fin.outros || 0);
+
+                // Listagem de pilotos disponíveis para o select de atribuição
+                let dadosBase = obterTodosDadosConsolidados();
+                let pilotosSet = new Set();
+                dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
+                Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+                Object.values(participantes).forEach(p => pilotosSet.add(p.nome));
+                let listaPilotosDisponiveis = Array.from(pilotosSet).sort();
+
+                let itensHtml = itens.map((it, idx) => {
+                    let subtotalItem = (it.valor || 0) * (it.qtd || 1);
+                    let optionsPilotos = listaPilotosDisponiveis.map(p => `<option value="${escapeHtml(p)}" ${it.atribuidoA === p ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('');
+                    return `
+                        <div class="det-item-row" data-index="${idx}" style="display: grid; grid-template-columns: 50px 2fr 1.5fr 100px 70px 110px 1.5fr 40px; gap: 10px; align-items: center; margin-bottom: 10px;">
+                            <div style="background: #fff; border-radius: 6px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;"><img src="${it.imagem || 'https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg'}" style="max-width: 36px; max-height: 36px; object-fit: contain;"></div>
+                            <input type="text" id="item-desc-${idx}" class="config-input" value="${escapeHtml(it.descricao || '')}" placeholder="Descrição do item">
+                            <input type="text" id="item-link-${idx}" class="config-input" value="${escapeHtml(it.link || '')}" placeholder="Link">
+                            <input type="number" step="0.01" id="item-val-${idx}" class="config-input" value="${it.valor || 0}" placeholder="Valor">
+                            <input type="number" id="item-qtd-${idx}" class="config-input" value="${it.qtd || 1}" placeholder="Qtd">
+                            <span style="color: var(--accent-gold); font-weight: 700; font-size: 0.9rem;">R$ ${subtotalItem.toFixed(2)}</span>
+                            <select id="item-atr-${idx}" class="config-select">${optionsPilotos}</select>
+                            <button class="btn-action-danger" style="padding: 6px 10px;" onclick="removerItemCompra('${compraGerenciandoKey}', ${idx})">🗑️</button>
+                        </div>
+                    `;
+                }).join('');
+
+                let participantesKeys = Object.keys(participantes);
+                let totalAtivos = participantesKeys.filter(pk => participantes[pk].ativo).length;
+                let valorPorAtivo = totalAtivos > 0 ? (valorGlobalFinal / totalAtivos) : 0;
+
+                let participantesHtml = participantesKeys.map(pk => {
+                    let p = participantes[pk];
+                    let valorDevidoCalc = p.ativo ? valorPorAtivo : 0;
+                    return `
+                        <div class="det-part-row" data-pkey="${pk}" data-nome="${escapeHtml(p.nome)}" style="display: grid; grid-template-columns: 70px 2fr 100px 130px 100px 2.5fr 40px; gap: 10px; align-items: center; background: rgba(21,28,40,0.6); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-card); margin-bottom: 8px;">
+                            <div style="text-align: center;"><input type="checkbox" id="part-ativo-${pk}" ${p.ativo ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-green); cursor: pointer;"></div>
+                            <div><strong>${escapeHtml(p.nome)}</strong></div>
+                            <div style="text-align: center;"><input type="radio" name="comprador_radio" id="part-comprador-${pk}" ${p.comprador ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-blue); cursor: pointer;"></div>
+                            <div style="color: var(--accent-gold); font-weight: 700;">R$ ${valorDevidoCalc.toFixed(2)}</div>
+                            <div style="text-align: center;"><input type="checkbox" id="part-pago-${pk}" ${p.pago ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-green); cursor: pointer;"></div>
+                            <div><input type="text" id="part-recibo-${pk}" class="config-input" value="${escapeHtml(p.reciboPix || '')}" placeholder="Cole a URL da imagem do recibo" style="width: 100%;"></div>
+                            <div style="text-align: right;"><button class="btn-action-danger" style="padding: 6px 10px;" onclick="removerParticipanteCompra('${compraGerenciandoKey}', '${pk}')">🗑️</button></div>
+                        </div>
+                    `;
+                }).join('');
+
+                bodyEl.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--bg-input); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-card);">
+                        <span style="font-size: 0.95rem; font-weight: 700; color: var(--accent-gold);">Gerenciando: ${escapeHtml(comp.chave)}</span>
+                        <button class="btn-action-primary" style="background: #3a86ff; font-weight: 700;" onclick="voltarParaListaCompras()">⬅️ Voltar para Lista</button>
+                    </div>
+
+                    <!-- 1. Nome da Compra -->
+                    <div class="config-panel">
+                        <div class="config-panel-title">1. NOME DA COMPRA</div>
+                        <input type="text" id="det-nome-compra" class="config-input" value="${escapeHtml(comp.nome || '')}" placeholder="Nome ou ID da Compra">
+                    </div>
+
+                    <!-- 2. Itens da Compra -->
+                    <div class="config-panel">
+                        <div class="config-panel-title">2. ITENS DA COMPRA E ATRIBUIÇÃO (INDIVIDUAL OU TODOS)</div>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+                            ${itensHtml}
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700;" onclick="adicionarItemCompra('${compraGerenciandoKey}')">+ Adicionar Item</button>
+                        </div>
+                    </div>
+
+                    <!-- 3. Informações Financeiras e Fiscais -->
+                    <div class="config-panel">
+                        <div class="config-panel-title">3. INFORMAÇÕES FINANCEIRAS E FISCAIS</div>
+                        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 6px;">
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">SUBTOTAL</label>
+                                <input type="number" step="0.01" id="fin-subtotal" class="config-input" value="${calcSubtotal.toFixed(2)}" readonly style="width: 100%; margin-top: 4px; background: var(--bg-body);">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">DESCONTO</label>
+                                <input type="number" step="0.01" id="fin-desconto" class="config-input" value="${fin.desconto || 0}" style="width: 100%; margin-top: 4px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">FRETE</label>
+                                <input type="number" step="0.01" id="fin-frete" class="config-input" value="${fin.frete || 0}" style="width: 100%; margin-top: 4px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">IMPOSTO</label>
+                                <input type="number" step="0.01" id="fin-imposto" class="config-input" value="${fin.imposto || 0}" style="width: 100%; margin-top: 4px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">ICMS</label>
+                                <input type="number" step="0.01" id="fin-icms" class="config-input" value="${fin.icms || 0}" style="width: 100%; margin-top: 4px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.7rem; color: var(--text-muted);">OUTROS</label>
+                                <input type="number" step="0.01" id="fin-outros" class="config-input" value="${fin.outros || 0}" style="width: 100%; margin-top: 4px;">
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,183,3,0.1); border: 1px dashed var(--accent-gold); border-radius: 8px; padding: 14px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                            <span style="font-size: 0.9rem; font-weight: 700; color: var(--accent-gold);">VALOR GLOBAL FINAL:</span>
+                            <span style="font-size: 1.3rem; font-weight: 700; color: var(--accent-gold);">R$ ${valorGlobalFinal.toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <!-- 4. Gestão de Participantes -->
+                    <div class="config-panel">
+                        <div class="config-panel-title">4. GESTÃO DE PARTICIPANTES, RATEIO E COMPROVANTES DE RECIBO</div>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
+                            <input type="text" id="input-novo-participante-compra" class="config-input" placeholder="Adicionar novo participante (Ex: Carlos)" style="max-width: 320px;">
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700;" onclick="adicionarParticipanteCompra('${compraGerenciandoKey}')">+ Adicionar Participante</button>
+                        </div>
+                        <p style="font-size: 0.8rem; color: var(--accent-gold); margin-top: 4px;">💡 Dica: Marque os ativos, defina quem pagou e cole o link da imagem do recibo de pagamento no campo correspondente.</p>
+                        
+                        <div style="display: grid; grid-template-columns: 70px 2fr 100px 130px 100px 2.5fr 40px; gap: 10px; padding: 8px 12px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 8px;">
+                            <div>Ativo</div>
+                            <div>Piloto / Cotista</div>
+                            <div style="text-align: center;">Comprador</div>
+                            <div>Valor Devido</div>
+                            <div style="text-align: center;">Status (Pago)</div>
+                            <div>Link / Imagem do Recibo Pix</div>
+                            <div style="text-align: right;">Ação</div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            ${participantesHtml}
+                        </div>
+                    </div>
+
+                    <!-- 5. Chave Pix do Comprador -->
+                    <div class="config-panel">
+                        <div class="config-panel-title">5. CHAVE PIX DO COMPRADOR (RAPHAEL)</div>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
+                            <input type="text" id="det-chave-pix" class="config-input" value="${escapeHtml(comp.chavePix || '00020126580014br.gov.pix.pix0136aac94da7-9d9a-463a-b33a-b974665b3022520400005303986540546.705802BR5925LUIS RAPHAEL')}" placeholder="Chave Pix Copia e Cola">
+                            <button class="btn-action-primary" style="background: #7209b7; font-weight: 700;">📄 Upload PDF do Pix</button>
+                        </div>
+                        <div style="display: flex; justify-content: center; margin-top: 10px;">
+                            <div style="background: #fff; padding: 10px; border-radius: 8px; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center;">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=KrathusRacingPix" style="max-width: 100%; max-height: 100%;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6. Código de Rastreio -->
+                    <div class="config-panel">
+                        <div class="config-panel-title">6. CÓDIGO DE RASTREIO</div>
+                        <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)">
+                    </div>
+
+                    <!-- Botões de Ação Inferiores -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 10px;">
+                        <button class="btn-action-danger" style="background: var(--accent-red); padding: 10px 20px; font-weight: 700;" onclick="excluirCompraColetiva('${compraGerenciandoKey}')">🗑️ Excluir Compra</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-action-primary" style="background: #3a86ff; padding: 10px 20px; font-weight: 700;" onclick="finalizarCompraColetivaStatus('${compraGerenciandoKey}')">✔️ Finalizar Compra Coletiva</button>
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; padding: 10px 20px; font-weight: 700;" onclick="salvarCompraGerenciada('${compraGerenciandoKey}')">💾 Salvar Alterações</button>
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
-            container.innerHTML = keys.map(k => {
+            // Exibir a lista principal de compras coletivas (estilo do print 1)
+            if (tituloEl) tituloEl.innerHTML = `🛒 Gestão de Compras Coletivas`;
+            let keys = Object.keys(comprasColetivasCache);
+
+            if (keys.length === 0) {
+                bodyEl.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div style="color: var(--text-muted); text-align: center; padding: 20px;">Nenhuma compra coletiva cadastrada no momento. Crie uma abaixo.</div>
+                        <div class="config-panel" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 18px;">
+                            <div class="config-panel-title" style="color: var(--accent-gold);">🔒 CRIAR NOVA COMPRA COLETIVA</div>
+                            <div style="display: flex; gap: 12px; align-items: center; margin-top: 10px; flex-wrap: wrap;">
+                                <input type="text" id="input-compra-item" class="config-input" placeholder="Nome da Compra (Ex: Peças RC AliExpress)" style="flex: 2; background: var(--bg-input);">
+                                <input type="number" step="0.01" id="input-compra-preco" class="config-input" placeholder="Preço (R$)" style="flex: 0.8; background: var(--bg-input);">
+                                <input type="number" id="input-compra-qtd-min" class="config-input" placeholder="Qtd Mínima" style="flex: 0.8; background: var(--bg-input);">
+                                <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 10px 20px;" onclick="criarCompraColetiva()">Criar Compra Coletiva</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let cardsHtml = keys.map(k => {
                 let comp = comprasColetivasCache[k];
                 let status = comp.status || "EM ANDAMENTO / PENDENTE";
                 let isEntregue = status.includes("FINALIZADA") || status.includes("ENTREGUE");
@@ -975,40 +1255,39 @@
                 let statusDot = isEntregue ? "🔵" : "🟡";
 
                 let participantes = comp.participantes || {};
-                let totalCotas = Object.values(participantes).reduce((acc, p) => acc + (p.cotas || 0), 0);
-                let qtdMinima = comp.qtdMinima || 1;
-                let pct = Math.min(100, Math.round((totalCotas / qtdMinima) * 100));
+                let totalPart = Object.keys(participantes).length;
+                let pagosPart = Object.values(participantes).filter(p => p.pago).length;
+                let pct = totalPart > 0 ? Math.round((pagosPart / totalPart) * 100) : 0;
 
-                let rastreioHtml = comp.rastreio ? 
-                    `<button class="btn" style="background: rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold); padding: 6px 12px; font-size: 0.8rem;" onclick="adicionarRastreioCompra('${k}')">📦 Rastreio: ${escapeHtml(comp.rastreio)}</button>` :
-                    `<button class="btn" style="background: rgba(181,101,29,0.2); color: #d0d7e3; border: 1px solid #b5651d; padding: 6px 12px; font-size: 0.8rem;" onclick="adicionarRastreioCompra('${k}')">📦 Add Rastreio</button>`;
+                let rastreioBtn = comp.rastreio ? 
+                    `<button class="btn" style="background: rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold); padding: 6px 14px; font-size: 0.85rem;" onclick="gerenciarCompraColetiva('${k}')">📦 Rastreio: ${escapeHtml(comp.rastreio)}</button>` :
+                    `<button class="btn" style="background: rgba(181,101,29,0.2); color: #d0d7e3; border: 1px solid #b5651d; padding: 6px 14px; font-size: 0.85rem;" onclick="gerenciarCompraColetiva('${k}')">📦 Add Rastreio</button>`;
 
-                let itensImagens = comp.itensImagens || ["https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg"];
-                let itensImagensHtml = itensImagens.map(img => `<div style="background: #fff; padding: 4px; border-radius: 6px; border: 1px solid var(--border-card); display: inline-flex; width: 42px; height: 42px; align-items: center; justify-content: center;"><img src="${img}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`).join('');
+                let itens = comp.itens || [{ imagem: "" }];
+                let itensImagensHtml = itens.map(it => `<div style="background: #fff; padding: 4px; border-radius: 6px; border: 1px solid var(--border-card); display: inline-flex; width: 42px; height: 42px; align-items: center; justify-content: center;"><img src="${it.imagem || 'https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg'}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>`).join('');
 
                 return `
                     <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 5px solid ${isEntregue ? 'var(--accent-blue)' : 'var(--accent-gold)'}; border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                <span style="font-size: 1rem; font-weight: 700; color: var(--text-title);">🛒 ${escapeHtml(comp.item)}</span>
+                            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                <span style="font-size: 1.05rem; font-weight: 700; color: var(--text-title);">🛒 ${escapeHtml(comp.nome || comp.chave)}</span>
                                 <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: ${statusBadgeColor}">${statusDot} ${status}</span>
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                                <button class="btn" style="background: rgba(114,9,183,0.25); color: #e0aaff; border: 1px solid #7209b7; padding: 6px 12px; font-size: 0.8rem;" onclick="resumirCompraColetiva('${k}')">📊 Resumir</button>
-                                ${rastreioHtml}
-                                <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 6px 12px; font-size: 0.8rem;" onclick="gerenciarCompraColetiva('${k}')">⚙️ Gerenciar</button>
-                                <button class="btn-text-action" style="color: var(--accent-red); margin-left: 4px;" onclick="excluirCompraColetiva('${k}')">🗑️</button>
+                                <button class="btn" style="background: rgba(114,9,183,0.25); color: #e0aaff; border: 1px solid #7209b7; padding: 6px 14px; font-size: 0.85rem;" onclick="resumirCompraColetiva('${k}')">📊 Resumir</button>
+                                ${rastreioBtn}
+                                <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 6px 14px; font-size: 0.85rem;" onclick="gerenciarCompraColetiva('${k}')">⚙️ Gerenciar</button>
                             </div>
                         </div>
 
                         <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">ITENS (${itensImagens.length}):</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">ITENS (${itens.length}):</span>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">${itensImagensHtml}</div>
                         </div>
 
                         <div style="display: flex; flex-direction: column; gap: 6px;">
                             <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
-                                <span>STATUS DE PAGAMENTOS (${totalCotas}/${qtdMinima})</span>
+                                <span>STATUS DE PAGAMENTOS (${pagosPart}/${totalPart})</span>
                                 <span style="color: var(--accent-green);">${pct}%</span>
                             </div>
                             <div style="background: var(--bg-card); border-radius: 6px; height: 8px; width: 100%; overflow: hidden; border: 1px solid var(--border-card);">
@@ -1018,41 +1297,31 @@
                     </div>
                 `;
             }).join('');
-        }
 
-        function renderizarResumoComprasDashboard() {
-            let container = document.getElementById('dashboard-compras-container');
-            if (!container) return;
-            let keys = Object.keys(comprasColetivasCache);
-
-            if (keys.length === 0) {
-                container.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma compra coletiva ativa no momento. Clique em "Compras Coletivas" no topo para gerenciar grupos.</span>`;
-                return;
-            }
-
-            container.innerHTML = keys.map(k => {
-                let comp = comprasColetivasCache[k];
-                let participantes = comp.participantes || {};
-                let totalCotas = Object.values(participantes).reduce((acc, p) => acc + (p.cotas || 0), 0);
-                let progresso = Math.min(100, Math.round((totalCotas / (comp.qtdMinima || 1)) * 100));
-
-                return `
-                    <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 6px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <strong>🛒 ${escapeHtml(comp.item)}</strong>
-                            <span style="color: var(--accent-gold); font-size: 0.85rem;">R$ ${(comp.precoUnitario || 0).toFixed(2)} unit.</span>
-                        </div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">Progresso: ${totalCotas} de ${comp.qtdMinima} cotas mínimas (${progresso}%)</div>
-                        <div style="background: var(--bg-card); border-radius: 4px; height: 8px; width: 100%; overflow: hidden; border: 1px solid var(--border-card);">
-                            <div style="background: var(--accent-cc); width: ${progresso}%; height: 100%;"></div>
-                        </div>
-                        <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-                            <button class="btn-action-primary" style="padding: 4px 12px; font-size: 0.78rem;" onclick="abrirModalCompras()">Abrir Módulo de Compras</button>
-                        </div>
+            bodyEl.innerHTML = `
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">COMPRAS COLETIVAS CADASTRADAS</div>
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    ${cardsHtml}
+                </div>
+                <div class="config-panel" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 18px; margin-top: 10px;">
+                    <div class="config-panel-title" style="color: var(--accent-gold); border-bottom: none; padding-bottom: 0;">🔒 CRIAR NOVA COMPRA COLETIVA</div>
+                    <div style="display: flex; gap: 12px; align-items: center; margin-top: 10px; flex-wrap: wrap;">
+                        <input type="text" id="input-compra-item" class="config-input" placeholder="Nome da Compra (Ex: Peças RC AliExpress)" style="flex: 2; background: var(--bg-input);">
+                        <input type="number" step="0.01" id="input-compra-preco" class="config-input" placeholder="Preço (R$)" style="flex: 0.8; background: var(--bg-input);">
+                        <input type="number" id="input-compra-qtd-min" class="config-input" placeholder="Qtd Mínima" style="flex: 0.8; background: var(--bg-input);">
+                        <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 10px 20px;" onclick="criarCompraColetiva()">Criar Compra Coletiva</button>
                     </div>
-                `;
-            }).join('');
+                </div>
+            `;
         }
+
+        window.resumirCompraColetiva = function(compraKey) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            let participantes = comp.participantes || {};
+            let listaPart = Object.values(participantes).map(p => `- ${p.nome}: ${p.pago ? 'Pago ✅' : 'Pendente ❌'}`).join('\n') || 'Nenhum participante.';
+            alert(`📦 RESUMO DA COMPRA: ${comp.nome || comp.chave}\nStatus: ${comp.status}\nRastreio: ${comp.rastreio || 'Não informado'}\n\nParticipantes:\n${listaPart}`);
+        };
 
         window.abrirModalParticipar = function(key) {
             campeonatoParticiparKey = key;
@@ -2424,6 +2693,41 @@
                     renderizarGraficoPosicao(batKey, safeKey, ordenados);
                 }
             });
+        }
+
+        function renderizarResumoComprasDashboard() {
+            let container = document.getElementById('dashboard-compras-container');
+            if (!container) return;
+            let keys = Object.keys(comprasColetivasCache);
+
+            if (keys.length === 0) {
+                container.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma compra coletiva ativa no momento. Clique em "Compras Coletivas" no topo para gerenciar grupos.</span>`;
+                return;
+            }
+
+            container.innerHTML = keys.map(k => {
+                let comp = comprasColetivasCache[k];
+                let participantes = comp.participantes || {};
+                let totalPart = Object.keys(participantes).length;
+                let pagosPart = Object.values(participantes).filter(p => p.pago).length;
+                let progresso = totalPart > 0 ? Math.round((pagosPart / totalPart) * 100) : 0;
+
+                return `
+                    <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>🛒 ${escapeHtml(comp.nome || comp.chave)}</strong>
+                            <span style="color: var(--accent-gold); font-size: 0.85rem;">Status: ${escapeHtml(comp.status || 'Pendente')}</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Progresso de Pagamentos: ${pagosPart} de ${totalPart} participantes pagos (${progresso}%)</div>
+                        <div style="background: var(--bg-card); border-radius: 4px; height: 8px; width: 100%; overflow: hidden; border: 1px solid var(--border-card);">
+                            <div style="background: var(--accent-cc); width: ${progresso}%; height: 100%;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                            <button class="btn-action-primary" style="padding: 4px 12px; font-size: 0.78rem;" onclick="abrirModalCompras(); gerenciarCompraColetiva('${k}')">Gerenciar Compra</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
