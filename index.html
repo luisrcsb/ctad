@@ -589,7 +589,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.62.0 (Gestão Avançada de Compras Coletivas com Rateio Geral)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.63.0 (Correção de Nomes em Branco nas Compras Coletivas)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -706,7 +706,7 @@
                         snap.forEach(child => {
                             let pData = child.val();
                             let pNome = typeof pData === 'string' ? pData : (pData.nome || child.key);
-                            if (pNome && !novaLista.includes(pNome)) novaLista.push(pNome);
+                            if (pNome && pNome.trim() && !novaLista.includes(pNome.trim())) novaLista.push(pNome.trim());
                         });
                     }
                 });
@@ -795,10 +795,10 @@
         function renderizarGerenciadorPilotos() {
             let dadosBase = obterTodosDadosConsolidados();
             let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
-            dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
-            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+            dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
 
-            let listaPilotos = Array.from(pilotosSet).sort();
+            let listaPilotos = Array.from(pilotosSet).filter(p => p && p.trim()).sort();
             let tbodyApelidos = document.getElementById('tabela-pilotos-apelidos');
 
             if (listaPilotos.length === 0) {
@@ -890,11 +890,11 @@
 
             let dadosBase = obterTodosDadosConsolidados();
             let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
-            dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
-            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+            dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
 
             let participantesObj = {};
-            Array.from(pilotosSet).sort().forEach(pNome => {
+            Array.from(pilotosSet).filter(p => p && p.trim()).sort().forEach(pNome => {
                 let pKey = "part_" + pNome.toLowerCase().replace(/[^a-z0-9]/g, "_");
                 participantesObj[pKey] = {
                     nome: pNome,
@@ -944,16 +944,17 @@
         function sincronizarParticipantesCompra(comp) {
             let dadosBase = obterTodosDadosConsolidados();
             let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
-            dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
-            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+            dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
             
             if (!comp.participantes) comp.participantes = {};
 
             pilotosSet.forEach(pNome => {
+                if (!pNome || !pNome.trim()) return;
                 let pKey = "part_" + pNome.toLowerCase().replace(/[^a-z0-9]/g, "_");
                 if (!comp.participantes[pKey]) {
                     comp.participantes[pKey] = {
-                        nome: pNome,
+                        nome: pNome.trim(),
                         ativo: true,
                         comprador: false,
                         valorDevido: 0,
@@ -969,7 +970,7 @@
             let participantes = comp.participantes || {};
             let fin = comp.financeiro || { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 };
 
-            let pKeys = Object.keys(participantes);
+            let pKeys = Object.keys(participantes).filter(pk => participantes[pk] && participantes[pk].nome && participantes[pk].nome.trim() !== "");
             let activeKeys = pKeys.filter(pk => participantes[pk].ativo);
             let totalAtivos = activeKeys.length;
 
@@ -1025,11 +1026,12 @@
             document.querySelectorAll('.det-part-row').forEach(row => {
                 let pKey = row.getAttribute('data-pkey');
                 let nome = row.getAttribute('data-nome');
+                if (!nome || !nome.trim()) return; // Ignorar vazios
                 let ativo = document.getElementById(`part-ativo-${pKey}`)?.checked || false;
                 let comprador = document.getElementById(`part-comprador-${pKey}`)?.checked || false;
                 let pago = document.getElementById(`part-pago-${pKey}`)?.checked || false;
                 let recibo = document.getElementById(`part-recibo-${pKey}`)?.value || "";
-                novosParticipantes[pKey] = { nome, ativo, comprador, valorDevido: 0, pago, reciboPix: recibo };
+                novosParticipantes[pKey] = { nome: nome.trim(), ativo, comprador, valorDevido: 0, pago, reciboPix: recibo };
             });
             comp.participantes = novosParticipantes;
 
@@ -1134,10 +1136,10 @@
 
                 let dadosBase = obterTodosDadosConsolidados();
                 let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
-                dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
-                Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
-                Object.values(participantes).forEach(p => pilotosSet.add(p.nome));
-                let listaPilotosDisponiveis = Array.from(pilotosSet).sort();
+                dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+                Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
+                Object.values(participantes).forEach(p => { if (p && p.nome && p.nome.trim()) pilotosSet.add(p.nome.trim()); });
+                let listaPilotosDisponiveis = Array.from(pilotosSet).filter(p => p && p.trim()).sort();
 
                 let itensHtml = itens.map((it, idx) => {
                     let subtotalItem = (it.valor || 0) * (it.qtd || 1);
@@ -1158,7 +1160,11 @@
                     `;
                 }).join('');
 
-                let participantesKeys = Object.keys(participantes);
+                let participantesKeys = Object.keys(participantes).filter(pk => {
+                    let p = participantes[pk];
+                    return p && p.nome && p.nome.trim() !== "";
+                });
+
                 let participantesHtml = participantesKeys.map(pk => {
                     let p = participantes[pk];
                     return `
@@ -1316,8 +1322,8 @@
                 let statusDot = isEntregue ? "🔵" : "🟡";
 
                 let participantes = comp.participantes || {};
-                let totalPart = Object.keys(participantes).length;
-                let pagosPart = Object.values(participantes).filter(p => p.pago).length;
+                let totalPart = Object.keys(participantes).filter(pk => participantes[pk] && participantes[pk].nome && participantes[pk].nome.trim() !== "").length;
+                let pagosPart = Object.values(participantes).filter(p => p && p.nome && p.nome.trim() !== "" && p.pago).length;
                 let pct = totalPart > 0 ? Math.round((pagosPart / totalPart) * 100) : 0;
 
                 let rastreioBtn = comp.rastreio ? 
@@ -1380,7 +1386,7 @@
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
             let participantes = comp.participantes || {};
-            let listaPart = Object.values(participantes).map(p => `- ${p.nome}: R$ ${(p.valorDevido || 0).toFixed(2)} (${p.pago ? 'Pago ✅' : 'Pendente ❌'})`).join('\n') || 'Nenhum participante.';
+            let listaPart = Object.values(participantes).filter(p => p && p.nome && p.nome.trim() !== "").map(p => `- ${p.nome}: R$ ${(p.valorDevido || 0).toFixed(2)} (${p.pago ? 'Pago ✅' : 'Pendente ❌'})`).join('\n') || 'Nenhum participante.';
             alert(`📦 RESUMO DA COMPRA: ${comp.nome || comp.chave}\nStatus: ${comp.status}\nRastreio: ${comp.rastreio || 'Não informado'}\n\nParticipantes e Valores:\n${listaPart}`);
         };
 
@@ -1394,11 +1400,11 @@
             let select = document.getElementById('participar-select-piloto');
             let dadosBase = obterTodosDadosConsolidados();
             let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
-            dadosBase.forEach(d => { if(d.piloto) pilotosSet.add(d.piloto); });
-            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+            dadosBase.forEach(d => { if(d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
 
             let optionsHtml = `<option value="">Selecione um piloto já cadastrado no site...</option>`;
-            Array.from(pilotosSet).sort().forEach(p => {
+            Array.from(pilotosSet).filter(p => p && p.trim()).sort().forEach(p => {
                 let meta = pilotosMetadadosCache[p] || {};
                 let label = meta.apelido ? `${p} (${meta.apelido})` : p;
                 optionsHtml += `<option value="${escapeHtml(p)}">${escapeHtml(label)}</option>`;
@@ -1435,7 +1441,7 @@
         window.adicionarPilotoPorModalParticipar = async function() {
             if (!campeonatoParticiparKey || !db) return;
             let select = document.getElementById('participar-select-piloto');
-            let nomeP = select.value;
+            let nomeP = select.value.trim();
             if (!nomeP) { alert("Selecione um piloto."); return; }
 
             let camp = campeonatosCache[campeonatoParticiparKey];
@@ -1588,11 +1594,11 @@
             if (!select) return;
             let dadosBase = obterTodosDadosConsolidados();
             let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
-            dadosBase.forEach(d => { if(d.piloto) pilotosSet.add(d.piloto); });
-            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+            dadosBase.forEach(d => { if(d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
 
             let optionsHtml = `<option value="">Selecione um piloto já cadastrado no site...</option>`;
-            Array.from(pilotosSet).sort().forEach(p => {
+            Array.from(pilotosSet).filter(p => p && p.trim()).sort().forEach(p => {
                 let meta = pilotosMetadadosCache[p] || {};
                 let label = meta.apelido ? `${p} (${meta.apelido})` : p;
                 optionsHtml += `<option value="${escapeHtml(p)}">${escapeHtml(label)}</option>`;
@@ -1626,7 +1632,7 @@
         window.importarPilotoBancoGeral = async function() {
             if (!campeonatoAtivoKey || !db) return;
             let select = document.getElementById('zround-select-piloto-geral');
-            let nomeP = select.value;
+            let nomeP = select.value.trim();
             if (!nomeP) { alert("Selecione um piloto do banco geral."); return; }
             let pKey = "pil_" + nomeP.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
             try {
@@ -2283,8 +2289,8 @@
                 listaJsonsCache.forEach(arq => {
                     if (arq.dados && Array.isArray(arq.dados)) {
                         arq.dados.forEach(d => {
-                            if (!d.laps || d.laps.length === 0) return;
-                            let pilotoReal = d.piloto;
+                            if (!d.laps || d.laps.length === 0 || !d.piloto || !d.piloto.trim()) return;
+                            let pilotoReal = d.piloto.trim();
                             let safeNomeKey = pilotoReal.replace(/[.#$\/\[\]]/g, "_");
                             if (mesclagensCache[safeNomeKey]) pilotoReal = mesclagensCache[safeNomeKey];
                             let metaKey = pilotoReal;
@@ -2306,8 +2312,8 @@
             listaJsonsCache.forEach(arq => {
                 if (arq.dados && Array.isArray(arq.dados)) {
                     arq.dados.forEach(d => { 
-                        if (d.piloto && d.laps && d.laps.length > 0) {
-                            let pReal = d.piloto;
+                        if (d.piloto && d.piloto.trim() && d.laps && d.laps.length > 0) {
+                            let pReal = d.piloto.trim();
                             let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
                             if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
                             pilotosSet.add(pReal); 
@@ -2317,9 +2323,11 @@
             });
 
             Object.keys(pilotosMetadadosCache).forEach(p => {
-                let safeKey = p.replace(/[.#$\/\[\]]/g, "_");
-                let pReal = mesclagensCache[safeKey] || p;
-                pilotosSet.add(pReal);
+                if (p && p.trim()) {
+                    let safeKey = p.replace(/[.#$\/\[\]]/g, "_");
+                    let pReal = mesclagensCache[safeKey] || p.trim();
+                    pilotosSet.add(pReal);
+                }
             });
 
             if (listaJsonsCache.length === 0 && pilotosSet.size === 0) {
@@ -2342,6 +2350,7 @@
             }).join('');
 
             let listaNomesUnicos = Array.from(pilotosSet).filter(p => {
+                if (!p || !p.trim()) return false;
                 let sKey = p.replace(/[.#$\/\[\]]/g, "_");
                 if (mesclagensCache[sKey]) return false;
                 let isNomeCurtoIsolado = Array.from(pilotosSet).some(outroP => outroP !== p && outroP.includes(p) && outroP.length > p.length);
@@ -2383,11 +2392,11 @@
             
             listaJsonsCache.forEach(arq => {
                 let todosBat = (arq.dados || []).map(d => {
-                    let pReal = d.piloto;
+                    let pReal = d.piloto ? d.piloto.trim() : "";
                     let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
                     if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
                     return { ...d, piloto: pReal };
-                }).filter(d => d.laps && d.laps.length > 0);
+                }).filter(d => d.piloto && d.piloto.trim() && d.laps && d.laps.length > 0);
 
                 let ordenados = ordenarParticipantesBateria(todosBat);
                 if (ordenados.length > 0 && ordenados[0].piloto === nomePiloto) vitorias++;
@@ -2520,10 +2529,11 @@
                 let vencedorContadorGlobal = {};
                 listaJsonsCache.forEach(arq => {
                     let itensDaBateria = (arq.dados || []).map(d => {
-                        let pReal = d.piloto; let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                        let pReal = d.piloto ? d.piloto.trim() : ""; 
+                        let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
                         if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
                         return { ...d, piloto: pReal };
-                    });
+                    }).filter(d => d.piloto && d.piloto.trim());
                     let participantesValidos = itensDaBateria.filter(d => d.laps && d.laps.length > 0);
                     let ordenados = ordenarParticipantesBateria(participantesValidos);
                     if (ordenados.length > 0) {
@@ -2769,8 +2779,8 @@
             container.innerHTML = keys.map(k => {
                 let comp = comprasColetivasCache[k];
                 let participantes = comp.participantes || {};
-                let totalPart = Object.keys(participantes).length;
-                let pagosPart = Object.values(participantes).filter(p => p.pago).length;
+                let totalPart = Object.keys(participantes).filter(pk => participantes[pk] && participantes[pk].nome && participantes[pk].nome.trim() !== "").length;
+                let pagosPart = Object.values(participantes).filter(p => p && p.nome && p.nome.trim() !== "" && p.pago).length;
                 let progresso = totalPart > 0 ? Math.round((pagosPart / totalPart) * 100) : 0;
 
                 return `
