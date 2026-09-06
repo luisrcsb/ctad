@@ -589,7 +589,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.61.0 (Gestão Avançada de Compras Coletivas)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.62.0 (Gestão Avançada de Compras Coletivas com Rateio Geral)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -623,7 +623,7 @@
         let mesclagensCache = {};
         let campeonatoAtivoKey = null;
         let campeonatoParticiparKey = null;
-        let compraGerenciandoKey = null; // null = exibe lista, string = exibe tela de gerenciar compra
+        let compraGerenciandoKey = null;
 
         try {
             firebase.initializeApp(firebaseConfig);
@@ -752,7 +752,7 @@
                     
                     listaJsonsCache.sort((a, b) => {
                         let nomeA = a.sessao || (a.dados && a.dados[0] ? a.dados[0].sessao : '') || '';
-                        let nomeB = sessaoStr = b.sessao || (b.dados && b.dados[0] ? b.dados[0].sessao : '') || '';
+                        let nomeB = b.sessao || (b.dados && b.dados[0] ? b.dados[0].sessao : '') || '';
                         return extrairPesoOrdenacao(nomeB) - extrairPesoOrdenacao(nomeA);
                     });
 
@@ -885,6 +885,30 @@
             let qtdMin = parseInt(document.getElementById('input-compra-qtd-min').value, 10) || 1;
 
             if (!item) { alert("Informe o nome da compra ou peça."); return; }
+
+            // Obter todos os pilotos cadastrados para popular inicial dos participantes
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set();
+            dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
+            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+            if (pilotosSet.size === 0) {
+                pilotosSet.add("Raphael");
+                pilotosSet.add("DJ Edgard");
+            }
+
+            let participantesObj = {};
+            Array.from(pilotosSet).sort().forEach(pNome => {
+                let pKey = "part_" + pNome.toLowerCase().replace(/[^a-z0-9]/g, "_");
+                participantesObj[pKey] = {
+                    nome: pNome,
+                    ativo: true,
+                    comprador: (pNome === "Raphael"),
+                    valorDevido: 0,
+                    pago: (pNome === "Raphael"),
+                    reciboPix: ""
+                };
+            });
+
             let compraKey = "compra_" + Date.now();
             let novaCompra = {
                 chave: compraKey,
@@ -896,12 +920,9 @@
                 financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
                 chavePix: "",
                 itens: [
-                    { imagem: "", descricao: item, link: "", valor: preco, qtd: 1, atribuidoA: "Raphael" }
+                    { imagem: "", descricao: item, link: "", valor: preco, qtd: 1, atribuidoA: "TODOS" }
                 ],
-                participantes: {
-                    "part_raphael": { nome: "Raphael", ativo: true, comprador: true, valorDevido: 0, pago: true, reciboPix: "" },
-                    "part_dj_edgard": { nome: "DJ Edgard", ativo: true, comprador: false, valorDevido: 0, pago: true, reciboPix: "" }
-                }
+                participantes: participantesObj
             };
 
             try {
@@ -923,16 +944,63 @@
             renderizarModalComprasColetivas();
         };
 
+        function sincronizarParticipantesCompra(comp) {
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set();
+            dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
+            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+            
+            if (!comp.participantes) comp.participantes = {};
+
+            // Garantir que todos os pilotos conhecidos estejam em comp.participantes
+            pilotosSet.forEach(pNome => {
+                let pKey = "part_" + pNome.toLowerCase().replace(/[^a-z0-9]/g, "_");
+                if (!comp.participantes[pKey]) {
+                    comp.participantes[pKey] = {
+                        nome: pNome,
+                        ativo: true,
+                        comprador: false,
+                        valorDevido: 0,
+                        pago: false,
+                        reciboPix: ""
+                    };
+                }
+            });
+        }
+
+        function calcularValoresDevidosCompra(comp) {
+            let itens = comp.itens || [];
+            let participantes = comp.participantes || {};
+            let fin = comp.financeiro || { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 };
+
+            let pKeys = Object.keys(participantes);
+            let activeKeys = pKeys.filter(pk => participantes[pk].ativo);
+            let totalAtivos = activeKeys.length;
+
+            let ajusteTotal = -(fin.desconto || 0) + (fin.frete || 0) + (fin.imposto || 0) + (fin.icms || 0) + (fin.outros || 0);
+            let ajustePorAtivo = totalAtivos > 0 ? (ajusteTotal / totalAtivos) : 0;
+
+            let totalItensTodos = itens.filter(it => it.atribuidoA === 'TODOS').reduce((acc, it) => acc + ((it.valor || 0) * (it.qtd || 1)), 0);
+            let valorTodosPorAtivo = totalAtivos > 0 ? (totalItensTodos / totalAtivos) : 0;
+
+            pKeys.forEach(pk => {
+                let p = participantes[pk];
+                let specificCost = itens.filter(it => it.atribuidoA === p.nome).reduce((acc, it) => acc + ((it.valor || 0) * (it.qtd || 1)), 0);
+                let sharedCost = p.ativo ? valorTodosPorAtivo : 0;
+                let adjCost = p.ativo ? ajustePorAtivo : 0;
+                let totalDevido = specificCost + sharedCost + adjCost;
+                p.valorDevido = parseFloat(totalDevido.toFixed(2));
+            });
+        }
+
         window.salvarCompraGerenciada = async function(compraKey) {
             if (!db) return;
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
 
-            // Coletar dados da interface
             let nomeInput = document.getElementById('det-nome-compra');
             if (nomeInput) comp.nome = nomeInput.value.trim();
 
-            // Financeiro
             comp.financeiro = {
                 subtotal: parseFloat(document.getElementById('fin-subtotal')?.value) || 0,
                 desconto: parseFloat(document.getElementById('fin-desconto')?.value) || 0,
@@ -945,7 +1013,6 @@
             comp.chavePix = document.getElementById('det-chave-pix')?.value.trim() || "";
             comp.rastreio = document.getElementById('det-rastreio')?.value.trim() || "";
 
-            // Coletar itens da tabela
             let novasItens = [];
             document.querySelectorAll('.det-item-row').forEach(row => {
                 let idx = row.getAttribute('data-index');
@@ -953,12 +1020,11 @@
                 let link = document.getElementById(`item-link-${idx}`)?.value || "";
                 let val = parseFloat(document.getElementById(`item-val-${idx}`)?.value) || 0;
                 let qtd = parseInt(document.getElementById(`item-qtd-${idx}`)?.value, 10) || 1;
-                let atribuido = document.getElementById(`item-atr-${idx}`)?.value || "Raphael";
+                let atribuido = document.getElementById(`item-atr-${idx}`)?.value || "TODOS";
                 novasItens.push({ imagem: "", descricao: desc, link: link, valor: val, qtd: qtd, atribuidoA: atribuido });
             });
             comp.itens = novasItens;
 
-            // Coletar participantes da tabela
             let novosParticipantes = {};
             document.querySelectorAll('.det-part-row').forEach(row => {
                 let pKey = row.getAttribute('data-pkey');
@@ -971,6 +1037,9 @@
             });
             comp.participantes = novosParticipantes;
 
+            // Recalcular valores devidos com base na nova atribuição (TODOS vs Individual) e rateios
+            calcularValoresDevidosCompra(comp);
+
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
                 alert("Alterações salvas com sucesso!");
@@ -982,7 +1051,7 @@
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
             if (!comp.itens) comp.itens = [];
-            comp.itens.push({ imagem: "", descricao: "Novo Item", link: "", valor: 0.0, qtd: 1, atribuidoA: "Raphael" });
+            comp.itens.push({ imagem: "", descricao: "Novo Item", link: "", valor: 0.0, qtd: 1, atribuidoA: "TODOS" });
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
                 renderizarModalComprasColetivas();
@@ -1054,20 +1123,20 @@
             let bodyEl = document.getElementById('compras-modal-body');
             if (!bodyEl) return;
 
-            // Se estiver gerenciando uma compra específica, exibe as 6 seções detalhadas idênticas aos prints
             if (compraGerenciandoKey && comprasColetivasCache[compraGerenciandoKey]) {
                 let comp = comprasColetivasCache[compraGerenciandoKey];
+                sincronizarParticipantesCompra(comp);
+                calcularValoresDevidosCompra(comp);
+
                 if (tituloEl) tituloEl.innerHTML = `🛒 Gestão de Compras Coletivas`;
 
                 let itens = comp.itens || [];
                 let participantes = comp.participantes || {};
                 let fin = comp.financeiro || { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 };
 
-                // Calcular subtotal com base nos itens
                 let calcSubtotal = itens.reduce((acc, it) => acc + ((it.valor || 0) * (it.qtd || 1)), 0);
                 let valorGlobalFinal = calcSubtotal - (fin.desconto || 0) + (fin.frete || 0) + (fin.imposto || 0) + (fin.icms || 0) + (fin.outros || 0);
 
-                // Listagem de pilotos disponíveis para o select de atribuição
                 let dadosBase = obterTodosDadosConsolidados();
                 let pilotosSet = new Set();
                 dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
@@ -1077,13 +1146,15 @@
 
                 let itensHtml = itens.map((it, idx) => {
                     let subtotalItem = (it.valor || 0) * (it.qtd || 1);
-                    let optionsPilotos = listaPilotosDisponiveis.map(p => `<option value="${escapeHtml(p)}" ${it.atribuidoA === p ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('');
+                    let optionsPilotos = `<option value="TODOS" ${it.atribuidoA === 'TODOS' ? 'selected' : ''}>TODOS (Rateio)</option>` +
+                        listaPilotosDisponiveis.map(p => `<option value="${escapeHtml(p)}" ${it.atribuidoA === p ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('');
+                    
                     return `
                         <div class="det-item-row" data-index="${idx}" style="display: grid; grid-template-columns: 50px 2fr 1.5fr 100px 70px 110px 1.5fr 40px; gap: 10px; align-items: center; margin-bottom: 10px;">
                             <div style="background: #fff; border-radius: 6px; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;"><img src="${it.imagem || 'https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg'}" style="max-width: 36px; max-height: 36px; object-fit: contain;"></div>
                             <input type="text" id="item-desc-${idx}" class="config-input" value="${escapeHtml(it.descricao || '')}" placeholder="Descrição do item">
                             <input type="text" id="item-link-${idx}" class="config-input" value="${escapeHtml(it.link || '')}" placeholder="Link">
-                            <input type="number" step="0.01" id="item-val-${idx}" class="config-input" value="${it.valor || 0}" placeholder="Valor">
+                            <input type="number" step="0.001" id="item-val-${idx}" class="config-input" value="${it.valor || 0}" placeholder="Valor">
                             <input type="number" id="item-qtd-${idx}" class="config-input" value="${it.qtd || 1}" placeholder="Qtd">
                             <span style="color: var(--accent-gold); font-weight: 700; font-size: 0.9rem;">R$ ${subtotalItem.toFixed(2)}</span>
                             <select id="item-atr-${idx}" class="config-select">${optionsPilotos}</select>
@@ -1093,18 +1164,14 @@
                 }).join('');
 
                 let participantesKeys = Object.keys(participantes);
-                let totalAtivos = participantesKeys.filter(pk => participantes[pk].ativo).length;
-                let valorPorAtivo = totalAtivos > 0 ? (valorGlobalFinal / totalAtivos) : 0;
-
                 let participantesHtml = participantesKeys.map(pk => {
                     let p = participantes[pk];
-                    let valorDevidoCalc = p.ativo ? valorPorAtivo : 0;
                     return `
                         <div class="det-part-row" data-pkey="${pk}" data-nome="${escapeHtml(p.nome)}" style="display: grid; grid-template-columns: 70px 2fr 100px 130px 100px 2.5fr 40px; gap: 10px; align-items: center; background: rgba(21,28,40,0.6); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-card); margin-bottom: 8px;">
                             <div style="text-align: center;"><input type="checkbox" id="part-ativo-${pk}" ${p.ativo ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-green); cursor: pointer;"></div>
                             <div><strong>${escapeHtml(p.nome)}</strong></div>
                             <div style="text-align: center;"><input type="radio" name="comprador_radio" id="part-comprador-${pk}" ${p.comprador ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-blue); cursor: pointer;"></div>
-                            <div style="color: var(--accent-gold); font-weight: 700;">R$ ${valorDevidoCalc.toFixed(2)}</div>
+                            <div style="color: var(--accent-gold); font-weight: 700;">R$ ${(p.valorDevido || 0).toFixed(2)}</div>
                             <div style="text-align: center;"><input type="checkbox" id="part-pago-${pk}" ${p.pago ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-green); cursor: pointer;"></div>
                             <div><input type="text" id="part-recibo-${pk}" class="config-input" value="${escapeHtml(p.reciboPix || '')}" placeholder="Cole a URL da imagem do recibo" style="width: 100%;"></div>
                             <div style="text-align: right;"><button class="btn-action-danger" style="padding: 6px 10px;" onclick="removerParticipanteCompra('${compraGerenciandoKey}', '${pk}')">🗑️</button></div>
@@ -1225,7 +1292,6 @@
                 return;
             }
 
-            // Exibir a lista principal de compras coletivas (estilo do print 1)
             if (tituloEl) tituloEl.innerHTML = `🛒 Gestão de Compras Coletivas`;
             let keys = Object.keys(comprasColetivasCache);
 
@@ -1319,8 +1385,8 @@
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
             let participantes = comp.participantes || {};
-            let listaPart = Object.values(participantes).map(p => `- ${p.nome}: ${p.pago ? 'Pago ✅' : 'Pendente ❌'}`).join('\n') || 'Nenhum participante.';
-            alert(`📦 RESUMO DA COMPRA: ${comp.nome || comp.chave}\nStatus: ${comp.status}\nRastreio: ${comp.rastreio || 'Não informado'}\n\nParticipantes:\n${listaPart}`);
+            let listaPart = Object.values(participantes).map(p => `- ${p.nome}: R$ ${(p.valorDevido || 0).toFixed(2)} (${p.pago ? 'Pago ✅' : 'Pendente ❌'})`).join('\n') || 'Nenhum participante.';
+            alert(`📦 RESUMO DA COMPRA: ${comp.nome || comp.chave}\nStatus: ${comp.status}\nRastreio: ${comp.rastreio || 'Não informado'}\n\nParticipantes e Valores:\n${listaPart}`);
         };
 
         window.abrirModalParticipar = function(key) {
