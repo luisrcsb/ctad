@@ -552,7 +552,6 @@
                             <label class="checkbox-item"><input type="checkbox" value="mod-log-posicao" class="filter-modulo" checked onchange="atualizarDashboard()"> 📝 Relatório de Ultrapassagens</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-classificacao-analise" class="filter-modulo" checked onchange="atualizarDashboard()"> 📋 Laudo Técnico</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked onchange="atualizarDashboard()"> ⏱️ Tabela Geral Volta a Volta com Gaps</label>
-                            <label class="checkbox-item"><input type="checkbox" value="mod-compras" class="filter-modulo" checked onchange="atualizarDashboard()"> 🛒 Compras Coletivas Ativas</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-comentarios" class="filter-modulo" checked onchange="atualizarDashboard()"> 💬 Comentários e Reações</label>
                         </div>
                     </div>
@@ -589,7 +588,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.63.0 (Correção de Nomes em Branco nas Compras Coletivas)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.64.0 (Remoção do Modulo de Compras do Dashboard Principal)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -2604,20 +2603,6 @@
             if (!mainContainer) return;
             mainContainer.innerHTML = '';
 
-            if (modulosSel.includes('mod-compras')) {
-                let cardComprasGlobal = document.createElement('div');
-                cardComprasGlobal.className = 'card';
-                cardComprasGlobal.style.borderLeft = '5px solid var(--accent-cc)';
-                cardComprasGlobal.innerHTML = `
-                    <div class="card-header" style="color: var(--accent-cc);">🛒 Compras Coletivas Ativas (Grupo Krathus Racing)</div>
-                    <div id="dashboard-compras-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-                        <span style="color: var(--text-muted); font-size: 0.85rem;">Carregando resumo de compras coletivas...</span>
-                    </div>
-                `;
-                mainContainer.appendChild(cardComprasGlobal);
-                renderizarResumoComprasDashboard();
-            }
-
             if (dadosBase.length === 0 || bateriasSel.length === 0) return;
 
             bateriasSel.forEach(batKey => {
@@ -2764,41 +2749,6 @@
                     renderizarGraficoPosicao(batKey, safeKey, ordenados);
                 }
             });
-        }
-
-        function renderizarResumoComprasDashboard() {
-            let container = document.getElementById('dashboard-compras-container');
-            if (!container) return;
-            let keys = Object.keys(comprasColetivasCache);
-
-            if (keys.length === 0) {
-                container.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma compra coletiva ativa no momento. Clique em "Compras Coletivas" no topo para gerenciar grupos.</span>`;
-                return;
-            }
-
-            container.innerHTML = keys.map(k => {
-                let comp = comprasColetivasCache[k];
-                let participantes = comp.participantes || {};
-                let totalPart = Object.keys(participantes).filter(pk => participantes[pk] && participantes[pk].nome && participantes[pk].nome.trim() !== "").length;
-                let pagosPart = Object.values(participantes).filter(p => p && p.nome && p.nome.trim() !== "" && p.pago).length;
-                let progresso = totalPart > 0 ? Math.round((pagosPart / totalPart) * 100) : 0;
-
-                return `
-                    <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 6px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <strong>🛒 ${escapeHtml(comp.nome || comp.chave)}</strong>
-                            <span style="color: var(--accent-gold); font-size: 0.85rem;">Status: ${escapeHtml(comp.status || 'Pendente')}</span>
-                        </div>
-                        <div style="font-size: 0.8rem; color: var(--text-muted);">Progresso de Pagamentos: ${pagosPart} de ${totalPart} participantes pagos (${progresso}%)</div>
-                        <div style="background: var(--bg-card); border-radius: 4px; height: 8px; width: 100%; overflow: hidden; border: 1px solid var(--border-card);">
-                            <div style="background: var(--accent-cc); width: ${progresso}%; height: 100%;"></div>
-                        </div>
-                        <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
-                            <button class="btn-action-primary" style="padding: 4px 12px; font-size: 0.78rem;" onclick="abrirModalCompras(); gerenciarCompraColetiva('${k}')">Gerenciar Compra</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
         }
 
         function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
