@@ -395,10 +395,12 @@
                         <!-- Aba 5 -->
                         <div id="zround-aba-5" class="zround-aba-content" style="display: none; flex-direction: column; gap: 12px;">
                             <div class="config-panel">
-                                <div class="config-panel-title">Classificação Geral do Campeonato</div>
+                                <div class="config-panel-title">Classificação Geral do Campeonato (Discriminação por Prova)</div>
                                 <div class="table-container" style="margin-top: 6px;">
-                                    <table>
-                                        <thead><tr><th>Pos</th><th>Piloto</th><th style="text-align: right;">Pontos Totais</th></tr></thead>
+                                    <table id="zround-tabela-classificacao-completa">
+                                        <thead id="zround-thead-classificacao">
+                                            <tr><th>Pos</th><th>Piloto</th><th style="text-align: right;">Total</th></tr>
+                                        </thead>
                                         <tbody id="zround-tabela-classificacao-geral">
                                             <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pontuação computada.</td></tr>
                                         </tbody>
@@ -414,7 +416,6 @@
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- Gestão de Pilotos (Modal Novo) -->
     <div id="pilotos-gestao-modal" class="custom-modal">
@@ -571,7 +572,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.57.0 (Gestão Avançada de Pilotos e Mesclagens)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.58.0 (Classificação Geral Discriminada por Prova)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -1399,27 +1400,39 @@
             }
             containerGrids.innerHTML = gridsHtml;
 
+            let theadEl = document.getElementById('zround-thead-classificacao');
             let tbodyClass = document.getElementById('zround-tabela-classificacao-geral');
+            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
             let ranking = calcularClassificacaoBancoSeparado(camp);
+
+            let thProvasHtml = provasArr.map((arq, idx) => `<th style="text-align: center;">P${idx + 1}</th>`).join('');
+            theadEl.innerHTML = `<tr><th>Pos</th><th>Piloto</th>${thProvasHtml}<th style="text-align: right;">Total</th></tr>`;
+
             if (ranking.length === 0) {
-                tbodyClass.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pontuação computada no banco separado.</td></tr>`;
+                let colCount = 3 + provasArr.length;
+                tbodyClass.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: var(--text-muted);">Sem pontuação computada no banco separado.</td></tr>`;
             } else {
-                tbodyClass.innerHTML = ranking.map((r, idx) => `
-                    <tr>
-                        <td><span class="pos-badge">${idx + 1}º</span></td>
-                        <td><strong><a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(r.piloto)}')">${escapeHtml(r.piloto)}</a></strong></td>
-                        <td style="text-align: right; color: var(--accent-gold); font-weight: 700;">${r.pontos} pts</td>
-                    </tr>`).join('');
+                tbodyClass.innerHTML = ranking.map((r, idx) => {
+                    let provasCelulasHtml = (r.provas || []).map(pts => `<td style="text-align: center; color: ${pts > 0 ? 'var(--text-main)' : 'var(--text-muted)'};">${pts} pts</td>`).join('');
+                    return `
+                        <tr>
+                            <td><span class="pos-badge">${idx + 1}º</span></td>
+                            <td><strong><a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(r.piloto)}')">${escapeHtml(r.piloto)}</a></strong></td>
+                            ${provasCelulasHtml}
+                            <td style="text-align: right; color: var(--accent-gold); font-weight: 700;">${r.pontos} pts</td>
+                        </tr>`;
+                }).join('');
             }
         }
 
         function calcularClassificacaoBancoSeparado(camp) {
             let provasSep = camp.bateriasBancoSeparado || {};
+            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
             let conf = camp.configuracoes || {};
             let tabelaPontosArr = conf.pontuacaoTabela || [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
-            let pilotoPontos = {};
+            let pilotoDados = {};
 
-            Object.values(provasSep).forEach(arq => {
+            provasArr.forEach((arq, provaIndex) => {
                 if (arq && arq.dados) {
                     arq.dados.forEach(d => {
                         if (!d.laps || d.laps.length === 0) return;
@@ -1430,17 +1443,24 @@
                             let sKey = pNome.replace(/[.#$\/\[\]]/g, "_");
                             if (mesclagensCache[sKey]) pNome = mesclagensCache[sKey];
 
-                            if (!pilotoPontos[pNome]) pilotoPontos[pNome] = 0;
-                            pilotoPontos[pNome] += pts;
+                            if (!pilotoDados[pNome]) {
+                                pilotoDados[pNome] = {
+                                    piloto: pNome,
+                                    provas: new Array(provasArr.length).fill(0),
+                                    pontos: 0
+                                };
+                            }
+                            pilotoDados[pNome].provas[provaIndex] = pts;
                         }
                     });
                 }
             });
 
-            let ranking = [];
-            for (let [piloto, pontos] of Object.entries(pilotoPontos)) {
-                ranking.push({ piloto, pontos });
-            }
+            let ranking = Object.values(pilotoDados).map(p => {
+                while(p.provas.length < provasArr.length) p.provas.push(0);
+                p.pontos = p.provas.reduce((acc, val) => acc + val, 0);
+                return p;
+            });
             ranking.sort((a, b) => b.pontos - a.pontos);
             return ranking;
         }
