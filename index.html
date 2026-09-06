@@ -613,6 +613,8 @@
             databaseURL: "https://krathus-telemetria-default-rtdb.firebaseio.com"
         };
 
+        const PILOTOS_CORE_PADRAO = ["DJ Edgard", "Gustavo", "Henrique", "Raphael", "Ronaldo"];
+
         let db = null;
         let listaJsonsCache = [];
         let campeonatosCache = {};
@@ -792,7 +794,7 @@
 
         function renderizarGerenciadorPilotos() {
             let dadosBase = obterTodosDadosConsolidados();
-            let pilotosSet = new Set();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
             dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
             Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
 
@@ -886,15 +888,10 @@
 
             if (!item) { alert("Informe o nome da compra ou peça."); return; }
 
-            // Obter todos os pilotos cadastrados para popular inicial dos participantes
             let dadosBase = obterTodosDadosConsolidados();
-            let pilotosSet = new Set();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
             dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
             Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
-            if (pilotosSet.size === 0) {
-                pilotosSet.add("Raphael");
-                pilotosSet.add("DJ Edgard");
-            }
 
             let participantesObj = {};
             Array.from(pilotosSet).sort().forEach(pNome => {
@@ -946,13 +943,12 @@
 
         function sincronizarParticipantesCompra(comp) {
             let dadosBase = obterTodosDadosConsolidados();
-            let pilotosSet = new Set();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
             dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
             Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
             
             if (!comp.participantes) comp.participantes = {};
 
-            // Garantir que todos os pilotos conhecidos estejam em comp.participantes
             pilotosSet.forEach(pNome => {
                 let pKey = "part_" + pNome.toLowerCase().replace(/[^a-z0-9]/g, "_");
                 if (!comp.participantes[pKey]) {
@@ -1037,7 +1033,6 @@
             });
             comp.participantes = novosParticipantes;
 
-            // Recalcular valores devidos com base na nova atribuição (TODOS vs Individual) e rateios
             calcularValoresDevidosCompra(comp);
 
             try {
@@ -1138,7 +1133,7 @@
                 let valorGlobalFinal = calcSubtotal - (fin.desconto || 0) + (fin.frete || 0) + (fin.imposto || 0) + (fin.icms || 0) + (fin.outros || 0);
 
                 let dadosBase = obterTodosDadosConsolidados();
-                let pilotosSet = new Set();
+                let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
                 dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
                 Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
                 Object.values(participantes).forEach(p => pilotosSet.add(p.nome));
@@ -1398,7 +1393,7 @@
             
             let select = document.getElementById('participar-select-piloto');
             let dadosBase = obterTodosDadosConsolidados();
-            let pilotosSet = new Set();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
             dadosBase.forEach(d => { if(d.piloto) pilotosSet.add(d.piloto); });
             Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
 
@@ -1592,7 +1587,7 @@
             let select = document.getElementById('zround-select-piloto-geral');
             if (!select) return;
             let dadosBase = obterTodosDadosConsolidados();
-            let pilotosSet = new Set();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
             dadosBase.forEach(d => { if(d.piloto) pilotosSet.add(d.piloto); });
             Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
 
@@ -2307,7 +2302,7 @@
             const pilContainer = document.getElementById('filtro-pilotos-container');
             if (!batContainer || !pilContainer) return;
 
-            const pilotosSet = new Set();
+            const pilotosSet = new Set(PILOTOS_CORE_PADRAO);
             listaJsonsCache.forEach(arq => {
                 if (arq.dados && Array.isArray(arq.dados)) {
                     arq.dados.forEach(d => { 
@@ -2327,7 +2322,7 @@
                 pilotosSet.add(pReal);
             });
 
-            if (listaJsonsCache.length === 0) {
+            if (listaJsonsCache.length === 0 && pilotosSet.size === 0) {
                 batContainer.innerHTML = `<span style="font-size:0.85rem; color: var(--text-muted);">Nenhum arquivo.</span>`;
                 pilContainer.innerHTML = `<span style="font-size:0.85rem; color: var(--text-muted);">Nenhum piloto.</span>`;
                 return;
