@@ -56,6 +56,7 @@
         .btn-pdf-global { background: linear-gradient(135deg, #ff5722 0%, #e63946 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; }
         .btn-upload-modal-trigger { background: linear-gradient(135deg, #3a86ff 0%, #2ec4b6 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         .btn-campeonatos-trigger { background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%); color: #000; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-pilotos-trigger { background: linear-gradient(135deg, #7209b7 0%, #4cc9f0 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         
         .btn-share { background: rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
         .btn-like { background: rgba(230, 57, 70, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
@@ -415,6 +416,50 @@
         </div>
     </div>
 
+    <!-- Gestão de Pilotos (Modal Novo) -->
+    <div id="pilotos-gestao-modal" class="custom-modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <div class="modal-title">👤 Gestão e Configuração de Pilotos</div>
+                <button class="modal-close" onclick="fecharModalPilotos()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="config-panel">
+                    <div class="config-panel-title">Apelidos e Nomes de Exibição</div>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">Defina apelidos para exibição personalizada nos gráficos, tabelas e pódios.</p>
+                    <div class="table-container" style="margin-top: 10px;">
+                        <table>
+                            <thead><tr><th>Piloto Original</th><th>Apelido / Nome Exibição</th><th style="text-align: right;">Ação</th></tr></thead>
+                            <tbody id="tabela-pilotos-apelidos">
+                                <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Carregando pilotos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="config-panel">
+                    <div class="config-panel-title">Mesclagem de Pilotos (Aliases / Unificação)</div>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">Mapeie variações de nomes ou digitações incorretas para um único piloto oficial.</p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px;">
+                        <input type="text" id="input-alias-nome" class="config-input" placeholder="Nome alternativo (ex: Edgar)">
+                        <select id="select-alias-destino" class="config-select">
+                            <option value="">Selecione o piloto oficial principal...</option>
+                        </select>
+                        <button class="btn-action-primary" onclick="adicionarMesclagemPiloto()">Adicionar Mesclagem</button>
+                    </div>
+                    <div class="table-container" style="margin-top: 10px;">
+                        <table>
+                            <thead><tr><th>Nome Alternativo (Alias)</th><th>Piloto Oficial Principal</th><th style="text-align: right;">Ação</th></tr></thead>
+                            <tbody id="tabela-pilotos-mesclagens">
+                                <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhuma mesclagem cadastrada.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Participar do Campeonato -->
     <div id="participar-campeonato-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 600px; border-top-color: var(--accent-gold);">
@@ -455,6 +500,7 @@
             <div class="header-actions">
                 <button class="btn btn-upload-modal-trigger" onclick="abrirModalUpload()">📤 Uploads</button>
                 <button class="btn btn-campeonatos-trigger" onclick="abrirModalCampeonatos()">🏆 Championship Manager</button>
+                <button class="btn btn-pilotos-trigger" onclick="abrirModalPilotos()">👤 Pilotos</button>
                 <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
             </div>
         </header>
@@ -525,7 +571,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.56.0 (Tabela Geral Volta a Volta com Gaps e Liderança por Volta)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.57.0 (Gestão Avançada de Pilotos e Mesclagens)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -696,6 +742,14 @@
         window.abrirModalUpload = function() { document.getElementById('upload-modal').style.display = 'flex'; };
         window.fecharModalUpload = function() { document.getElementById('upload-modal').style.display = 'none'; };
 
+        window.abrirModalPilotos = function() {
+            document.getElementById('pilotos-gestao-modal').style.display = 'flex';
+            renderizarGerenciadorPilotos();
+        };
+        window.fecharModalPilotos = function() {
+            document.getElementById('pilotos-gestao-modal').style.display = 'none';
+        };
+
         window.abrirModalCampeonatos = function() {
             document.getElementById('campeonatos-modal').style.display = 'flex';
             renderizarListaCampeonatosModal();
@@ -703,6 +757,94 @@
             preencherSelectProvasBancoPrincipal();
         };
         window.fecharModalCampeonatos = function() { document.getElementById('campeonatos-modal').style.display = 'none'; };
+
+        function renderizarGerenciadorPilotos() {
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set();
+            dadosBase.forEach(d => { if (d.piloto) pilotosSet.add(d.piloto); });
+            Object.keys(pilotosMetadadosCache).forEach(p => pilotosSet.add(p));
+
+            let listaPilotos = Array.from(pilotosSet).sort();
+            let tbodyApelidos = document.getElementById('tabela-pilotos-apelidos');
+
+            if (listaPilotos.length === 0) {
+                tbodyApelidos.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum piloto encontrado.</td></tr>`;
+            } else {
+                tbodyApelidos.innerHTML = listaPilotos.map(p => {
+                    let meta = pilotosMetadadosCache[p] || {};
+                    let apelidoVal = meta.apelido || "";
+                    let safeId = p.replace(/[^a-zA-Z0-9]/g, "_");
+                    return `
+                        <tr>
+                            <td><strong>${escapeHtml(p)}</strong></td>
+                            <td><input type="text" id="input-apelido-${safeId}" class="config-input" value="${escapeHtml(apelidoVal)}" placeholder="Digite um apelido..."></td>
+                            <td style="text-align: right;"><button class="btn-action-primary" style="padding: 5px 12px; font-size: 0.8rem;" onclick="salvarApelidoPiloto('${escapeHtml(p)}', '${safeId}')">Salvar</button></td>
+                        </tr>`;
+                }).join('');
+            }
+
+            let selectDestino = document.getElementById('select-alias-destino');
+            selectDestino.innerHTML = `<option value="">Selecione o piloto oficial principal...</option>` + listaPilotos.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+
+            let tbodyMesclagens = document.getElementById('tabela-pilotos-mesclagens');
+            let aliasKeys = Object.keys(mesclagensCache);
+            if (aliasKeys.length === 0) {
+                tbodyMesclagens.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhuma mesclagem cadastrada.</td></tr>`;
+            } else {
+                tbodyMesclagens.innerHTML = aliasKeys.map(alias => {
+                    let alvo = mesclagensCache[alias];
+                    return `
+                        <tr>
+                            <td><strong>${escapeHtml(alias)}</strong></td>
+                            <td><span style="color: var(--accent-gold);">${escapeHtml(alvo)}</span></td>
+                            <td style="text-align: right;"><button class="btn-text-action" style="color: var(--accent-red);" onclick="removerMesclagemPiloto('${escapeHtml(alias)}')">Remover</button></td>
+                        </tr>`;
+                }).join('');
+            }
+        }
+
+        window.salvarApelidoPiloto = async function(nomePiloto, safeId) {
+            if (!db) return;
+            let inputEl = document.getElementById(`input-apelido-${safeId}`);
+            let novoApelido = inputEl ? inputEl.value.trim() : "";
+            let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
+            try {
+                await db.ref(`pilotosMetadados/${metaKey}/apelido`).set(novoApelido);
+                alert(`Apelido para "${nomePiloto}" salvo com sucesso!`);
+                renderizarGerenciadorPilotos();
+                atualizarDashboard();
+            } catch (err) { alert("Erro ao salvar apelido: " + err.message); }
+        };
+
+        window.adicionarMesclagemPiloto = async function() {
+            if (!db) return;
+            let aliasInput = document.getElementById('input-alias-nome').value.trim();
+            let destinoSelect = document.getElementById('select-alias-destino').value;
+
+            if (!aliasInput || !destinoSelect) { alert("Preencha o nome alternativo e selecione o piloto de destino principal."); return; }
+            if (aliasInput.toLowerCase() === destinoSelect.toLowerCase()) { alert("O nome alternativo não pode ser igual ao destino principal."); return; }
+
+            let aliasKey = aliasInput.replace(/[.#$\/\[\]]/g, "_");
+            try {
+                await db.ref(`mesclagensPilotos/${aliasKey}`).set(destinoSelect);
+                document.getElementById('input-alias-nome').value = "";
+                alert(`Mesclagem de "${aliasInput}" para "${destinoSelect}" salva com sucesso!`);
+                renderizarGerenciadorPilotos();
+                atualizarDashboard();
+            } catch (err) { alert("Erro ao adicionar mesclagem: " + err.message); }
+        };
+
+        window.removerMesclagemPiloto = async function(aliasKey) {
+            if (!db) return;
+            if (confirm(`Deseja remover a mesclagem do alias "${aliasKey}"?`)) {
+                let safeKey = aliasKey.replace(/[.#$\/\[\]]/g, "_");
+                try {
+                    await db.ref(`mesclagensPilotos/${safeKey}`).remove();
+                    renderizarGerenciadorPilotos();
+                    atualizarDashboard();
+                } catch (err) { alert("Erro ao remover mesclagem: " + err.message); }
+            }
+        };
 
         window.abrirModalParticipar = function(key) {
             campeonatoParticiparKey = key;
@@ -1727,6 +1869,7 @@
             if (event.target === document.getElementById('piloto-modal')) document.getElementById('piloto-modal').style.display = 'none';
             if (event.target === document.getElementById('upload-modal')) document.getElementById('upload-modal').style.display = 'none';
             if (event.target === document.getElementById('campeonatos-modal')) document.getElementById('campeonatos-modal').style.display = 'none';
+            if (event.target === document.getElementById('pilotos-gestao-modal')) document.getElementById('pilotos-gestao-modal').style.display = 'none';
             if (event.target === document.getElementById('participar-campeonato-modal')) document.getElementById('participar-campeonato-modal').style.display = 'none';
         };
 
@@ -2164,7 +2307,6 @@
                 if (p.laps && p.laps.length > maxVoltas) maxVoltas = p.laps.length;
             });
 
-            // Encontrar o melhor tempo para cada volta individual
             let melhoresTemposPorVolta = [];
             for (let v = 0; v < maxVoltas; v++) {
                 let melhor = 999999;
