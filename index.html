@@ -29,7 +29,7 @@
             --accent-bronze: #cd7f32;
             --accent-blue: #3a86ff;
             --accent-gap: #ff006e;
-            --accent-cc: #2a9d8f;
+            --accent-cc: #f72585;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
@@ -57,6 +57,7 @@
         .btn-upload-modal-trigger { background: linear-gradient(135deg, #3a86ff 0%, #2ec4b6 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         .btn-campeonatos-trigger { background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%); color: #000; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         .btn-pilotos-trigger { background: linear-gradient(135deg, #7209b7 0%, #4cc9f0 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-compras-trigger { background: linear-gradient(135deg, #f72585 0%, #7209b7 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         
         .btn-share { background: rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
         .btn-like { background: rgba(230, 57, 70, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
@@ -462,6 +463,38 @@
         </div>
     </div>
 
+    <!-- Módulo de Compras Coletivas -->
+    <div id="compras-modal" class="custom-modal">
+        <div class="modal-content" style="max-width: 1000px; border-top-color: var(--accent-cc);">
+            <div class="modal-header">
+                <div class="modal-title">🛒 Módulo de Compras Coletivas (Krathus Racing)</div>
+                <button class="modal-close" onclick="fecharModalCompras()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="config-panel">
+                    <div class="config-panel-title" style="color: var(--accent-cc);">Criar Nova Compra Coletiva / Encomenda em Grupo</div>
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: center;">
+                        <input type="text" id="input-compra-item" class="config-input" placeholder="Item / Peça (Ex: Pneus RC 1/28 9mm, Baterias LiPo)">
+                        <input type="number" step="0.01" id="input-compra-preco" class="config-input" placeholder="Preço Unit. (R$)">
+                        <input type="number" id="input-compra-qtd-min" class="config-input" placeholder="Qtd Mínima">
+                        <button class="btn-action-primary" style="background: var(--accent-cc);" onclick="criarCompraColetiva()">Criar Grupo</button>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Grupos de Compras Coletivas Ativos</span>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Item / Peça</th><th>Preço Est.</th><th>Qtd Mín.</th><th>Participantes / Cotas</th><th style="text-align: right;">Ação</th></tr></thead>
+                            <tbody id="tabela-compras-coletivas">
+                                <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Carregando compras coletivas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Participar do Campeonato -->
     <div id="participar-campeonato-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 600px; border-top-color: var(--accent-gold);">
@@ -503,6 +536,7 @@
                 <button class="btn btn-upload-modal-trigger" onclick="abrirModalUpload()">📤 Uploads</button>
                 <button class="btn btn-campeonatos-trigger" onclick="abrirModalCampeonatos()">🏆 Championship Manager</button>
                 <button class="btn btn-pilotos-trigger" onclick="abrirModalPilotos()">👤 Pilotos</button>
+                <button class="btn btn-compras-trigger" onclick="abrirModalCompras()">🛒 Compras Coletivas</button>
                 <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
             </div>
         </header>
@@ -537,6 +571,7 @@
                             <label class="checkbox-item"><input type="checkbox" value="mod-log-posicao" class="filter-modulo" checked onchange="atualizarDashboard()"> 📝 Relatório de Ultrapassagens</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-classificacao-analise" class="filter-modulo" checked onchange="atualizarDashboard()"> 📋 Laudo Técnico</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked onchange="atualizarDashboard()"> ⏱️ Tabela Geral Volta a Volta com Gaps</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-compras" class="filter-modulo" checked onchange="atualizarDashboard()"> 🛒 Compras Coletivas Ativas</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-comentarios" class="filter-modulo" checked onchange="atualizarDashboard()"> 💬 Comentários e Reações</label>
                         </div>
                     </div>
@@ -573,7 +608,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.58.0 (Classificação Geral Discriminada por Prova)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.59.0 (Módulo de Compras Coletivas Reativado)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -600,13 +635,13 @@
         let db = null;
         let listaJsonsCache = [];
         let campeonatosCache = {};
+        let comprasColetivasCache = {};
 
         let chartInstances = [];
         let pilotosMetadadosCache = {};
         let mesclagensCache = {};
         let campeonatoAtivoKey = null;
         let campeonatoParticiparKey = null;
-        let replayStates = {};
 
         try {
             firebase.initializeApp(firebaseConfig);
@@ -717,6 +752,12 @@
                     }
                 });
 
+                db.ref('comprasColetivas').on('value', snapshot => {
+                    comprasColetivasCache = snapshot.val() || {};
+                    renderizarTabelaComprasModal();
+                    atualizarDashboard();
+                });
+
                 db.ref('baterias').on('value', snapshot => {
                     listaJsonsCache = [];
                     snapshot.forEach(childSnapshot => {
@@ -759,6 +800,12 @@
             preencherSelectProvasBancoPrincipal();
         };
         window.fecharModalCampeonatos = function() { document.getElementById('campeonatos-modal').style.display = 'none'; };
+
+        window.abrirModalCompras = function() {
+            document.getElementById('compras-modal').style.display = 'flex';
+            renderizarTabelaComprasModal();
+        };
+        window.fecharModalCompras = function() { document.getElementById('compras-modal').style.display = 'none'; };
 
         function renderizarGerenciadorPilotos() {
             let dadosBase = obterTodosDadosConsolidados();
@@ -848,6 +895,115 @@
             }
         };
 
+        window.criarCompraColetiva = async function() {
+            if (!db) return;
+            let item = document.getElementById('input-compra-item').value.trim();
+            let preco = parseFloat(document.getElementById('input-compra-preco').value) || 0;
+            let qtdMin = parseInt(document.getElementById('input-compra-qtd-min').value, 10) || 1;
+
+            if (!item) { alert("Informe o nome do item ou peça."); return; }
+            let compraKey = "compra_" + Date.now();
+            let novaCompra = {
+                chave: compraKey, item: item, precoUnitario: preco, qtdMinima: qtdMin, participantes: {}
+            };
+
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(novaCompra);
+                document.getElementById('input-compra-item').value = "";
+                document.getElementById('input-compra-preco').value = "";
+                document.getElementById('input-compra-qtd-min').value = "";
+                alert("Compra coletiva criada com sucesso!");
+            } catch(err) { alert("Erro ao criar compra coletiva: " + err.message); }
+        };
+
+        window.participarCompraColetiva = async function(compraKey) {
+            if (!db) return;
+            let nomePiloto = prompt("Digite seu nome ou apelido para participar desta compra coletiva:");
+            if (!nomePiloto) return;
+            nomePiloto = nomePiloto.trim();
+            let qtdCotas = parseInt(prompt("Quantas unidades/cotas você deseja?", "1"), 10) || 1;
+
+            let participanteKey = "part_" + nomePiloto.toLowerCase().replace(/[^a-z0-9]/g, "_");
+            try {
+                await db.ref(`comprasColetivas/${compraKey}/participantes/${participanteKey}`).set({ nome: nomePiloto, cotas: qtdCotas });
+                alert("Inscrição na compra coletiva registrada com sucesso!");
+            } catch(err) { alert("Erro ao registrar participação: " + err.message); }
+        };
+
+        window.excluirCompraColetiva = async function(compraKey) {
+            if (!db) return;
+            if (confirm("Deseja encerrar e excluir esta compra coletiva?")) {
+                try {
+                    await db.ref(`comprasColetivas/${compraKey}`).remove();
+                } catch(err) { alert("Erro ao excluir: " + err.message); }
+            }
+        };
+
+        function renderizarTabelaComprasModal() {
+            let tbody = document.getElementById('tabela-compras-coletivas');
+            if (!tbody) return;
+            let keys = Object.keys(comprasColetivasCache);
+
+            if (keys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhuma compra coletiva cadastrada no momento.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = keys.map(k => {
+                let comp = comprasColetivasCache[k];
+                let participantes = comp.participantes || {};
+                let totalCotas = Object.values(participantes).reduce((acc, p) => acc + (p.cotas || 0), 0);
+                let listaPartStr = Object.values(participantes).map(p => `${p.nome} (${p.cotas} un)`).join(', ') || 'Nenhum ainda';
+
+                return `
+                    <tr>
+                        <td><strong>${escapeHtml(comp.item)}</strong></td>
+                        <td style="color: var(--accent-gold);">R$ ${(comp.precoUnitario || 0).toFixed(2)}</td>
+                        <td>${totalCotas} / ${comp.qtdMinima} un</td>
+                        <td><span style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(listaPartStr)}</span></td>
+                        <td style="text-align: right; display: flex; gap: 6px; justify-content: flex-end;">
+                            <button class="btn-action-primary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="participarCompraColetiva('${k}')">🛒 Participar</button>
+                            <button class="btn-action-danger" style="padding: 4px 10px; font-size: 0.78rem;" onclick="excluirCompraColetiva('${k}')">Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderizarResumoComprasDashboard() {
+            let container = document.getElementById('dashboard-compras-container');
+            if (!container) return;
+            let keys = Object.keys(comprasColetivasCache);
+
+            if (keys.length === 0) {
+                container.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma compra coletiva ativa no momento. Clique em "Compras Coletivas" no topo para iniciar um grupo.</span>`;
+                return;
+            }
+
+            container.innerHTML = keys.map(k => {
+                let comp = comprasColetivasCache[k];
+                let participantes = comp.participantes || {};
+                let totalCotas = Object.values(participantes).reduce((acc, p) => acc + (p.cotas || 0), 0);
+                let progresso = Math.min(100, Math.round((totalCotas / (comp.qtdMinima || 1)) * 100));
+
+                return `
+                    <div style="background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>🛒 ${escapeHtml(comp.item)}</strong>
+                            <span style="color: var(--accent-gold); font-size: 0.85rem;">R$ ${(comp.precoUnitario || 0).toFixed(2)} unit.</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted);">Progresso: ${totalCotas} de ${comp.qtdMinima} cotas mínimas (${progresso}%)</div>
+                        <div style="background: var(--bg-card); border-radius: 4px; height: 8px; width: 100%; overflow: hidden; border: 1px solid var(--border-card);">
+                            <div style="background: var(--accent-cc); width: ${progresso}%; height: 100%;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                            <button class="btn-action-primary" style="padding: 4px 12px; font-size: 0.78rem;" onclick="participarCompraColetiva('${k}')">Participar desta Compra</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         window.abrirModalParticipar = function(key) {
             campeonatoParticiparKey = key;
             let camp = campeonatosCache[key];
@@ -931,17 +1087,6 @@
                 } catch (err) { alert("Erro ao remover piloto: " + err.message); }
             }
         };
-
-        function persistirDados(path, valor, callback) {
-            if (db) {
-                db.ref(path).set(valor).then(() => {
-                    if (callback) callback();
-                }).catch(err => {
-                    console.error("Erro ao salvar no Firebase:", err);
-                    alert("⚠️ Erro ao salvar no banco de dados online.");
-                });
-            }
-        }
 
         window.criarCampeonatoProtegido = async function() {
             let senha = prompt("🔒 Digite a senha unificada de segurança (1234) para criar um novo campeonato:");
@@ -1891,6 +2036,7 @@
             if (event.target === document.getElementById('upload-modal')) document.getElementById('upload-modal').style.display = 'none';
             if (event.target === document.getElementById('campeonatos-modal')) document.getElementById('campeonatos-modal').style.display = 'none';
             if (event.target === document.getElementById('pilotos-gestao-modal')) document.getElementById('pilotos-gestao-modal').style.display = 'none';
+            if (event.target === document.getElementById('compras-modal')) document.getElementById('compras-modal').style.display = 'none';
             if (event.target === document.getElementById('participar-campeonato-modal')) document.getElementById('participar-campeonato-modal').style.display = 'none';
         };
 
@@ -2068,10 +2214,21 @@
             if (!mainContainer) return;
             mainContainer.innerHTML = '';
 
-            if (dadosBase.length === 0 || bateriasSel.length === 0) {
-                mainContainer.innerHTML = `<div class="card" style="text-align:center; padding: 30px; color: var(--text-muted);">Nenhuma bateria selecionada.</div>`;
-                return;
+            if (modulosSel.includes('mod-compras')) {
+                let cardComprasGlobal = document.createElement('div');
+                cardComprasGlobal.className = 'card';
+                cardComprasGlobal.style.borderLeft = '5px solid var(--accent-cc)';
+                cardComprasGlobal.innerHTML = `
+                    <div class="card-header" style="color: var(--accent-cc);">🛒 Compras Coletivas Ativas (Grupo Krathus Racing)</div>
+                    <div id="dashboard-compras-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                        <span style="color: var(--text-muted); font-size: 0.85rem;">Carregando resumo de compras coletivas...</span>
+                    </div>
+                `;
+                mainContainer.appendChild(cardComprasGlobal);
+                renderizarResumoComprasDashboard();
             }
+
+            if (dadosBase.length === 0 || bateriasSel.length === 0) return;
 
             bateriasSel.forEach(batKey => {
                 let sessaoObj = listaJsonsCache.find(i => i.firebaseKey === batKey);
