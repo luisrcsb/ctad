@@ -54,10 +54,7 @@
         .btn-text-action:hover { text-decoration: underline; }
 
         .btn-pdf-global { background: linear-gradient(135deg, #ff5722 0%, #e63946 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; }
-        .btn-upload-modal-trigger { background: linear-gradient(135deg, #3a86ff 0%, #2ec4b6 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-campeonatos-trigger { background: linear-gradient(135deg, #ffb703 0%, #fb8500 100%); color: #000; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-pilotos-trigger { background: linear-gradient(135deg, #7209b7 0%, #4cc9f0 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-compras-trigger { background: linear-gradient(135deg, #f72585 0%, #7209b7 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-admin-trigger { background: linear-gradient(135deg, #7209b7 0%, #3a86ff 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         
         .piloto-link { color: var(--accent-blue); text-decoration: none; font-weight: 700; cursor: pointer; }
         .piloto-link:hover { color: var(--accent-gold); text-decoration: underline; }
@@ -174,10 +171,6 @@
         .analysis-section-block { display: flex; flex-direction: column; gap: 4px; background: rgba(13, 17, 26, 0.4); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border-card); }
         .analysis-section-title { color: var(--accent-gold); text-transform: uppercase; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
         .analysis-section-content { color: var(--text-main); font-size: 0.86rem; }
-        
-        .lap-cell-inline { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
-        .leader-badge { background: var(--accent-gold); color: #000; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px; display: inline-block; text-transform: uppercase; }
-        .lap-gap { color: var(--accent-gap); font-size: 0.8rem; font-weight: 600; margin-left: 4px; }
 
         .footer-container { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 10px; }
         .footer-meta-info { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; font-size: 0.82rem; color: var(--text-muted); background: var(--bg-input); padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border-card); }
@@ -196,6 +189,17 @@
 
     <!-- Modais do Sistema -->
     
+    <!-- Painel de Administração Central (Protegido por Senha) -->
+    <div id="admin-modal" class="custom-modal" style="z-index: 10700;">
+        <div class="modal-content" style="max-width: 900px; border-top-color: var(--accent-red);">
+            <div class="modal-header">
+                <div class="modal-title">🔐 Painel de Administração Central</div>
+                <button class="modal-close" onclick="fecharModalAdmin()">&times;</button>
+            </div>
+            <div class="modal-body" id="admin-modal-body"></div>
+        </div>
+    </div>
+
     <!-- Ficha do Piloto -->
     <div id="piloto-modal" class="custom-modal">
         <div class="modal-content">
@@ -219,7 +223,7 @@
     </div>
 
     <!-- Central de Uploads -->
-    <div id="upload-modal" class="custom-modal">
+    <div id="upload-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">📤 Central de Upload de Relatórios (Banco Principal)</div>
@@ -231,7 +235,7 @@
                         <p style="font-size: 0.85rem; color: var(--text-muted);">Selecione relatórios PDF ou HTML oficiais do ZRound. O sistema converte automaticamente, evita duplicidades e atualiza o painel principal.</p>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                             <input type="file" id="input-pdf-upload" accept=".pdf,.html,.htm" multiple style="background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.85rem;">
-                            <button class="btn btn-upload-modal-trigger" onclick="processarUploadEEnviarNuvemPrincipal()">Converter e Enviar</button>
+                            <button class="btn btn-admin-trigger" onclick="processarUploadEEnviarNuvemPrincipal()">Converter e Enviar</button>
                         </div>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -253,7 +257,7 @@
     </div>
 
     <!-- Championship Manager -->
-    <div id="campeonatos-modal" class="custom-modal">
+    <div id="campeonatos-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">🏆 Championship Manager</div>
@@ -262,7 +266,7 @@
             <div class="modal-body">
                 <div style="display: flex; flex-direction: column; gap: 20px;">
                     <div class="upload-box">
-                        <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">🔒 Criar Novo Campeonato (Protegido por Senha Unificada)</span>
+                        <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">🔒 Criar Novo Campeonato</span>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                             <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa Krathus 2026)">
                             <button class="btn-action-primary" onclick="criarCampeonatoProtegido()">Criar Campeonato</button>
@@ -381,7 +385,7 @@
                                 <p style="font-size: 0.82rem; color: var(--text-muted);">Adicione novos arquivos de provas (PDF/HTML) para o banco dedicado deste campeonato.</p>
                                 <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px;">
                                     <input type="file" id="zround-input-file-prova" accept=".pdf,.html,.htm" multiple style="background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.85rem;">
-                                    <button class="btn btn-upload-modal-trigger" onclick="uploadProvasBancoSeparado()">Enviar Prova (Banco Separado)</button>
+                                    <button class="btn btn-admin-trigger" onclick="uploadProvasBancoSeparado()">Enviar Prova (Banco Separado)</button>
                                 </div>
                             </div>
 
@@ -433,7 +437,7 @@
     </div>
 
     <!-- Gestão de Pilotos -->
-    <div id="pilotos-gestao-modal" class="custom-modal">
+    <div id="pilotos-gestao-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
                 <div class="modal-title">👤 Gestão e Configuração de Pilotos</div>
@@ -457,7 +461,7 @@
     </div>
 
     <!-- Módulo de Compras Coletivas -->
-    <div id="compras-modal" class="custom-modal">
+    <div id="compras-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 1100px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
                 <div class="modal-title" id="compras-modal-titulo">🛒 Gestão de Compras Coletivas</div>
@@ -505,10 +509,7 @@
                 <p>Central de Telemetria e Análise de Desempenho</p>
             </div>
             <div class="header-actions">
-                <button class="btn btn-upload-modal-trigger" onclick="abrirModalUpload()">📤 Uploads</button>
-                <button class="btn btn-campeonatos-trigger" onclick="abrirModalCampeonatos()">🏆 Championship Manager</button>
-                <button class="btn btn-pilotos-trigger" onclick="abrirModalPilotos()">👤 Pilotos</button>
-                <button class="btn btn-compras-trigger" onclick="abrirModalCompras()">🛒 Compras Coletivas</button>
+                <button class="btn btn-admin-trigger" onclick="abrirModalAdmin()">🔐 Administração</button>
                 <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
             </div>
         </header>
@@ -549,7 +550,7 @@
                 </div>
             </section>
 
-            <!-- KPIs Compactos e Elegantes (Substituindo o Ticker) -->
+            <!-- KPIs Compactos e Elegantes -->
             <section class="kpi-compact-section">
                 <div class="kpi-compact-card">
                     <span class="kpi-compact-label">👑 Piloto com Mais Vitórias</span>
@@ -574,7 +575,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.71.0 (KPIs Compactos e Elegantes)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.72.0 (Admin Isolado com Senha)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -586,6 +587,7 @@
 
     <script>
         const SENHA_UNIFICADA = "1234";
+        let isAdminLogado = false;
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",
@@ -752,6 +754,84 @@
                 });
             }
         });
+
+        // Controles do Painel de Administração Central
+        window.abrirModalAdmin = function() {
+            document.getElementById('admin-modal').style.display = 'flex';
+            renderizarAdminModal();
+        };
+
+        window.fecharModalAdmin = function() {
+            document.getElementById('admin-modal').style.display = 'none';
+        };
+
+        window.fazerLoginAdmin = function() {
+            let senhaInput = document.getElementById('input-senha-admin').value;
+            if (senhaInput === SENHA_UNIFICADA) {
+                isAdminLogado = true;
+                renderizarAdminModal();
+            } else {
+                alert("❌ Senha incorreta!");
+            }
+        };
+
+        window.logoutAdmin = function() {
+            isAdminLogado = false;
+            renderizarAdminModal();
+        };
+
+        function renderizarAdminModal() {
+            let bodyEl = document.getElementById('admin-modal-body');
+            if (!bodyEl) return;
+
+            if (!isAdminLogado) {
+                bodyEl.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 40px 20px; text-align: center;">
+                        <div style="font-size: 3rem;">🔒</div>
+                        <h3>Acesso Restrito à Administração</h3>
+                        <p style="color: var(--text-muted); max-width: 400px; font-size: 0.9rem;">Digite a senha de segurança do sistema para acessar o painel administrativo contendo todas as ferramentas de gestão.</p>
+                        <div style="display: flex; gap: 10px; width: 100%; max-width: 350px; margin-top: 10px;">
+                            <input type="password" id="input-senha-admin" class="config-input" placeholder="Digite a senha..." onkeydown="if(event.key === 'Enter') fazerLoginAdmin()" style="text-align: center; font-size: 1.1rem;">
+                            <button class="btn-action-primary" onclick="fazerLoginAdmin()">Entrar</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                bodyEl.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--border-card);">
+                        <span style="font-weight: 700; color: var(--accent-green);">🟢 Sessão Administrativa Autenticada</span>
+                        <button class="btn-action-danger" style="padding: 6px 14px; font-size: 0.8rem;" onclick="logoutAdmin()">Encerrar Sessão</button>
+                    </div>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 10px;">Ferramentas de Gestão Exclusivas</div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 10px;">
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('upload')">
+                            <div class="config-panel-title" style="color: var(--accent-blue);">📤 Central de Uploads</div>
+                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">Envie, converta e gerencie relatórios PDF ou HTML oficiais do ZRound no banco principal.</p>
+                        </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('campeonatos')">
+                            <div class="config-panel-title" style="color: var(--accent-gold);">🏆 Championship Manager</div>
+                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">Crie e configure campeonatos, gerencie provas, inscrições, grids e pontuações.</p>
+                        </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('pilotos')">
+                            <div class="config-panel-title" style="color: var(--accent-cc);">👤 Gestão de Pilotos</div>
+                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">Configure apelidos, mesclagens de nomes (aliases) e cadastro de carros com fotos.</p>
+                        </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('compras')">
+                            <div class="config-panel-title" style="color: var(--accent-green);">🛒 Compras Coletivas</div>
+                            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">Gerencie cotas, itens, rateios de frete/impostos e recibos de pagamento Pix.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        window.abrirFerramentaAdmin = function(tipo) {
+            fecharModalAdmin();
+            if (tipo === 'upload') abrirModalUpload();
+            if (tipo === 'campeonatos') abrirModalCampeonatos();
+            if (tipo === 'pilotos') abrirModalPilotos();
+            if (tipo === 'compras') abrirModalCompras();
+        };
 
         window.abrirModalUpload = function() { document.getElementById('upload-modal').style.display = 'flex'; };
         window.fecharModalUpload = function() { document.getElementById('upload-modal').style.display = 'none'; };
@@ -1584,10 +1664,6 @@
         };
 
         window.criarCampeonatoProtegido = async function() {
-            let senha = prompt("🔒 Digite a senha unificada de segurança (1234) para criar um novo campeonato:");
-            if (senha === null) return;
-            if (senha !== SENHA_UNIFICADA) { alert("❌ Senha incorreta!"); return; }
-
             let nomeCamp = document.getElementById('input-nome-campeonato').value.trim();
             if (!nomeCamp) { alert("Digite o nome do campeonato."); return; }
             if (!db) { alert("Erro: Firebase não conectado."); return; }
@@ -2529,6 +2605,7 @@
         window.fecharDossiePiloto = function() { document.getElementById('piloto-modal').style.display = 'none'; };
 
         window.onclick = function(event) {
+            if (event.target === document.getElementById('admin-modal')) document.getElementById('admin-modal').style.display = 'none';
             if (event.target === document.getElementById('piloto-modal')) document.getElementById('piloto-modal').style.display = 'none';
             if (event.target === document.getElementById('piloto-config-modal')) document.getElementById('piloto-config-modal').style.display = 'none';
             if (event.target === document.getElementById('upload-modal')) document.getElementById('upload-modal').style.display = 'none';
