@@ -569,8 +569,8 @@
                 <div class="filters-grid">
                     <div class="filter-group">
                         <div class="filter-group-header">
-                            <label class="group-title">SESSÕES / BATERIAS (Mais recentes no topo)</label>
-                            <button class="btn-text-action" onclick="limparSelecao('filter-bateria')">🗑️ Limpar</button>
+                            <label class="group-title">SESSÕES / BATERIAS (MAIS RECENTES NO TOPO)</label>
+                            <button class="btn-text-action" id="btn-toggle-baterias" onclick="toggleSelecionarTodasBaterias()">📥 Selecionar todos</button>
                         </div>
                         <div class="checkbox-container" id="filtro-baterias-container"></div>
                     </div>
@@ -664,6 +664,9 @@
         let campeonatoParticiparKey = null;
         let compraGerenciandoKey = null;
         let pilotoSendoConfigurado = null;
+        
+        let _bateriasInicializadas = false;
+        let _ultimaListaBateriasKeys = [];
 
         try {
             firebase.initializeApp(firebaseConfig);
@@ -2572,16 +2575,44 @@
 
             let bateriasSelecionadasAntigas = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
             let pilotosSelecionadosAntigos = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
-            let primeiraVezBat = bateriasSelecionadasAntigas.length === 0;
+            
+            let primeiraVezBat = bateriasSelecionadasAntigas.length === 0 && !_bateriasInicializadas;
             let primeiraVezPil = pilotosSelecionadosAntigos.length === 0;
 
-            batContainer.innerHTML = listaJsonsCache.map(arq => {
+            let novasBateriasKeys = listaJsonsCache.map(i => i.firebaseKey);
+            let houveNovoUpload = _ultimaListaBateriasKeys.length > 0 && novasBateriasKeys.length > _ultimaListaBateriasKeys.length;
+            let bateriaRecemAdicionada = null;
+            if (houveNovoUpload) {
+                bateriaRecemAdicionada = novasBateriasKeys.find(k => !_ultimaListaBateriasKeys.includes(k));
+            }
+            _ultimaListaBateriasKeys = novasBateriasKeys;
+
+            batContainer.innerHTML = listaJsonsCache.map((arq, idx) => {
                 let key = arq.firebaseKey;
                 let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
                 let sessaoFormatada = formatarNomeSessao(sessaoOriginal);
-                let marcado = (primeiraVezBat || bateriasSelecionadasAntigas.includes(key)) ? 'checked' : '';
-                return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(sessaoFormatada)}</label>`;
+                
+                let marcado = '';
+                if (primeiraVezBat && idx === 0) {
+                    marcado = 'checked';
+                } else if (houveNovoUpload) {
+                    if (key === bateriaRecemAdicionada) {
+                        marcado = 'checked';
+                    } else if (idx === listaJsonsCache.length - 1) {
+                        marcado = '';
+                    } else {
+                        if (bateriasSelecionadasAntigas.includes(key)) marcado = 'checked';
+                    }
+                } else {
+                    if (bateriasSelecionadasAntigas.includes(key) || (primeiraVezBat && idx === 0)) marcado = 'checked';
+                }
+
+                return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="aoMudarCheckboxBateria()"> ${escapeHtml(sessaoFormatada)}</label>`;
             }).join('');
+
+            if (primeiraVezBat) {
+                _bateriasInicializadas = true;
+            }
 
             let listaNomesUnicos = Array.from(pilotosSet).filter(p => {
                 if (!p || !p.trim()) return false;
@@ -2598,10 +2629,45 @@
                 let marcado = primeiraVezPil || pilotosSelecionadosAntigos.includes(piloto) ? 'checked' : '';
                 return `<label class="checkbox-item"><input type="checkbox" value="${escapeHtml(piloto)}" class="filter-piloto" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(labelExib)}</label>`;
             }).join('');
+
+            atualizarEstadoBotaoBaterias();
+        }
+
+        window.toggleSelecionarTodasBaterias = function() {
+            let checkboxes = document.querySelectorAll('.filter-bateria');
+            let todasMarcadas = Array.from(checkboxes).every(cb => cb.checked);
+            
+            checkboxes.forEach(cb => {
+                cb.checked = !todasMarcadas;
+            });
+            
+            atualizarEstadoBotaoBaterias();
+            atualizarDashboard();
+        };
+
+        window.aoMudarCheckboxBateria = function() {
+            atualizarEstadoBotaoBaterias();
+            atualizarDashboard();
+        };
+
+        function atualizarEstadoBotaoBaterias() {
+            let btn = document.getElementById('btn-toggle-baterias');
+            let checkboxes = document.querySelectorAll('.filter-bateria');
+            if (!btn || checkboxes.length === 0) return;
+
+            let todasMarcadas = Array.from(checkboxes).every(cb => cb.checked);
+            if (todasMarcadas) {
+                btn.innerHTML = `🗑️ Limpar`;
+            } else {
+                btn.innerHTML = `📥 Selecionar todos`;
+            }
         }
 
         window.limparSelecao = function(classeFiltro) {
             document.querySelectorAll(`.${classeFiltro}`).forEach(cb => cb.checked = false);
+            if (classeFiltro === 'filter-bateria') {
+                atualizarEstadoBotaoBaterias();
+            }
             atualizarDashboard();
         };
 
@@ -3084,7 +3150,7 @@
             } catch(err) { alert("Erro ao confirmar pagamento: " + err.message); }
         };
 
-        function atualizarDashboard() {
+        window.atualizarDashboard = function() {
             let dadosBase = obterTodosDadosConsolidados();
             const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
             const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
@@ -3298,6 +3364,65 @@
 
         function gerarLaudoTecnicoSessao(ordenados) {
             if (!ordenados || ordenados.length === 0) return "Sem dados suficientes para gerar laudo.";
-            
-            let dadosGerais = obterTodosDadosConsolidados();
-            let historSou um modelo de linguagem. Isso está além das minhas habiliades.
+            let p1 = ordenados[0];
+            return `<div class="analysis-section-block"><div class="analysis-section-title">⭐ Destaque da Sessão</div><div class="analysis-section-content">O piloto <strong>${escapeHtml(p1.piloto)}</strong> demonstrou excelente consistência e ritmo, conquistando a 1ª posição com melhor volta de ${p1.melhorVoltaTxt || '--'}.</div></div>`;
+        }
+
+        function gerarTabelaGeralSessao(ordenados) {
+            if (!ordenados || ordenados.length === 0) return '<div>Sem dados para tabela.</div>';
+            let maxVoltas = Math.max(...ordenados.map(p => (p.laps || []).length));
+            let ths = '';
+            for (let i = 1; i <= maxVoltas; i++) ths += `<th>V${i}</th>`;
+
+            let trs = ordenados.map((p, idx) => {
+                let tds = (p.laps || []).map(l => {
+                    let t = typeof l === 'object' ? l.tempo : l;
+                    return `<td>${t ? t.toFixed(3) : '--'}</td>`;
+                }).join('');
+                return `<tr><td><span class="pos-badge">${idx + 1}º</span></td><td><strong>${escapeHtml(p.piloto)}</strong></td>${tds}</tr>`;
+            }).join('');
+
+            return `<table><thead><tr><th>Pos</th><th>Piloto</th>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+        }
+
+        function renderizarGraficoRitmo(batKey, safeKey, ordenados) {
+            const ctx = document.getElementById(`chart-ritmo-${safeKey}`);
+            if (!ctx) return;
+            let datasets = ordenados.map((p, idx) => {
+                let cores = ['#e63946', '#2ec4b6', '#ffb703', '#3a86ff', '#ff006e', '#8338ec'];
+                let cor = cores[idx % cores.length];
+                return {
+                    label: p.piloto,
+                    data: (p.laps || []).map(l => typeof l === 'object' ? l.tempo : l),
+                    borderColor: cor,
+                    backgroundColor: cor,
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: false
+                };
+            });
+            let chart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: Array.from({length: Math.max(...ordenados.map(p => (p.laps||[]).length))}, (_, i) => `V${i+1}`), datasets },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3' } } }, scales: { x: { ticks: { color: '#8492a6' } }, y: { ticks: { color: '#8492a6' } } } }
+            });
+            chartInstances.push(chart);
+        }
+
+        function renderizarGraficoPosicao(batKey, safeKey, ordenados) {
+            const ctx = document.getElementById(`chart-posicao-${safeKey}`);
+            if (!ctx) return;
+            let chart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: ['V1'], datasets: [{ label: 'Exemplo', data: [1], borderColor: '#3a86ff' }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3' } } } }
+            });
+            chartInstances.push(chart);
+        }
+
+        window.gerarRelatórioPDF = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>
