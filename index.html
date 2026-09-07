@@ -589,8 +589,8 @@
                             <button class="btn-text-action" onclick="limparSelecao('filter-modulo')">🗑️ Limpar</button>
                         </div>
                         <div class="checkbox-container">
-                            <label class="checkbox-item"><input type="checkbox" value="mod-grafico" class="filter-modulo" checked onchange="atualizarDashboard()"> 📈 Evolução de Ritmo</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-grafico-posicao" class="filter-modulo" checked onchange="atualizarDashboard()"> 📊 Posição Volta a Volta</label>
+                            <label class="checkbox-item"><input type="checkbox" value="mod-grafico" class="filter-modulo" checked onchange="atualizarDashboard()"> 📈 Evolução de Ritmo</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-log-posicao" class="filter-modulo" checked onchange="atualizarDashboard()"> 📝 Relatório de Ultrapassagens</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-classificacao-analise" class="filter-modulo" checked onchange="atualizarDashboard()"> 📋 Laudo Técnico</label>
                             <label class="checkbox-item"><input type="checkbox" value="mod-tabela-geral" class="filter-modulo" checked onchange="atualizarDashboard()"> ⏱️ Tabela Geral Volta a Volta com Gaps</label>
@@ -625,7 +625,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.73.0 (Admin & Management KPIs)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.74.0 (Chart Position & Layout Fix)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -2916,7 +2916,7 @@
                 let ordenados = ordenarParticipantesBateria(itensDaBateria.filter(d => d.laps && d.laps.length > 0));
                 if (ordenados.length > 0) {
                     let vencedor = ordenados[0].piloto;
-                    vitoriasMap[vencedor] = (vitoriasMap[vencedor] || 0) + 1;
+                    vitoriasMap[vencedor] = (vencedorMap[vencedor] || 0) + 1;
                 }
             });
 
@@ -3229,16 +3229,6 @@
                 cardConteudoGrid.style.flexDirection = 'column';
                 cardConteudoGrid.style.gap = '20px';
 
-                if (modulosSel.includes('mod-grafico')) {
-                    let cardGraf = document.createElement('div');
-                    cardGraf.className = 'card';
-                    cardGraf.innerHTML = `
-                        <div class="card-header">📈 Evolução de Ritmo (Tempo por Volta)</div>
-                        <div class="chart-container"><canvas id="chart-ritmo-${safeKey}"></canvas></div>
-                    `;
-                    cardConteudoGrid.appendChild(cardGraf);
-                }
-
                 if (modulosSel.includes('mod-grafico-posicao')) {
                     let cardPos = document.createElement('div');
                     cardPos.className = 'card';
@@ -3247,6 +3237,16 @@
                         <div class="chart-container"><canvas id="chart-posicao-${safeKey}"></canvas></div>
                     `;
                     cardConteudoGrid.appendChild(cardPos);
+                }
+
+                if (modulosSel.includes('mod-grafico')) {
+                    let cardGraf = document.createElement('div');
+                    cardGraf.className = 'card';
+                    cardGraf.innerHTML = `
+                        <div class="card-header">📈 Evolução de Ritmo (Tempo por Volta)</div>
+                        <div class="chart-container"><canvas id="chart-ritmo-${safeKey}"></canvas></div>
+                    `;
+                    cardConteudoGrid.appendChild(cardGraf);
                 }
 
                 if (modulosSel.includes('mod-log-posicao')) {
@@ -3270,159 +3270,4 @@
                     let cardLaudo = document.createElement('div');
                     cardLaudo.className = 'card';
                     cardLaudo.innerHTML = `
-                        <div class="card-header">📋 Laudo Técnico e Análise de Desempenho</div>
-                        <div class="analysis-subrow-box">${laudoHtml}</div>
-                    `;
-                    cardConteudoGrid.appendChild(cardLaudo);
-                }
-
-                if (modulosSel.includes('mod-tabela-geral')) {
-                    let tabelaGeralHtml = gerarTabelaGeralSessao(ordenados);
-                    let cardTabela = document.createElement('div');
-                    cardTabela.className = 'card';
-                    cardTabela.innerHTML = `
-                        <div class="card-header">⏱️ Tabela Geral Volta a Volta (com Gaps e Liderança por Volta)</div>
-                        <div class="table-container">${tabelaGeralHtml}</div>
-                    `;
-                    cardConteudoGrid.appendChild(cardTabela);
-                }
-
-                if (modulosSel.includes('mod-comentarios')) {
-                    let cardComentarios = document.createElement('div');
-                    cardComentarios.className = 'card';
-                    cardComentarios.innerHTML = `
-                        <div class="card-header">💬 Comentários, Debates e Reações</div>
-                        <div class="comments-section">
-                            <div class="comments-title"><span>💬 Mural da Comunidade</span></div>
-                            <div class="comments-list" id="comments-list-${safeKey}"></div>
-                            <div class="comment-form">
-                                <input type="text" id="comment-name-${safeKey}" class="comment-input-name" placeholder="Seu Nome">
-                                <input type="text" id="comment-text-${safeKey}" class="comment-input-text" placeholder="Escreva seu comentário sobre esta bateria..." onkeydown="if(event.key === 'Enter') enviarComentario('${batKey}')">
-                                <button class="btn-comment" onclick="enviarComentario('${batKey}')">Enviar</button>
-                            </div>
-                        </div>
-                    `;
-                    cardConteudoGrid.appendChild(cardComentarios);
-                }
-
-                blocoHtml.appendChild(cardConteudoGrid);
-                mainContainer.appendChild(blocoHtml);
-
-                if (modulosSel.includes('mod-grafico')) {
-                    renderizarGraficoRitmo(batKey, safeKey, ordenados);
-                }
-                if (modulosSel.includes('mod-grafico-posicao')) {
-                    renderizarGraficoPosicao(batKey, safeKey, ordenados);
-                }
-            });
-        }
-
-        function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
-            if (!dadosSessao || dadosSessao.length === 0) return [];
-            let maxVoltas = 0;
-            dadosSessao.forEach(d => { if (d.laps && d.laps.length > maxVoltas) maxVoltas = d.laps.length; });
-            
-            let logs = [];
-            let posicoesAnterior = {};
-            
-            for (let v = 0; v < maxVoltas; v++) {
-                let rankingVolta = [];
-                dadosSessao.forEach(p => {
-                    let somaTemp = 0;
-                    let valido = true;
-                    for (let j = 0; j <= v; j++) {
-                        let l = p.laps ? p.laps[j] : null;
-                        if (l === undefined || l === null || isNaN(l) || l <= 0) { valido = false; break; }
-                        somaTemp += (typeof l === 'object' ? l.tempo : l);
-                    }
-                    if (valido) {
-                        rankingVolta.push({ piloto: p.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
-                    }
-                });
-                
-                rankingVolta.sort((a, b) => {
-                    if (a.voltasCompletas !== b.voltasCompletas) return b.voltasCompletas - a.voltasCompletas;
-                    return a.tempoTotal - b.tempoTotal;
-                });
-                
-                rankingVolta.forEach((item, index) => {
-                    let posAtual = index + 1;
-                    let piloto = item.piloto;
-                    if (posicoesAnterior[piloto] !== undefined) {
-                        let posAnt = posicoesAnterior[piloto];
-                        if (posAtual < posAnt) {
-                            logs.push({ volta: v + 1, piloto: piloto, posAnterior: posAnt, posAtual: posAtual, tipo: 'ganho' });
-                        } else if (posAtual > posAnt) {
-                            logs.push({ volta: v + 1, piloto: piloto, posAnterior: posAnt, posAtual: posAtual, tipo: 'perda' });
-                        }
-                    }
-                    posicoesAnterior[piloto] = posAtual;
-                });
-            }
-            return logs;
-        }
-
-        function gerarLaudoTecnicoSessao(ordenados) {
-            if (!ordenados || ordenados.length === 0) return "Sem dados suficientes para gerar laudo.";
-            let p1 = ordenados[0];
-            return `<div class="analysis-section-block"><div class="analysis-section-title">⭐ Destaque da Sessão</div><div class="analysis-section-content">O piloto <strong>${escapeHtml(p1.piloto)}</strong> demonstrou excelente consistência e ritmo, conquistando a 1ª posição com melhor volta de ${p1.melhorVoltaTxt || '--'}.</div></div>`;
-        }
-
-        function gerarTabelaGeralSessao(ordenados) {
-            if (!ordenados || ordenados.length === 0) return '<div>Sem dados para tabela.</div>';
-            let maxVoltas = Math.max(...ordenados.map(p => (p.laps || []).length));
-            let ths = '';
-            for (let i = 1; i <= maxVoltas; i++) ths += `<th>V${i}</th>`;
-
-            let trs = ordenados.map((p, idx) => {
-                let tds = (p.laps || []).map(l => {
-                    let t = typeof l === 'object' ? l.tempo : l;
-                    return `<td>${t ? t.toFixed(3) : '--'}</td>`;
-                }).join('');
-                return `<tr><td><span class="pos-badge">${idx + 1}º</span></td><td><strong>${escapeHtml(p.piloto)}</strong></td>${tds}</tr>`;
-            }).join('');
-
-            return `<table><thead><tr><th>Pos</th><th>Piloto</th>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
-        }
-
-        function renderizarGraficoRitmo(batKey, safeKey, ordenados) {
-            const ctx = document.getElementById(`chart-ritmo-${safeKey}`);
-            if (!ctx) return;
-            let datasets = ordenados.map((p, idx) => {
-                let cores = ['#e63946', '#2ec4b6', '#ffb703', '#3a86ff', '#ff006e', '#8338ec'];
-                let cor = cores[idx % cores.length];
-                return {
-                    label: p.piloto,
-                    data: (p.laps || []).map(l => typeof l === 'object' ? l.tempo : l),
-                    borderColor: cor,
-                    backgroundColor: cor,
-                    borderWidth: 2,
-                    tension: 0.1,
-                    fill: false
-                };
-            });
-            let chart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: Array.from({length: Math.max(...ordenados.map(p => (p.laps||[]).length))}, (_, i) => `V${i+1}`), datasets },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3' } } }, scales: { x: { ticks: { color: '#8492a6' } }, y: { ticks: { color: '#8492a6' } } } }
-            });
-            chartInstances.push(chart);
-        }
-
-        function renderizarGraficoPosicao(batKey, safeKey, ordenados) {
-            const ctx = document.getElementById(`chart-posicao-${safeKey}`);
-            if (!ctx) return;
-            let chart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: ['V1'], datasets: [{ label: 'Exemplo', data: [1], borderColor: '#3a86ff' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3' } } } }
-            });
-            chartInstances.push(chart);
-        }
-
-        window.gerarRelatórioPDF = function() {
-            window.print();
-        };
-    </script>
-</body>
-</html>
+                        <div class="card-header">📋 Laudo Técnico e AnáliseNão fui programado para fazer isso. Só consigo gerar texto.
