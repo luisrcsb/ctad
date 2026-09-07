@@ -205,6 +205,17 @@
         </div>
     </div>
 
+    <!-- Modal de Configuração Individual do Piloto -->
+    <div id="piloto-config-modal" class="custom-modal" style="z-index: 10600;">
+        <div class="modal-content" style="max-width: 800px; border-top-color: var(--accent-blue);">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-config-piloto-titulo">⚙️ Configurar Piloto</div>
+                <button class="modal-close" onclick="fecharModalConfigurarPiloto()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-config-piloto-corpo" style="display: flex; flex-direction: column; gap: 20px;"></div>
+        </div>
+    </div>
+
     <!-- Central de Uploads -->
     <div id="upload-modal" class="custom-modal">
         <div class="modal-content">
@@ -419,7 +430,7 @@
         </div>
     </div>
 
-    <!-- Gestão de Pilotos (Modal Novo) -->
+    <!-- Gestão de Pilotos (Modal Atualizado com Botão Configurar Individual) -->
     <div id="pilotos-gestao-modal" class="custom-modal">
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
@@ -429,32 +440,12 @@
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
                 <div class="config-panel">
                     <div class="config-panel-title">Apelidos e Nomes de Exibição</div>
-                    <p style="font-size: 0.82rem; color: var(--text-muted);">Defina apelidos para exibição personalizada nos gráficos, tabelas e pódios.</p>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">Clique em "Configurar" ao lado de cada piloto para gerenciar apelidos, opções de mesclagem (aliases) e cadastrar carros com upload de imagem.</p>
                     <div class="table-container" style="margin-top: 10px;">
                         <table>
                             <thead><tr><th>Piloto Original</th><th>Apelido / Nome Exibição</th><th style="text-align: right;">Ação</th></tr></thead>
                             <tbody id="tabela-pilotos-apelidos">
                                 <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Carregando pilotos...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="config-panel">
-                    <div class="config-panel-title">Mesclagem de Pilotos (Aliases / Unificação)</div>
-                    <p style="font-size: 0.82rem; color: var(--text-muted);">Mapeie variações de nomes ou digitações incorretas para um único piloto oficial.</p>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 8px;">
-                        <input type="text" id="input-alias-nome" class="config-input" placeholder="Nome alternativo (ex: Edgar)">
-                        <select id="select-alias-destino" class="config-select">
-                            <option value="">Selecione o piloto oficial principal...</option>
-                        </select>
-                        <button class="btn-action-primary" onclick="adicionarMesclagemPiloto()">Adicionar Mesclagem</button>
-                    </div>
-                    <div class="table-container" style="margin-top: 10px;">
-                        <table>
-                            <thead><tr><th>Nome Alternativo (Alias)</th><th>Piloto Oficial Principal</th><th style="text-align: right;">Ação</th></tr></thead>
-                            <tbody id="tabela-pilotos-mesclagens">
-                                <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhuma mesclagem cadastrada.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -588,7 +579,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.67.0 (Correção do Cálculo de Status de Pagamentos por Participantes Ativos)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.68.0 (Adição de Configuração Individual por Piloto com Mesclagem e Gestão de Carros)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -625,6 +616,7 @@
         let campeonatoAtivoKey = null;
         let campeonatoParticiparKey = null;
         let compraGerenciandoKey = null;
+        let pilotoSendoConfigurado = null;
 
         try {
             firebase.initializeApp(firebaseConfig);
@@ -776,6 +768,18 @@
             document.getElementById('pilotos-gestao-modal').style.display = 'none';
         };
 
+        window.abrirModalConfigurarPiloto = function(nomePiloto) {
+            pilotoSendoConfigurado = nomePiloto;
+            document.getElementById('modal-config-piloto-titulo').innerHTML = `⚙️ Configurar Piloto: <span style="color: var(--accent-gold);">${escapeHtml(nomePiloto)}</span>`;
+            renderizarCorpoConfigurarPiloto();
+            document.getElementById('piloto-config-modal').style.display = 'flex';
+        };
+
+        window.fecharModalConfigurarPiloto = function() {
+            document.getElementById('piloto-config-modal').style.display = 'none';
+            pilotoSendoConfigurado = null;
+        };
+
         window.abrirModalCampeonatos = function() {
             document.getElementById('campeonatos-modal').style.display = 'flex';
             renderizarListaCampeonatosModal();
@@ -805,77 +809,178 @@
             } else {
                 tbodyApelidos.innerHTML = listaPilotos.map(p => {
                     let meta = pilotosMetadadosCache[p] || {};
-                    let apelidoVal = meta.apelido || "";
-                    let safeId = p.replace(/[^a-zA-Z0-9]/g, "_");
+                    let apelidoVal = meta.apelido || "(Sem apelido)";
                     return `
                         <tr>
                             <td><strong>${escapeHtml(p)}</strong></td>
-                            <td><input type="text" id="input-apelido-${safeId}" class="config-input" value="${escapeHtml(apelidoVal)}" placeholder="Digite um apelido..."></td>
-                            <td style="text-align: right;"><button class="btn-action-primary" style="padding: 5px 12px; font-size: 0.8rem;" onclick="salvarApelidoPiloto('${escapeHtml(p)}', '${safeId}')">Salvar</button></td>
-                        </tr>`;
-                }).join('');
-            }
-
-            let selectDestino = document.getElementById('select-alias-destino');
-            selectDestino.innerHTML = `<option value="">Selecione o piloto oficial principal...</option>` + listaPilotos.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
-
-            let tbodyMesclagens = document.getElementById('tabela-pilotos-mesclagens');
-            let aliasKeys = Object.keys(mesclagensCache);
-            if (aliasKeys.length === 0) {
-                tbodyMesclagens.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhuma mesclagem cadastrada.</td></tr>`;
-            } else {
-                tbodyMesclagens.innerHTML = aliasKeys.map(alias => {
-                    let alvo = mesclagensCache[alias];
-                    return `
-                        <tr>
-                            <td><strong>${escapeHtml(alias)}</strong></td>
-                            <td><span style="color: var(--accent-gold);">${escapeHtml(alvo)}</span></td>
-                            <td style="text-align: right;"><button class="btn-text-action" style="color: var(--accent-red);" onclick="removerMesclagemPiloto('${escapeHtml(alias)}')">Remover</button></td>
+                            <td><span style="color: var(--accent-gold);">${escapeHtml(apelidoVal)}</span></td>
+                            <td style="text-align: right;"><button class="btn-action-primary" style="padding: 6px 14px; font-size: 0.8rem;" onclick="abrirModalConfigurarPiloto('${escapeHtml(p)}')">⚙️ Configurar</button></td>
                         </tr>`;
                 }).join('');
             }
         }
 
-        window.salvarApelidoPiloto = async function(nomePiloto, safeId) {
+        function renderizarCorpoConfigurarPiloto() {
+            let nomePiloto = pilotoSendoConfigurado;
+            if (!nomePiloto) return;
+            let meta = pilotosMetadadosCache[nomePiloto] || {};
+            let apelidoVal = meta.apelido || "";
+            let carrosObj = meta.carros || {};
+            let carrosArr = Object.keys(carrosObj).map(k => ({ key: k, ...carrosObj[k] }));
+
+            let aliasesPiloto = Object.keys(mesclagensCache).filter(alias => mesclagensCache[alias] === nomePiloto);
+
+            let aliasHtml = aliasesPiloto.length === 0 ? 
+                `<div style="font-size: 0.82rem; color: var(--text-muted);">Nenhum nome alternativo (alias) mapeado para este piloto.</div>` :
+                aliasesPiloto.map(alias => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 6px;">
+                        <span style="font-weight: 600; color: var(--accent-gold);">${escapeHtml(alias)}</span>
+                        <button class="btn-text-action" style="color: var(--accent-red);" onclick="removerAliasPiloto('${escapeHtml(alias)}')">Remover</button>
+                    </div>
+                `).join('');
+
+            let carrosHtml = carrosArr.length === 0 ?
+                `<div style="font-size: 0.82rem; color: var(--text-muted);">Nenhum carro cadastrado para este piloto.</div>` :
+                carrosArr.map(car => `
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-card); margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            ${car.imagem ? `<div style="background: #fff; padding: 2px; border-radius: 4px; width: 50px; height: 35px; display: flex; align-items: center; justify-content: center;"><img src="${escapeHtml(car.imagem)}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>` : `<div style="background: var(--bg-input); width: 50px; height: 35px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--text-muted);">Sem foto</div>`}
+                            <div>
+                                <strong style="color: var(--text-title);">${escapeHtml(car.modelo)}</strong>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(car.categoria || '1/28 4x4')}</div>
+                            </div>
+                        </div>
+                        <button class="btn-action-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="removerCarroPiloto('${escapeHtml(nomePiloto)}', '${car.key}')">🗑️ Excluir</button>
+                    </div>
+                `).join('');
+
+            let bodyEl = document.getElementById('modal-config-piloto-corpo');
+            bodyEl.innerHTML = `
+                <!-- 1. Apelido / Nome de Exibição -->
+                <div class="config-panel">
+                    <div class="config-panel-title">1. Apelido / Nome de Exibição</div>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px;">
+                        <input type="text" id="input-config-apelido" class="config-input" value="${escapeHtml(apelidoVal)}" placeholder="Digite o apelido...">
+                        <button class="btn-action-primary" onclick="salvarApelidoPilotoModal('${escapeHtml(nomePiloto)}')">Salvar Apelido</button>
+                    </div>
+                </div>
+
+                <!-- 2. Opções de Mesclagem (Aliases) -->
+                <div class="config-panel">
+                    <div class="config-panel-title">2. Opções de Mesclagem (Nomes Alternativos / Variações)</div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Adicione variações de nomes ou digitações incorretas que devem ser unificadas para este piloto.</p>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                        <input type="text" id="input-config-alias" class="config-input" placeholder="Nome alternativo (ex: Edgar, DJ)">
+                        <button class="btn-action-primary" onclick="adicionarAliasParaPiloto('${escapeHtml(nomePiloto)}')">Adicionar Mesclagem</button>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 10px;">
+                        ${aliasHtml}
+                    </div>
+                </div>
+
+                <!-- 3. Gestão de Carros -->
+                <div class="config-panel">
+                    <div class="config-panel-title">3. Gestão de Carros do Piloto</div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted);">Cadastre os carros do piloto e faça upload da imagem para uso no sistema.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 8px; background: var(--bg-card); padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); margin-top: 8px;">
+                        <input type="text" id="input-carro-modelo" class="config-input" placeholder="Modelo do Carro (Ex: WLtoys K989 - Drift Spec)">
+                        <input type="text" id="input-carro-categoria" class="config-input" placeholder="Categoria (Ex: 1/28 4x4 / Touring)">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <label style="font-size: 0.8rem; color: var(--text-muted);">Foto do Carro:</label>
+                            <input type="file" id="input-carro-foto" accept="image/*" style="background: var(--bg-body); padding: 6px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); font-size: 0.8rem; flex: 1;">
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700;" onclick="adicionarCarroPiloto('${escapeHtml(nomePiloto)}')">+ Adicionar Carro</button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 10px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Carros Cadastrados</span>
+                        ${carrosHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        window.salvarApelidoPilotoModal = async function(nomePiloto) {
             if (!db) return;
-            let inputEl = document.getElementById(`input-apelido-${safeId}`);
+            let inputEl = document.getElementById('input-config-apelido');
             let novoApelido = inputEl ? inputEl.value.trim() : "";
             let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
             try {
                 await db.ref(`pilotosMetadados/${metaKey}/apelido`).set(novoApelido);
                 alert(`Apelido para "${nomePiloto}" salvo com sucesso!`);
                 renderizarGerenciadorPilotos();
+                renderizarCorpoConfigurarPiloto();
                 atualizarDashboard();
             } catch (err) { alert("Erro ao salvar apelido: " + err.message); }
         };
 
-        window.adicionarMesclagemPiloto = async function() {
+        window.adicionarAliasParaPiloto = async function(nomePiloto) {
             if (!db) return;
-            let aliasInput = document.getElementById('input-alias-nome').value.trim();
-            let destinoSelect = document.getElementById('select-alias-destino').value;
-
-            if (!aliasInput || !destinoSelect) { alert("Preencha o nome alternativo e selecione o piloto de destino principal."); return; }
-            if (aliasInput.toLowerCase() === destinoSelect.toLowerCase()) { alert("O nome alternativo não pode ser igual ao destino principal."); return; }
+            let aliasInput = document.getElementById('input-config-alias').value.trim();
+            if (!aliasInput) { alert("Digite o nome alternativo (alias)."); return; }
+            if (aliasInput.toLowerCase() === nomePiloto.toLowerCase()) { alert("O nome alternativo não pode ser igual ao nome principal."); return; }
 
             let aliasKey = aliasInput.replace(/[.#$\/\[\]]/g, "_");
             try {
-                await db.ref(`mesclagensPilotos/${aliasKey}`).set(destinoSelect);
-                document.getElementById('input-alias-nome').value = "";
-                alert(`Mesclagem de "${aliasInput}" para "${destinoSelect}" salva com sucesso!`);
-                renderizarGerenciadorPilotos();
+                await db.ref(`mesclagensPilotos/${aliasKey}`).set(nomePiloto);
+                document.getElementById('input-config-alias').value = "";
+                alert(`Mesclagem de "${aliasInput}" para "${nomePiloto}" salva com sucesso!`);
+                renderizarCorpoConfigurarPiloto();
                 atualizarDashboard();
             } catch (err) { alert("Erro ao adicionar mesclagem: " + err.message); }
         };
 
-        window.removerMesclagemPiloto = async function(aliasKey) {
+        window.removerAliasPiloto = async function(aliasKey) {
             if (!db) return;
             if (confirm(`Deseja remover a mesclagem do alias "${aliasKey}"?`)) {
                 let safeKey = aliasKey.replace(/[.#$\/\[\]]/g, "_");
                 try {
                     await db.ref(`mesclagensPilotos/${safeKey}`).remove();
-                    renderizarGerenciadorPilotos();
+                    renderizarCorpoConfigurarPiloto();
                     atualizarDashboard();
                 } catch (err) { alert("Erro ao remover mesclagem: " + err.message); }
+            }
+        };
+
+        window.adicionarCarroPiloto = async function(nomePiloto) {
+            if (!db) return;
+            let modeloInput = document.getElementById('input-carro-modelo').value.trim();
+            let categoriaInput = document.getElementById('input-carro-categoria').value.trim();
+            let fileInput = document.getElementById('input-carro-foto');
+
+            if (!modeloInput) { alert("Informe o modelo do carro."); return; }
+
+            let imagemBase64 = "";
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                imagemBase64 = await arquivoParaBase64(fileInput.files[0]);
+            }
+
+            let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
+            let carKey = "car_" + Date.now();
+            let novoCarro = {
+                modelo: modeloInput,
+                categoria: categoriaInput || "1/28 4x4",
+                imagem: imagemBase64
+            };
+
+            try {
+                await db.ref(`pilotosMetadados/${metaKey}/carros/${carKey}`).set(novoCarro);
+                alert("Carro cadastrado com sucesso!");
+                renderizarCorpoConfigurarPiloto();
+            } catch (err) { alert("Erro ao cadastrar carro: " + err.message); }
+        };
+
+        window.removerCarroPiloto = async function(nomePiloto, carKey) {
+            if (!db) return;
+            if (confirm("Deseja remover este carro do piloto?")) {
+                let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
+                try {
+                    await db.ref(`pilotosMetadados/${metaKey}/carros/${carKey}`).remove();
+                    renderizarCorpoConfigurarPiloto();
+                } catch (err) { alert("Erro ao remover carro: " + err.message); }
             }
         };
 
@@ -1026,7 +1131,7 @@
             document.querySelectorAll('.det-part-row').forEach(row => {
                 let pKey = row.getAttribute('data-pkey');
                 let nome = row.getAttribute('data-nome');
-                if (!nome || !nome.trim()) return; // Ignorar vazios
+                if (!nome || !nome.trim()) return;
                 let ativo = document.getElementById(`part-ativo-${pKey}`)?.checked || false;
                 let comprador = document.getElementById(`part-comprador-${pKey}`)?.checked || false;
                 let pago = document.getElementById(`part-pago-${pKey}`)?.checked || false;
@@ -1186,13 +1291,11 @@
                         <button class="btn-action-primary" style="background: #3a86ff; font-weight: 700;" onclick="voltarParaListaCompras()">⬅️ Voltar para Lista</button>
                     </div>
 
-                    <!-- 1. Nome da Compra -->
                     <div class="config-panel">
                         <div class="config-panel-title">1. NOME DA COMPRA</div>
                         <input type="text" id="det-nome-compra" class="config-input" value="${escapeHtml(comp.nome || '')}" placeholder="Nome ou ID da Compra">
                     </div>
 
-                    <!-- 2. Itens da Compra -->
                     <div class="config-panel">
                         <div class="config-panel-title">2. ITENS DA COMPRA E ATRIBUIÇÃO (INDIVIDUAL OU TODOS)</div>
                         <div style="display: grid; grid-template-columns: 1.2fr 2fr 1.5fr 90px 60px 100px 1.4fr 40px; gap: 10px; padding: 4px 0; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 6px;">
@@ -1213,7 +1316,6 @@
                         </div>
                     </div>
 
-                    <!-- 3. Informações Financeiras e Fiscais -->
                     <div class="config-panel">
                         <div class="config-panel-title">3. INFORMAÇÕES FINANCEIRAS E FISCAIS</div>
                         <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 6px;">
@@ -1248,7 +1350,6 @@
                         </div>
                     </div>
 
-                    <!-- 4. Gestão de Participantes -->
                     <div class="config-panel">
                         <div class="config-panel-title">4. GESTÃO DE PARTICIPANTES, RATEIO E COMPROVANTES DE RECIBO</div>
                         <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
@@ -1271,7 +1372,6 @@
                         </div>
                     </div>
 
-                    <!-- 5. Chave Pix do Comprador -->
                     <div class="config-panel">
                         <div class="config-panel-title">5. CHAVE PIX DO COMPRADOR (RAPHAEL)</div>
                         <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
@@ -1285,13 +1385,11 @@
                         </div>
                     </div>
 
-                    <!-- 6. Código de Rastreio -->
                     <div class="config-panel">
                         <div class="config-panel-title">6. CÓDIGO DE RASTREIO</div>
                         <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)">
                     </div>
 
-                    <!-- Botões de Ação Inferiores -->
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 10px;">
                         <button class="btn-action-danger" style="background: var(--accent-red); padding: 10px 20px; font-weight: 700;" onclick="excluirCompraColetiva('${compraGerenciandoKey}')">🗑️ Excluir Compra</button>
                         <div style="display: flex; gap: 10px;">
@@ -1982,7 +2080,7 @@
                     let ordenadosBateria = ordenarParticipantesBateria(participantesValidos);
 
                     ordenadosBateria.forEach((d, index) => {
-                        let posNum = index + 1; // Posição real calculada pelo desempenho de voltas e tempos
+                        let posNum = index + 1;
                         let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
                         if (pts > 0) {
                             let pNome = d.piloto;
@@ -2436,6 +2534,7 @@
 
         window.onclick = function(event) {
             if (event.target === document.getElementById('piloto-modal')) document.getElementById('piloto-modal').style.display = 'none';
+            if (event.target === document.getElementById('piloto-config-modal')) document.getElementById('piloto-config-modal').style.display = 'none';
             if (event.target === document.getElementById('upload-modal')) document.getElementById('upload-modal').style.display = 'none';
             if (event.target === document.getElementById('campeonatos-modal')) document.getElementById('campeonatos-modal').style.display = 'none';
             if (event.target === document.getElementById('pilotos-gestao-modal')) document.getElementById('pilotos-gestao-modal').style.display = 'none';
