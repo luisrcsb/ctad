@@ -59,11 +59,23 @@
         .btn-pilotos-trigger { background: linear-gradient(135deg, #7209b7 0%, #4cc9f0 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         .btn-compras-trigger { background: linear-gradient(135deg, #f72585 0%, #7209b7 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         
-        .btn-share { background: rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
-        .btn-like { background: rgba(230, 57, 70, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
-
         .piloto-link { color: var(--accent-blue); text-decoration: none; font-weight: 700; cursor: pointer; }
         .piloto-link:hover { color: var(--accent-gold); text-decoration: underline; }
+
+        /* Ticker / Crawl Styles */
+        .ticker-section { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+        .ticker-row { display: flex; align-items: center; background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 10px 14px; gap: 14px; overflow: hidden; }
+        .ticker-label { font-size: 0.72rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; white-space: nowrap; background: var(--bg-card); padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; align-items: center; gap: 6px; }
+        .ticker-viewport { overflow: hidden; width: 100%; position: relative; white-space: nowrap; }
+        .ticker-track { display: inline-block; white-space: nowrap; animation: tickerScroll 45s linear infinite; font-size: 0.9rem; color: var(--text-main); }
+        .ticker-row:hover .ticker-track { animation-play-state: paused; }
+        @keyframes tickerScroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .ticker-item { display: inline-block; margin-right: 50px; }
+        .ticker-item strong { color: var(--accent-gold); }
+        .ticker-highlight { color: var(--accent-green); font-weight: 700; }
 
         .custom-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -85,7 +97,6 @@
         .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
         .config-panel-title { font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-card); padding-bottom: 8px; }
         
-        .config-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .config-input { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); padding: 8px 12px; border-radius: 6px; flex: 1; font-size: 0.85rem; }
         .config-select { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); padding: 8px 12px; border-radius: 6px; flex: 1; font-size: 0.85rem; }
 
@@ -113,13 +124,6 @@
         ul#upload-lista-historico { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding-right: 4px; }
         ul#upload-lista-historico li { background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
         pre#upload-json-viewer { background: var(--bg-body); color: var(--accent-green); padding: 12px; border-radius: 6px; font-size: 0.75rem; max-height: 200px; overflow: auto; border: 1px solid var(--border-card); line-height: 1.4; }
-
-        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-        .kpi-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; }
-        .kpi-label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-        .kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--text-title); margin: 8px 0 4px 0; }
-        .kpi-value.green { color: var(--accent-green); }
-        .kpi-subtext { font-size: 0.8rem; color: var(--text-muted); }
 
         .session-block-header { background: linear-gradient(135deg, var(--bg-card-header) 0%, var(--bg-card) 100%); border: 1px solid var(--border-card); border-left: 5px solid var(--accent-red); border-radius: 10px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; flex-wrap: wrap; gap: 10px; }
         .session-block-title { font-size: 1.15rem; font-weight: 700; color: var(--text-title); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -430,7 +434,7 @@
         </div>
     </div>
 
-    <!-- Gestão de Pilotos (Modal Atualizado com Botão Configurar Individual) -->
+    <!-- Gestão de Pilotos -->
     <div id="pilotos-gestao-modal" class="custom-modal">
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
@@ -454,16 +458,14 @@
         </div>
     </div>
 
-    <!-- Módulo de Compras Coletivas (Lista & Gerenciamento Detalhado) -->
+    <!-- Módulo de Compras Coletivas -->
     <div id="compras-modal" class="custom-modal">
         <div class="modal-content" style="max-width: 1100px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
                 <div class="modal-title" id="compras-modal-titulo">🛒 Gestão de Compras Coletivas</div>
                 <button class="modal-close" onclick="fecharModalCompras()">&times;</button>
             </div>
-            <div class="modal-body" id="compras-modal-body" style="display: flex; flex-direction: column; gap: 20px;">
-                <!-- Conteúdo alternado via JS: Lista ou Tela de Gerenciamento Detalhado -->
-            </div>
+            <div class="modal-body" id="compras-modal-body" style="display: flex; flex-direction: column; gap: 20px;"></div>
         </div>
     </div>
 
@@ -549,28 +551,19 @@
                 </div>
             </section>
 
-            <section class="kpi-grid">
-                <div class="kpi-card">
-                    <span class="kpi-label">Piloto com Mais Vitórias</span>
-                    <div class="kpi-value" id="kpi-vencedor">--</div>
-                    <span class="kpi-subtext" id="kpi-vencedor-sub">Aguardando dados</span>
+            <!-- Substituição: Ticker / Crawl em duas linhas -->
+            <section class="ticker-section">
+                <div class="ticker-row">
+                    <div class="ticker-label">📈 Linha 1 (KPIs, Compras & Campeonatos)</div>
+                    <div class="ticker-viewport">
+                        <div class="ticker-track" id="ticker-track-1">Carregando informações do sistema...</div>
+                    </div>
                 </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">Melhor Volta Geral</span>
-                    <div class="kpi-value green" id="kpi-melhor-volta">--</div>
-                    <div class="kpi-value" id="kpi-melhor-volta-vel" style="color: var(--accent-gold); margin-top: 2px;">--</div>
-                    <span class="kpi-subtext" id="kpi-melhor-volta-sub">--</span>
-                </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">Voltas Válidas Analisadas</span>
-                    <div class="kpi-value" id="kpi-total-voltas">0</div>
-                    <span class="kpi-subtext">Total nas sessões marcadas</span>
-                </div>
-                <div class="kpi-card">
-                    <span class="kpi-label">Média Global do Grid</span>
-                    <div class="kpi-value" id="kpi-media-global">--</div>
-                    <div class="kpi-value" id="kpi-media-global-vel" style="color: var(--accent-gold); margin-top: 2px;">--</div>
-                    <span class="kpi-subtext">Média geral</span>
+                <div class="ticker-row">
+                    <div class="ticker-label">⏱️ Linha 2 (Última Bateria & Voltas)</div>
+                    <div class="ticker-viewport">
+                        <div class="ticker-track" id="ticker-track-2">Carregando dados da última bateria...</div>
+                    </div>
                 </div>
             </section>
 
@@ -579,7 +572,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.68.0 (Adição de Configuração Individual por Piloto com Mesclagem e Gestão de Carros)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.69.0 (Ticker Crawl Duplo Integrado)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -725,6 +718,7 @@
                     if (campeonatoParticiparKey && campeonatosCache[campeonatoParticiparKey]) {
                         renderizarTabelaInscritosParticipar();
                     }
+                    atualizarDashboard();
                 });
 
                 db.ref('comprasColetivas').on('value', snapshot => {
@@ -2630,13 +2624,17 @@
             }
         };
 
-        function atualizarDashboard() {
+        function atualizarTickerCrawl() {
             let dadosBase = obterTodosDadosConsolidados();
             const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
             const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
-            const modulosSel = Array.from(document.querySelectorAll('.filter-modulo:checked')).map(cb => cb.value);
-
             const dadosFiltrados = dadosBase.filter(item => bateriasSel.includes(item.bateriaKey) && (pilotosSel.length === 0 || pilotosSel.includes(item.piloto)));
+
+            // --- Lógica Linha 1 (KPIs, Compras Coletivas em aberto, Último Campeonato) ---
+            let kpiMaisVitorioso = "--";
+            let kpiMelhorVolta = "--";
+            let kpiTotalVoltas = dadosFiltrados.reduce((acc, item) => acc + (item.laps ? item.laps.length : 0), 0);
+            let kpiMediaGlobal = "--";
 
             if (listaJsonsCache.length > 0) {
                 let vencedorContadorGlobal = {};
@@ -2655,36 +2653,23 @@
                     }
                 });
 
-                let maisVitorioso = "--", maxV = -1;
-                for (let [p, v] of Object.entries(vencedorContadorGlobal)) { if (v > maxV) { maxV = v; maisVitorioso = p; } }
-                
-                let metaVencedor = pilotosMetadadosCache[maisVitorioso] || {};
-                let nomeVencExib = metaVencedor.apelido ? `${maisVitorioso} (${metaVencedor.apelido})` : maisVitorioso;
+                let maxV = -1;
+                for (let [p, v] of Object.entries(vencedorContadorGlobal)) { if (v > maxV) { maxV = v; kpiMaisVitorioso = `${p} (${v} vitórias)`; } }
 
-                document.getElementById('kpi-vencedor').innerHTML = maisVitorioso !== "--" && maxV > 0 ? `<a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(maisVitorioso)}')">${escapeHtml(nomeVencExib)}</a>` : "Nenhum";
-                document.getElementById('kpi-vencedor-sub').innerText = maxV > 0 ? `${maxV} vitória(s) absoluta(s)` : "Sem vitórias";
-
-                let melhorVoltaObj = null, melhorVoltaValGeral = 999999, melhorVoltaNum = 0;
+                let melhorVoltaValGeral = 999999;
+                let melhorVoltaPiloto = "";
                 dadosFiltrados.forEach(item => {
                     if (item.laps) {
-                        item.laps.forEach((l, idx) => {
+                        item.laps.forEach(l => {
                             let t = typeof l === 'object' ? l.tempo : l;
-                            if (t && t < melhorVoltaValGeral) { melhorVoltaValGeral = t; melhorVoltaObj = item; melhorVoltaNum = idx + 1; }
+                            if (t && t < melhorVoltaValGeral) { melhorVoltaValGeral = t; melhorVoltaPiloto = item.piloto; }
                         });
                     }
                 });
-
-                if (melhorVoltaObj) {
-                    let metaMelhor = pilotosMetadadosCache[melhorVoltaObj.piloto] || {};
-                    let nomeMelhorExib = metaMelhor.apelido ? `${melhorVoltaObj.piloto} (${metaMelhor.apelido})` : melhorVoltaObj.piloto;
-                    let velEscala = (26 / melhorVoltaValGeral) * 3.6 * 28;
-                    document.getElementById('kpi-melhor-volta').innerText = `${melhorVoltaValGeral.toFixed(3)}s`;
-                    document.getElementById('kpi-melhor-volta-vel').innerText = `${velEscala.toFixed(1)} km/h`;
-                    document.getElementById('kpi-melhor-volta-sub').innerHTML = `<a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(melhorVoltaObj.piloto)}')">${escapeHtml(nomeMelhorExib)}</a> (Volta ${melhorVoltaNum})`;
+                if (melhorVoltaValGeral < 999999) {
+                    let vel = (26 / melhorVoltaValGeral) * 3.6 * 28;
+                    kpiMelhorVolta = `${melhorVoltaValGeral.toFixed(3)}s (${melhorVoltaPiloto} - ${vel.toFixed(1)} km/h)`;
                 }
-
-                let totalV = dadosFiltrados.reduce((acc, item) => acc + (item.laps ? item.laps.length : 0), 0);
-                document.getElementById('kpi-total-voltas').innerText = totalV;
 
                 let somaTemposValidos = 0, totalVoltasValidas = 0;
                 dadosFiltrados.forEach(item => {
@@ -2695,18 +2680,123 @@
                         });
                     }
                 });
-
                 if (totalVoltasValidas > 0) {
-                    let mediaGlobalSegundos = somaTemposValidos / totalVoltasValidas;
-                    let mediaGlobalVelKmh = (26 / mediaGlobalSegundos) * 3.6 * 28;
-                    document.getElementById('kpi-media-global').innerText = `${mediaGlobalSegundos.toFixed(3)}s`;
-                    document.getElementById('kpi-media-global-vel').innerText = `${mediaGlobalVelKmh.toFixed(1)} km/h`;
+                    let mediaSeg = somaTemposValidos / totalVoltasValidas;
+                    let mediaVel = (26 / mediaSeg) * 3.6 * 28;
+                    kpiMediaGlobal = `${mediaSeg.toFixed(3)}s (${mediaVel.toFixed(1)} km/h)`;
                 }
-            } else {
-                document.getElementById('kpi-vencedor').innerText = "--"; document.getElementById('kpi-vencedor-sub').innerText = "Aguardando dados";
-                document.getElementById('kpi-melhor-volta').innerText = "--"; document.getElementById('kpi-total-voltas').innerText = "0";
-                document.getElementById('kpi-media-global').innerText = "--"; document.getElementById('kpi-media-global-vel').innerText = "--";
             }
+
+            // Compras Coletivas em aberto (% que falta para finalizar)
+            let comprasAbertasArr = [];
+            if (comprasColetivasCache) {
+                Object.values(comprasColetivasCache).forEach(comp => {
+                    let st = comp.status || "";
+                    if (!st.includes("FINALIZADA") && !st.includes("ENTREGUE")) {
+                        let parts = comp.participantes || {};
+                        let ativos = Object.values(parts).filter(p => p && p.ativo);
+                        let totalAtivos = ativos.length;
+                        let pagos = ativos.filter(p => p.pago).length;
+                        let pctFalta = totalAtivos > 0 ? Math.round(((totalAtivos - pagos) / totalAtivos) * 100) : 100;
+                        comprasAbertasArr.push(`🛒 <strong>${escapeHtml(comp.nome || 'Compra')}</strong>: falta <strong>${pctFalta}%</strong> para finalizar pagamentos`);
+                    }
+                });
+            }
+
+            // Último Campeonato
+            let campInfoStr = "🏆 Nenhum campeonato recente";
+            let campKeys = Object.keys(campeonatosCache);
+            if (campKeys.length > 0) {
+                let ultimoCampKey = campKeys[campKeys.length - 1];
+                let ultimoCamp = campeonatosCache[ultimoCampKey];
+                let rankingCamp = calcularClassificacaoBancoSeparado(ultimoCamp);
+                if (rankingCamp.length > 0) {
+                    let lider = rankingCamp[0];
+                    campInfoStr = `🏆 Campeonato <strong>${escapeHtml(ultimoCamp.nome)}</strong>: Líder <strong>${escapeHtml(lider.piloto)}</strong> com <strong>${lider.pontos} pts</strong>`;
+                } else {
+                    campInfoStr = `🏆 Campeonato <strong>${escapeHtml(ultimoCamp.nome)}</strong> em andamento`;
+                }
+            }
+
+            let itensLinha1 = [
+                `👑 Mais Vitórias: <strong>${escapeHtml(kpiMaisVitorioso)}</strong>`,
+                `⚡ Melhor Volta: <span class="ticker-highlight">${escapeHtml(kpiMelhorVolta)}</span>`,
+                `📊 Voltas Válidas: <strong>${kpiTotalVoltas}</strong>`,
+                `⏱️ Média do Grid: <strong>${escapeHtml(kpiMediaGlobal)}</strong>`,
+                campInfoStr
+            ];
+            if (comprasAbertasArr.length > 0) {
+                itensLinha1 = itensLinha1.concat(comprasAbertasArr);
+            }
+
+            document.getElementById('ticker-track-1').innerHTML = itensLinha1.map(t => `<span class="ticker-item">${t}</span>`).join(' &nbsp;&bull;&nbsp; ');
+
+            // --- Lógica Linha 2 (Última bateria, tempos dos pilotos, volta mais rápida, consistência e total de voltas) ---
+            let track2El = document.getElementById('ticker-track-2');
+            if (listaJsonsCache.length === 0) {
+                track2El.innerHTML = `<span class="ticker-item">Nenhuma bateria registrada para exibir no ticker.</span>`;
+                return;
+            }
+
+            let ultimaBateria = listaJsonsCache[0]; // mais recente
+            let nomeUltimaSessao = formatarNomeSessao(ultimaBateria.sessao || ultimaBateria.nomeArquivoOriginal || "Bateria");
+            let dadosUltimaBateria = (ultimaBateria.dados || []).map(d => {
+                let pReal = d.piloto ? d.piloto.trim() : ""; 
+                let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
+                return { ...d, piloto: pReal };
+            }).filter(d => d.piloto && d.piloto.trim() && d.laps && d.laps.length > 0);
+
+            if (dadosUltimaBateria.length === 0) {
+                track2El.innerHTML = `<span class="ticker-item">🏁 Última Bateria: <strong>${escapeHtml(nomeUltimaSessao)}</strong> — Sem voltas válidas computadas.</span>`;
+                return;
+            }
+
+            // Encontrar volta mais rápida absoluta da sessão
+            let minVoltaSessao = 999999;
+            let pilotoMaisRapidoSessao = "";
+            dadosUltimaBateria.forEach(p => {
+                if (p.laps) {
+                    p.laps.forEach(l => {
+                        let t = typeof l === 'object' ? l.tempo : l;
+                        if (t && t < minVoltaSessao) { minVoltaSessao = t; pilotoMaisRapidoSessao = p.piloto; }
+                    });
+                }
+            });
+
+            let itensLinha2 = [`🏁 <strong>${escapeHtml(nomeUltimaSessao)}</strong>`];
+
+            dadosUltimaBateria.forEach(p => {
+                let voltasFormatadas = (p.laps || []).map((l, idx) => {
+                    let t = typeof l === 'object' ? l.tempo : l;
+                    let tStr = t ? `${t.toFixed(3)}s` : '--';
+                    if (t && Math.abs(t - minVoltaSessao) < 0.0005) {
+                        return `${idx + 1} (<span class="ticker-highlight">${tStr} ⚡ RÁPIDA</span>)`;
+                    }
+                    return `${idx + 1} (${tStr})`;
+                }).join(', ');
+
+                let totalVoltas = (p.laps || []).filter(l => (typeof l === 'object' ? l.tempo : l) > 0).length;
+                let consistencia = p.desvio || '±0,000s';
+                let metaP = pilotosMetadadosCache[p.piloto] || {};
+                let nomeExibP = metaP.apelido ? `${p.piloto} (${metaP.apelido})` : p.piloto;
+
+                itensLinha2.push(`🏎️ <strong>${escapeHtml(nomeExibP)}</strong> [Voltas: ${totalVoltas} | Consistência: ${consistencia}]: Voltas ${voltasFormatadas}`);
+            });
+
+            track2El.innerHTML = itensLinha2.map(t => `<span class="ticker-item">${t}</span>`).join(' &nbsp;&bull;&nbsp; ');
+        }
+
+        function atualizarDashboard() {
+            let dadosBase = obterTodosDadosConsolidados();
+            const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
+            const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
+            const modulosSel = Array.from(document.querySelectorAll('.filter-modulo:checked')).map(cb => cb.value);
+
+            const dadosFiltrados = dadosBase.filter(item => bateriasSel.includes(item.bateriaKey) && (pilotosSel.length === 0 || pilotosSel.includes(item.piloto)));
+
+            // Atualiza o Ticker Crawl superior
+            atualizarTickerCrawl();
 
             renderizarSessõesCompletas(dadosBase, bateriasSel, pilotosSel, modulosSel);
         }
@@ -2766,8 +2856,8 @@
                         </div>
                         <div class="session-block-meta">
                             ${podiumTags}
-                            <button class="btn-share" onclick="compartilharCorrida('${batKey}', '${escapeHtml(nomeFormatado)}')">📤 Compartilhar</button>
-                            <button class="btn-like" onclick="curtirSessao('${batKey}')">❤️ Curtir (<span id="like-count-${safeKey}">0</span>)</button>
+                            <button class="btn" style="background: rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer;" onclick="compartilharCorrida('${batKey}', '${escapeHtml(nomeFormatado)}')">📤 Compartilhar</button>
+                            <button class="btn" style="background: rgba(230, 57, 70, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer;" onclick="curtirSessao('${batKey}')">❤️ Curtir (<span id="like-count-${safeKey}">0</span>)</button>
                         </div>
                     </div>
                 `;
