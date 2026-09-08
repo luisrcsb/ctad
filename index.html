@@ -64,8 +64,11 @@
         .kpi-compact-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
         .kpi-compact-value { font-size: 1.15rem; font-weight: 700; color: var(--accent-gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+        .dashboard-gestao-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
         @media (max-width: 1024px) {
             .kpi-compact-section { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-gestao-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 600px) {
             .kpi-compact-section { grid-template-columns: 1fr; }
@@ -580,12 +583,28 @@
                 </div>
             </section>
 
+            <!-- Novos KPIs / Cards de Gestão: Championship Manager e Compras Coletivas -->
+            <section class="dashboard-gestao-grid" style="margin-top: 20px;">
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="card-header">🏆 Championship Manager & Status</div>
+                    <div id="kpi-campeonatos-conteudo" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">Carregando campeonatos...</div>
+                    </div>
+                </div>
+                <div class="card" style="margin-bottom: 0;">
+                    <div class="card-header">🛒 Compras Coletivas & Pagamentos</div>
+                    <div id="kpi-compras-conteudo" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">Carregando compras coletivas...</div>
+                    </div>
+                </div>
+            </section>
+
             <div id="sessions-container" class="session-blocks-container" style="margin-top: 20px;"></div>
         </div>
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.74.0 (Pix Individual por Participante)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.75.0 (KPIs Integrados de Gestão)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -1609,8 +1628,6 @@
                 let pixBoxHtml = "";
                 if (!p.pago) {
                     let valorStr = (p.valorDevido || 0).toFixed(2);
-                    
-                    // Prioridade: Se houver pixPersonalizado preenchido para o piloto, usa ele; senão usa a chave global do campo 5
                     let payloadPixPiloto = (p.pixPersonalizado && p.pixPersonalizado.trim() !== "") 
                         ? p.pixPersonalizado 
                         : `${chavePixBase} (Valor: R$ ${valorStr} - ${p.nome})`;
@@ -2869,6 +2886,81 @@
             document.getElementById('kpi-val-media').innerHTML = kpiMediaGlobal;
         }
 
+        function renderizarKpisGestaoDashboard() {
+            // 1. Championship Manager KPI
+            let campContainer = document.getElementById('kpi-campeonatos-conteudo');
+            if (campContainer) {
+                let keys = Object.keys(campeonatosCache);
+                if (keys.length === 0) {
+                    campContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">Nenhum campeonato cadastrado.</div>`;
+                } else {
+                    campContainer.innerHTML = keys.map(k => {
+                        let camp = campeonatosCache[k];
+                        let status = camp.status || "Em andamento";
+                        let isEncerrado = status === "Finalizada";
+                        let acaoBtn = isEncerrado
+                            ? `<button class="btn-action-primary" style="background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-card); padding: 5px 12px; font-size: 0.8rem;" onclick="abrirModalCampeonatos()">Ver Resultado</button>`
+                            : `<button class="btn-action-primary" style="background: var(--accent-gold); color: #000; font-weight: 700; padding: 5px 12px; font-size: 0.8rem;" onclick="abrirModalParticipar('${k}')">Participar</button>`;
+                        
+                        return `
+                            <div style="background: var(--bg-input); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                                <div>
+                                    <strong style="color: var(--text-title); font-size: 0.9rem;">🏆 ${escapeHtml(camp.nome)}</strong>
+                                    <div style="font-size: 0.75rem; color: ${isEncerrado ? 'var(--accent-green)' : 'var(--accent-gold)'}; margin-top: 2px;">Status: ${status}</div>
+                                </div>
+                                ${acaoBtn}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // 2. Compras Coletivas KPI
+            let comprasContainer = document.getElementById('kpi-compras-conteudo');
+            if (comprasContainer) {
+                let keys = Object.keys(comprasColetivasCache);
+                if (keys.length === 0) {
+                    comprasContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">Nenhuma compra coletiva cadastrada.</div>`;
+                } else {
+                    comprasContainer.innerHTML = keys.map(k => {
+                        let comp = comprasColetivasCache[k];
+                        sincronizarParticipantesCompra(comp);
+                        calcularValoresDevidosCompra(comp);
+
+                        let participantes = comp.participantes || {};
+                        let ativos = Object.values(participantes).filter(p => p && p.ativo);
+                        let totalAtivos = ativos.length;
+                        let pagosAtivos = ativos.filter(p => p.pago).length;
+                        let faltamPagos = totalAtivos - pagosAtivos;
+
+                        let statusOriginal = comp.status || "EM ANDAMENTO / PENDENTE";
+                        let entregaFeita = statusOriginal.includes("ENTREGUE") || statusOriginal.includes("FINALIZADA");
+                        let tudoPago = (totalAtivos > 0 && pagosAtivos === totalAtivos);
+
+                        let statusFinal = statusOriginal;
+                        if (tudoPago && entregaFeita) {
+                            statusFinal = "FINALIZADA / CONCLUÍDA";
+                        }
+
+                        let badgeColor = statusFinal.includes("FINALIZADA") ? "rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green);" : "rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold);";
+
+                        return `
+                            <div style="background: var(--bg-input); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                                    <strong style="color: var(--text-title); font-size: 0.9rem;">🛒 ${escapeHtml(comp.nome || comp.chave)}</strong>
+                                    <button class="btn-action-primary" style="background: #3a86ff; padding: 5px 12px; font-size: 0.8rem;" onclick="resumirCompraColetiva('${k}')">📊 Resumo</button>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: var(--text-muted); flex-wrap: wrap; gap: 6px;">
+                                    <span>Pagamentos: <strong style="color: var(--accent-green);">${pagosAtivos} feitos</strong> | <strong style="color: var(--accent-red);">${faltamPagos} faltam</strong></span>
+                                    <span style="padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; background: ${badgeColor}">${statusFinal}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
         function atualizarDashboard() {
             let dadosBase = obterTodosDadosConsolidados();
             const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
@@ -2876,6 +2968,7 @@
             const modulosSel = Array.from(document.querySelectorAll('.filter-modulo:checked')).map(cb => cb.value);
 
             atualizarKPIsCompactos();
+            renderizarKpisGestaoDashboard();
             renderizarSessõesCompletas(dadosBase, bateriasSel, pilotosSel, modulosSel);
         }
 
