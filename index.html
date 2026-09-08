@@ -33,7 +33,6 @@
             --pista-scale: 1;
         }
 
-        /* Modos de Acessibilidade */
         body.modo-alto-contraste {
             --bg-body: #000000;
             --bg-card: #0a0a0a;
@@ -109,7 +108,6 @@
         .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-weight: bold; }
         .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
-        /* MODO PISTA FULLSCREEN (TELÃO 4K) */
         #modo-pista-fullscreen {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: var(--bg-body); z-index: 30000; overflow-y: auto; padding: 24px; box-sizing: border-box;
@@ -230,7 +228,6 @@
 </head>
 <body>
 
-    <!-- Filtros SVG ocultos para daltonismo -->
     <svg style="display:none">
         <filter id="protanopia-filter">
             <feColorMatrix type="matrix" values="0.567, 0.433, 0, 0, 0  0.558, 0.442, 0, 0, 0  0, 0.242, 0.758, 0, 0  0, 0, 0, 1, 0"/>
@@ -243,7 +240,6 @@
         </filter>
     </svg>
 
-    <!-- Modal de Acessibilidade -->
     <div id="accessibility-modal" class="custom-modal" style="z-index: 10800;">
         <div class="modal-content" style="max-width: 500px; border-top-color: var(--accent-green);">
             <div class="modal-header">
@@ -264,7 +260,6 @@
         </div>
     </div>
 
-    <!-- Painel de Administração Central -->
     <div id="admin-modal" class="custom-modal" style="z-index: 10700;">
         <div class="modal-content" style="max-width: 800px; border-top-color: var(--accent-red);">
             <div class="modal-header">
@@ -275,7 +270,6 @@
         </div>
     </div>
 
-    <!-- Modal de Configuração do Modo Pista -->
     <div id="pista-config-modal" class="custom-modal" style="z-index: 10800;">
         <div class="modal-content" style="max-width: 600px; border-top-color: var(--accent-gold);">
             <div class="modal-header">
@@ -307,7 +301,6 @@
         </div>
     </div>
 
-    <!-- MODO PISTA FULLSCREEN (TELÃO 4K) -->
     <div id="modo-pista-fullscreen">
         <div class="pista-header">
             <div>
@@ -319,11 +312,9 @@
             </div>
         </div>
         <div id="pista-fs-conteudo" style="display: flex; flex-direction: column; gap: 20px; width: 100%;">
-            <!-- Conteúdo injetado dinamicamente -->
         </div>
     </div>
 
-    <!-- Ficha do Piloto / Resumo Detalhado -->
     <div id="piloto-modal" class="custom-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -334,7 +325,6 @@
         </div>
     </div>
 
-    <!-- Modal de Configuração Individual do Piloto -->
     <div id="piloto-config-modal" class="custom-modal" style="z-index: 10600;">
         <div class="modal-content" style="max-width: 700px; border-top-color: var(--accent-blue);">
             <div class="modal-header">
@@ -345,7 +335,6 @@
         </div>
     </div>
 
-    <!-- Central de Uploads -->
     <div id="upload-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content">
             <div class="modal-header">
@@ -379,7 +368,6 @@
         </div>
     </div>
 
-    <!-- Championship Manager -->
     <div id="campeonatos-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content">
             <div class="modal-header">
@@ -551,7 +539,6 @@
         </div>
     </div>
 
-    <!-- Gestão de Pilotos -->
     <div id="pilotos-gestao-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
@@ -575,7 +562,6 @@
         </div>
     </div>
 
-    <!-- Módulo de Compras Coletivas -->
     <div id="compras-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 1000px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
@@ -586,7 +572,6 @@
         </div>
     </div>
 
-    <!-- Modal de Resumo de Compra Coletiva -->
     <div id="compra-resumo-modal" class="custom-modal" style="z-index: 10600;">
         <div class="modal-content" style="max-width: 550px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
@@ -597,7 +582,6 @@
         </div>
     </div>
 
-    <!-- Participar do Campeonato -->
     <div id="participar-campeonato-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 500px; border-top-color: var(--accent-gold);">
             <div class="modal-header" style="background: var(--bg-card-header);">
@@ -627,7 +611,6 @@
         </div>
     </div>
 
-    <!-- Estrutura Principal do Dashboard -->
     <div class="dashboard-container">
         <header class="header">
             <div class="header-top">
@@ -682,7 +665,6 @@
                 </div>
             </section>
 
-            <!-- KPIs Compactos e Elegantes -->
             <section class="kpi-compact-section">
                 <div class="kpi-compact-card">
                     <span class="kpi-compact-label">👑 Piloto com Mais Vitórias</span>
@@ -702,7 +684,6 @@
                 </div>
             </section>
 
-            <!-- Gestão Grid -->
             <section class="dashboard-gestao-grid" style="margin-top: 12px;">
                 <div class="card" style="margin-bottom: 0;">
                     <div class="card-header">🏆 Championship Manager & Status</div>
@@ -736,6 +717,7 @@
     <script>
         const SENHA_UNIFICADA = "1234";
         let isAdminLogado = false;
+        let conexaoEstabelecida = false;
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",
@@ -764,11 +746,36 @@
         let pilotoSendoConfigurado = null;
 
         try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.database();
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+
+                db.ref(".info/connected").on("value", function(snapshot) {
+                    if (snapshot.val() === true) {
+                        conexaoEstabelecida = true;
+                        console.log("Conexão com o Firebase estabelecida com sucesso.");
+                    } else {
+                        console.warn("Conexão com o Firebase perdida. Tentando reconectar...");
+                    }
+                });
+            } else {
+                console.error("O SDK do Firebase não foi carregado corretamente.");
+            }
         } catch (e) {
             console.warn("Erro Firebase:", e);
         }
+
+        setTimeout(() => {
+            if (!conexaoEstabelecida) {
+                console.warn("Tempo limite de conexão esgotado. Verifique extensões de bloqueio de anúncio, firewall ou a internet.");
+                const containersCarregando = document.querySelectorAll('#upload-lista-historico, #zround-tabela-pilotos-inscritos, #kpi-campeonatos-conteudo, #kpi-compras-conteudo');
+                containersCarregando.forEach(el => {
+                    if (el && el.innerHTML.includes("Carregando")) {
+                        el.innerHTML = `<li style="color: var(--accent-red); text-align: center; padding: 6px;">❌ Falha de conexão com o banco. Verifique extensões/rede.</li>`;
+                    }
+                });
+            }
+        }, 6000);
 
         const ALIAS_EDGARD_DJ_DEFAULTS = {
             "edgard": "Edgard Camilo (DJ)",
@@ -3477,4 +3484,39 @@
         function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
             let canvasEl = document.getElementById(`chart-posicao-${safeKey}`);
             if (!canvasEl) return;
-            let maxVoltas = Math.max(...ordenados.mapSou apenas uma IA com base em texto. Não tenho como ajudar nisso.
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
+
+            let datasets = ordenados.map((p, idx) => {
+                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
+                let posicoesVolta = [];
+                for (let v = 0; v < maxVoltas; v++) {
+                    let mapaVoltaPilotos = [];
+                    ordenados.forEach(pilotoObj => {
+                        let somaTemp = 0, valido = true;
+                        for (let j = 0; j <= v; j++) {
+                            let l = pilotoObj.laps ? pilotoObj.laps[j] : null;
+                            if (l === undefined || l === null || l <= 0) { valido = false; break; }
+                            somaTemp += (typeof l === 'object' ? l.tempo : l);
+                        }
+                        if (valido) mapaVoltaPilotos.push({ piloto: pilotoObj.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
+                    });
+                    mapaVoltaPilotos.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
+                    let pos = mapaVoltaPilotos.findIndex(item => item.piloto === p.piloto);
+                    posicoesVolta.push(pos !== -1 ? pos + 1 : null);
+                }
+                return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true };
+            });
+
+            chartInstances.push(new Chart(canvasEl.getContext('2d'), {
+                type: 'line', data: { labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#d0d7e3' } } },
+                    scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
+                }
+            }));
+        }
+    </script>
+</body>
+</html>
