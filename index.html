@@ -2631,12 +2631,29 @@
                         let camp = campeonatosCache[k];
                         let status = camp.status || "Em andamento";
                         let isEncerrado = status === "Finalizada";
+                        
+                        let infoExtraHtml = "";
+                        if (isEncerrado) {
+                            let ranking = calcularClassificacaoBancoSeparado(camp);
+                            let podiumStr = ranking.length > 0 ? ranking.slice(0, 3).map((r, i) => `${i+1}º ${r.piloto} (${r.pontos} pts)`).join(' • ') : "Sem pontuação registrada";
+                            infoExtraHtml = `<div style="font-size: 0.72rem; color: var(--text-main); margin-top: 3px;">🏅 <strong>Resultado:</strong> ${escapeHtml(podiumStr)}</div>`;
+                        } else {
+                            let inscritosObj = camp.pilotosInscritos || {};
+                            let inscritosNomes = Object.values(inscritosObj).map(p => p.nome);
+                            let inscritosStr = inscritosNomes.length > 0 ? inscritosNomes.join(', ') : "Nenhum piloto inscrito";
+                            infoExtraHtml = `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">👥 <strong>Inscritos:</strong> ${escapeHtml(inscritosStr)}</div>`;
+                        }
+
                         let acaoBtn = isEncerrado ? 
                             `<button class="btn-action-primary" style="background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.72rem;" onclick="abrirModalCampeonatos()">Resultado</button>` : 
                             `<button class="btn-action-primary" style="background: var(--accent-gold); color: #000; font-weight: 700; padding: 3px 8px; font-size: 0.72rem;" onclick="abrirModalParticipar('${k}')">Participar</button>`;
                         return `
-                            <div style="background: var(--bg-input); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; gap: 6px;">
-                                <div><strong style="color: var(--text-title); font-size: 0.82rem;">🏆 ${escapeHtml(camp.nome)}</strong><div style="font-size: 0.68rem; color: ${isEncerrado ? 'var(--accent-green)' : 'var(--accent-gold)'};">${status}</div></div>
+                            <div style="background: var(--bg-input); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
+                                <div style="display: flex; flex-direction: column; gap: 2px;">
+                                    <strong style="color: var(--text-title); font-size: 0.82rem;">🏆 ${escapeHtml(camp.nome)}</strong>
+                                    <div style="font-size: 0.68rem; color: ${isEncerrado ? 'var(--accent-green)' : 'var(--accent-gold)'}; font-weight: 600;">${status}</div>
+                                    ${infoExtraHtml}
+                                </div>
                                 ${acaoBtn}
                             </div>
                         `;
