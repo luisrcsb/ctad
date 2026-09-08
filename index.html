@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CTAAD - Central de Telemetria, Análise e Desempenho</title>
+    <title>CTAD - Central de Telemetria</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -390,7 +390,7 @@
                     <div class="upload-box">
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">🔒 Criar Novo Campeonato</span>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                            <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa CTAAD 2026)">
+                            <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa CTAD 2026)">
                             <button class="btn-action-primary" onclick="criarCampeonatoProtegido()">Criar Campeonato</button>
                         </div>
                     </div>
@@ -631,7 +631,7 @@
         <header class="header">
             <div class="header-top">
                 <div class="brand-title">
-                    <h1>CTAAD - Central de Telemetria, Análise e Desempenho</h1>
+                    <h1>CTAD - Central de Telemetria</h1>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
@@ -640,7 +640,8 @@
                 </div>
             </div>
             <div id="display-nome-pista" class="pista-display-banner">
-                🏁 Pista: Não Definida
+                🏁 Não Definida
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Análise e Desempenho</div>
             </div>
         </header>
 
@@ -721,13 +722,13 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.86.0 (CTAAD Rebranding & Pista Dinâmica)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.86.0 (CTAD Rebranding & Pista Dinâmica)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
                 <img src="https://www.zround.com/wp-content/uploads/2020/05/zround_logo_web.png" alt="ZRound" class="footer-logo-img">
             </div>
-            <div class="footer-copyright">&copy; 2026 CTAAD - Central de Telemetria, Análise e Desempenho. Todos os direitos reservados.</div>
+            <div class="footer-copyright">&copy; 2026 CTAD - Central de Telemetria. Todos os direitos reservados.</div>
         </footer>
     </div>
 
@@ -850,7 +851,9 @@
                 db.ref('configuracoesGlobais/nomePista').on('value', snapshot => {
                     let nomePista = snapshot.val() || "Não Definida";
                     let el = document.getElementById('display-nome-pista');
-                    if (el) el.innerText = `🏁 Pista: ${nomePista}`;
+                    if (el) {
+                        el.innerHTML = `🏁 ${escapeHtml(nomePista)}<div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Análise e Desempenho</div>`;
+                    }
                 });
 
                 db.ref('pilotosMetadados').on('value', snapshot => {
@@ -2908,7 +2911,7 @@
             if (ordenados.length === 0) return;
 
             let textoPilotos = ordenados.map((p, idx) => `*${idx + 1}º: ${p.piloto}* — ${p.melhorVoltaTxt || '--'}`).join('\n');
-            let txt = `🏁 *CTAAD - TELEMETRIA* 🏁\n🗓️ Sessão: *${nomeSessao}*\n\n${textoPilotos}\n\n🔎 ${linkPainel}`;
+            let txt = `🏁 *CTAD - TELEMETRIA* 🏁\n🗓️ Sessão: *${nomeSessao}*\n\n${textoPilotos}\n\n🔎 ${linkPainel}`;
             if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => alert("Copiado!"));
         };
 
