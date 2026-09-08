@@ -598,7 +598,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.79.0 (Layout Volta a Volta com Gaps & Líder)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.80.0 (Status de Compras Coletivas Integrado)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -2657,10 +2657,36 @@
                         let ativos = Object.values(comp.participantes || {}).filter(p => p && p.ativo);
                         let pagos = ativos.filter(p => p.pago).length;
                         let quitada = (ativos.length > 0 && pagos === ativos.length);
+                        let entregue = !!comp.entregue;
+                        let finalizada = quitada && entregue;
+
+                        let statusTexto = "";
+                        let corStatus = "";
+                        if (finalizada) {
+                            statusTexto = "Finalizado ✅";
+                            corStatus = "var(--accent-green)";
+                        } else if (quitada && !entregue) {
+                            statusTexto = "Quitado - Aguardando Entrega 📦";
+                            corStatus = "var(--accent-blue)";
+                        } else if (!quitada && entregue) {
+                            statusTexto = "Entregue - Com Pendência de Pagamento ⚠️";
+                            corStatus = "var(--accent-gold)";
+                        } else {
+                            statusTexto = "Com Pendência ⏳";
+                            corStatus = "var(--accent-red)";
+                        }
+
                         return `
-                            <div style="background: var(--bg-input); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; gap: 6px;">
-                                <div><strong style="color: var(--text-title); font-size: 0.82rem;">🛒 ${escapeHtml(comp.nome || comp.chave)}</strong><div style="font-size: 0.68rem; color: var(--accent-green);">Pagos: ${pagos}/${ativos.length}</div></div>
-                                <button class="btn-action-primary" style="background: #3a86ff; padding: 3px 8px; font-size: 0.72rem;" onclick="resumirCompraColetiva('${k}')">Resumo</button>
+                            <div style="background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                <div>
+                                    <strong style="color: var(--text-title); font-size: 0.85rem;">🛒 ${escapeHtml(comp.nome || comp.chave)}</strong>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; display: flex; gap: 8px; align-items: center;">
+                                        <span>Pagos: <strong style="color: var(--text-main);">${pagos}/${ativos.length}</strong></span>
+                                        <span>•</span>
+                                        <span style="color: ${corStatus}; font-weight: 600;">${statusTexto}</span>
+                                    </div>
+                                </div>
+                                <button class="btn-action-primary" style="background: #3a86ff; padding: 4px 10px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${k}')">Resumo</button>
                             </div>
                         `;
                     }).join('');
