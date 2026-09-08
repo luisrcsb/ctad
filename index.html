@@ -604,7 +604,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.75.1 (KPIs Integrados de Gestão)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.76.0 (Gestão Avançada de Compras Coletivas)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -1122,6 +1122,7 @@
                 precoUnitario: preco,
                 qtdMinima: qtdMin,
                 status: "EM ANDAMENTO / PENDENTE",
+                entregue: false,
                 rastreio: "",
                 financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
                 chavePix: "",
@@ -1199,6 +1200,34 @@
             });
         }
 
+        window.alternarEntregueCompra = async function(compraKey) {
+            if (!db) return;
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            comp.entregue = !comp.entregue;
+
+            let participantes = comp.participantes || {};
+            let ativos = Object.values(participantes).filter(p => p && p.ativo);
+            let totalAtivos = ativos.length;
+            let pagosAtivos = ativos.filter(p => p.pago).length;
+            let quitada = (totalAtivos > 0 && pagosAtivos === totalAtivos);
+
+            if (quitada && comp.entregue) {
+                comp.status = "FINALIZADA / CONCLUÍDA";
+            } else if (comp.entregue) {
+                comp.status = "ENTREGUE";
+            } else if (quitada) {
+                comp.status = "QUITADA";
+            } else {
+                comp.status = "EM ANDAMENTO / PENDENTE";
+            }
+
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro ao atualizar status de entrega: " + err.message); }
+        };
+
         window.salvarCompraGerenciada = async function(compraKey) {
             if (!db) return;
             let comp = comprasColetivasCache[compraKey];
@@ -1206,6 +1235,8 @@
 
             let nomeInput = document.getElementById('det-nome-compra');
             if (nomeInput) comp.nome = nomeInput.value.trim();
+
+            comp.entregue = document.getElementById('det-entregue')?.checked || false;
 
             comp.financeiro = {
                 subtotal: parseFloat(document.getElementById('fin-subtotal')?.value) || 0,
@@ -1246,6 +1277,21 @@
             comp.participantes = novosParticipantes;
 
             calcularValoresDevidosCompra(comp);
+
+            let ativos = Object.values(novosParticipantes).filter(p => p && p.ativo);
+            let totalAtivos = ativos.length;
+            let pagosAtivos = ativos.filter(p => p.pago).length;
+            let quitada = (totalAtivos > 0 && pagosAtivos === totalAtivos);
+
+            if (quitada && comp.entregue) {
+                comp.status = "FINALIZADA / CONCLUÍDA";
+            } else if (comp.entregue) {
+                comp.status = "ENTREGUE";
+            } else if (quitada) {
+                comp.status = "QUITADA";
+            } else {
+                comp.status = "EM ANDAMENTO / PENDENTE";
+            }
 
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
@@ -1304,10 +1350,11 @@
         window.finalizarCompraColetivaStatus = async function(compraKey) {
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
-            comp.status = "ENTREGUE / FINALIZADA";
+            comp.entregue = true;
+            comp.status = "FINALIZADA / CONCLUÍDA";
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
-                alert("Compra coletiva marcada como finalizada/entregue!");
+                alert("Compra coletiva marcada como entregue e finalizada!");
                 renderizarModalComprasColetivas();
             } catch(err) { alert("Erro ao finalizar: " + err.message); }
         };
@@ -1343,6 +1390,15 @@
 
                 let calcSubtotal = itens.reduce((acc, it) => acc + ((it.valor || 0) * (it.qtd || 1)), 0);
                 let valorGlobalFinal = calcSubtotal - (fin.desconto || 0) + (fin.frete || 0) + (fin.imposto || 0) + (fin.icms || 0) + (fin.outros || 0);
+
+                let ativosArr = Object.values(participantes).filter(p => p && p.ativo);
+                let totalAtivos = ativosArr.length;
+                let pagosAtivos = ativosArr.filter(p => p.pago).length;
+                let quitada = (totalAtivos > 0 && pagosAtivos === totalAtivos);
+                let entregue = !!comp.entregue;
+                let finalizada = quitada && entregue;
+
+                let statusExibicao = finalizada ? "Finalizada (Quitada & Entregue)" : (quitada ? "Quitada (100% Paga)" : (entregue ? "Entregue (Aguardando Pagamento)" : "Em Andamento"));
 
                 let dadosBase = obterTodosDadosConsolidados();
                 let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
@@ -1394,6 +1450,22 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--bg-input); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-card);">
                         <span style="font-size: 0.95rem; font-weight: 700; color: var(--accent-gold);">Gerenciando: ${escapeHtml(comp.chave)}</span>
                         <button class="btn-action-primary" style="background: #3a86ff; font-weight: 700;" onclick="voltarParaListaCompras()">⬅️ Voltar para Lista</button>
+                    </div>
+
+                    <div class="config-panel" style="background: rgba(46,196,182,0.06); border: 1px solid var(--accent-green);">
+                        <div class="config-panel-title" style="color: var(--accent-green);">📦 STATUS, ENTREGA E QUITAGEM</div>
+                        <div style="display: flex; gap: 20px; align-items: center; margin-top: 6px; flex-wrap: wrap; justify-content: space-between;">
+                            <label class="checkbox-item" style="font-weight: 700; font-size: 0.95rem;">
+                                <input type="checkbox" id="det-entregue" ${entregue ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: var(--accent-green); cursor: pointer;">
+                                Produto Entregue ✅
+                            </label>
+                            <div style="font-size: 0.9rem;">
+                                Pagamento: <strong style="color: ${quitada ? 'var(--accent-green)' : 'var(--accent-gold)'};">${quitada ? 'Quitada (100% paga)' : `${pagosAtivos}/${totalAtivos} pagos`}</strong>
+                            </div>
+                            <div style="font-size: 0.9rem;">
+                                Status Geral: <strong style="color: var(--accent-title);">${statusExibicao}</strong>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="config-panel">
@@ -1529,10 +1601,8 @@
 
             let cardsHtml = keys.map(k => {
                 let comp = comprasColetivasCache[k];
-                let status = comp.status || "EM ANDAMENTO / PENDENTE";
-                let isEntregue = status.includes("FINALIZADA") || status.includes("ENTREGUE");
-                let statusBadgeColor = isEntregue ? "rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue);" : "rgba(255, 183, 3, 0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold);";
-                let statusDot = isEntregue ? "🔵" : "🟡";
+                sincronizarParticipantesCompra(comp);
+                calcularValoresDevidosCompra(comp);
 
                 let participantes = comp.participantes || {};
                 let participantesArr = Object.values(participantes).filter(p => p && p.nome && p.nome.trim() !== "");
@@ -1540,6 +1610,16 @@
                 let totalAtivos = ativosArr.length;
                 let pagosAtivos = ativosArr.filter(p => p.pago).length;
                 let pct = totalAtivos > 0 ? Math.round((pagosAtivos / totalAtivos) * 100) : 0;
+                let quitada = (totalAtivos > 0 && pagosAtivos === totalAtivos);
+                let entregue = !!comp.entregue;
+                let finalizada = quitada && entregue;
+
+                let statusExibicao = finalizada ? "Finalizada (Quitada & Entregue)" : (quitada ? "Quitada" : (entregue ? "Entregue" : "Em Andamento"));
+                let badgeColor = finalizada ? "rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green);" : (quitada ? "rgba(58,134,255,0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue);" : "rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold);");
+
+                let botaoEntregueCard = entregue 
+                    ? `<button class="btn" style="background: rgba(46,196,182,0.2); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 6px 14px; font-size: 0.85rem;" onclick="alternarEntregueCompra('${k}')">✅ Entregue</button>`
+                    : `<button class="btn" style="background: rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold); padding: 6px 14px; font-size: 0.85rem;" onclick="alternarEntregueCompra('${k}')">📦 Marcar Entregue</button>`;
 
                 let rastreioBtn = comp.rastreio ? 
                     `<button class="btn" style="background: rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold); padding: 6px 14px; font-size: 0.85rem;" onclick="gerenciarCompraColetiva('${k}')">📦 Rastreio: ${escapeHtml(comp.rastreio)}</button>` :
@@ -1552,13 +1632,14 @@
                 }).join('');
 
                 return `
-                    <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 5px solid ${isEntregue ? 'var(--accent-blue)' : 'var(--accent-gold)'}; border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 5px solid ${finalizada ? 'var(--accent-green)' : (quitada ? 'var(--accent-blue)' : 'var(--accent-gold)')}; border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                                 <span style="font-size: 1.05rem; font-weight: 700; color: var(--text-title);">🛒 ${escapeHtml(comp.nome || comp.chave)}</span>
-                                <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: ${statusBadgeColor}">${statusDot} ${status}</span>
+                                <span style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: ${badgeColor}">${statusExibicao}</span>
                             </div>
                             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                ${botaoEntregueCard}
                                 <button class="btn" style="background: rgba(114,9,183,0.25); color: #e0aaff; border: 1px solid #7209b7; padding: 6px 14px; font-size: 0.85rem;" onclick="resumirCompraColetiva('${k}')">📊 Resumir</button>
                                 ${rastreioBtn}
                                 <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 6px 14px; font-size: 0.85rem;" onclick="gerenciarCompraColetiva('${k}')">⚙️ Gerenciar</button>
@@ -1572,11 +1653,11 @@
 
                         <div style="display: flex; flex-direction: column; gap: 6px;">
                             <div style="display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
-                                <span>STATUS DE PAGAMENTOS (${pagosAtivos}/${totalAtivos})</span>
-                                <span style="color: var(--accent-green);">${pct}%</span>
+                                <span>STATUS DE PAGAMENTOS (${pagosAtivos}/${totalAtivos} pagos — ${quitada ? 'Quitada ✅' : pct + '%'})</span>
+                                <span style="color: ${quitada ? 'var(--accent-green)' : 'var(--accent-gold)'};">${quitada ? 'Quitada' : pct + '%'}</span>
                             </div>
                             <div style="background: var(--bg-card); border-radius: 6px; height: 8px; width: 100%; overflow: hidden; border: 1px solid var(--border-card);">
-                                <div style="background: var(--accent-green); width: ${pct}%; height: 100%; transition: width 0.3s ease;"></div>
+                                <div style="background: ${quitada ? 'var(--accent-green)' : 'var(--accent-gold)'}; width: ${pct}%; height: 100%; transition: width 0.3s ease;"></div>
                             </div>
                         </div>
                     </div>
@@ -1611,6 +1692,11 @@
             let totalParticipantes = participantesAtivos.length;
             let devedores = participantesAtivos.filter(p => !p.pago);
             let pagos = participantesAtivos.filter(p => p.pago);
+            let quitada = (totalParticipantes > 0 && pagos.length === totalParticipantes);
+            let entregue = !!comp.entregue;
+            let finalizada = quitada && entregue;
+
+            let statusResumo = finalizada ? "Finalizada (Quitada & Entregue)" : (quitada ? "Quitada" : (entregue ? "Entregue" : "Em Andamento"));
 
             let modalTituloEl = document.getElementById('compra-resumo-titulo');
             let modalCorpoEl = document.getElementById('compra-resumo-corpo');
@@ -1622,7 +1708,7 @@
 
             let participantesHtml = participantesAtivos.map(p => {
                 let statusBadge = p.pago 
-                    ? `<span style="color: var(--accent-green); font-weight: 700;">Pago ✅</span>` 
+                    ? `<span style="color: var(--accent-green); font-weight: 700;">Quitado / Pago ✅</span>` 
                     : `<span style="color: var(--accent-red); font-weight: 700;">Pendente ❌</span>`;
 
                 let pixBoxHtml = "";
@@ -1664,14 +1750,14 @@
 
             modalCorpoEl.innerHTML = `
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border-card);">
-                    <div><strong>Status:</strong> ${escapeHtml(comp.status || 'Pendente')}</div>
+                    <div><strong>Status:</strong> ${statusResumo}</div>
                     <div><strong>Rastreio:</strong> ${escapeHtml(comp.rastreio || 'Não informado')}</div>
-                    <div><strong>Participantes Ativos:</strong> ${totalParticipantes}</div>
+                    <div><strong>Entregue:</strong> ${entregue ? 'Sim ✅' : 'Não 📦'}</div>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
                     <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Detalhamento dos Participantes no Rateio (${totalParticipantes})</span>
-                    <span style="font-size: 0.8rem; color: var(--accent-green);">Pagos: ${pagos.length} | Pendentes: ${devedores.length}</span>
+                    <span style="font-size: 0.8rem; color: var(--accent-green);">Quitados: ${pagos.length} | Pendentes: ${devedores.length}</span>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; padding-right: 4px;">
@@ -2933,18 +3019,12 @@
                         let ativos = Object.values(participantes).filter(p => p && p.ativo);
                         let totalAtivos = ativos.length;
                         let pagosAtivos = ativos.filter(p => p.pago).length;
-                        let faltamPagos = totalAtivos - pagosAtivos;
+                        let quitada = (totalAtivos > 0 && pagosAtivos === totalAtivos);
+                        let entregue = !!comp.entregue;
+                        let finalizada = quitada && entregue;
 
-                        let statusOriginal = comp.status || "EM ANDAMENTO / PENDENTE";
-                        let entregaFeita = statusOriginal.includes("ENTREGUE") || statusOriginal.includes("FINALIZADA");
-                        let tudoPago = (totalAtivos > 0 && pagosAtivos === totalAtivos);
-
-                        let statusFinal = statusOriginal;
-                        if (tudoPago && entregaFeita) {
-                            statusFinal = "FINALIZADA / CONCLUÍDA";
-                        }
-
-                        let badgeColor = statusFinal.includes("FINALIZADA") ? "rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green);" : "rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold);";
+                        let statusFinal = finalizada ? "Finalizada (Quitada & Entregue)" : (quitada ? "Quitada (100% Paga)" : (entregue ? "Entregue" : "Em Andamento"));
+                        let badgeColor = finalizada ? "rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green);" : (quitada ? "rgba(58,134,255,0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue);" : "rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold);");
 
                         return `
                             <div style="background: var(--bg-input); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 6px;">
@@ -2953,7 +3033,7 @@
                                     <button class="btn-action-primary" style="background: #3a86ff; padding: 5px 12px; font-size: 0.8rem;" onclick="resumirCompraColetiva('${k}')">📊 Resumo</button>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; color: var(--text-muted); flex-wrap: wrap; gap: 6px;">
-                                    <span>Pagamentos: <strong style="color: var(--accent-green);">${pagosAtivos} feitos</strong> | <strong style="color: var(--accent-red);">${faltamPagos} faltam</strong></span>
+                                    <span>Pagamentos: <strong style="color: var(--accent-green);">${pagosAtivos}/${totalAtivos} pagos</strong> (${quitada ? 'Quitada ✅' : ''})</span>
                                     <span style="padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; background: ${badgeColor}">${statusFinal}</span>
                                 </div>
                             </div>
