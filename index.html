@@ -471,6 +471,17 @@
         </div>
     </div>
 
+    <!-- Modal de Resumo de Compra Coletiva (Corrigido) -->
+    <div id="compra-resumo-modal" class="custom-modal" style="z-index: 10600;">
+        <div class="modal-content" style="max-width: 650px; border-top-color: var(--accent-cc);">
+            <div class="modal-header">
+                <div class="modal-title" id="compra-resumo-titulo">📊 Resumo da Compra Coletiva</div>
+                <button class="modal-close" onclick="fecharModalResumoCompra()">&times;</button>
+            </div>
+            <div class="modal-body" id="compra-resumo-corpo" style="display: flex; flex-direction: column; gap: 16px;"></div>
+        </div>
+    </div>
+
     <!-- Participar do Campeonato -->
     <div id="participar-campeonato-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 600px; border-top-color: var(--accent-gold);">
@@ -575,7 +586,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.72.0 (Admin Isolado com Senha)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.73.0 (Compras Coletivas Modal Corrigido)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -1574,9 +1585,84 @@
         window.resumirCompraColetiva = function(compraKey) {
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
+            sincronizarParticipantesCompra(comp);
+            calcularValoresDevidosCompra(comp);
+
             let participantes = comp.participantes || {};
-            let listaPart = Object.values(participantes).filter(p => p && p.nome && p.nome.trim() !== "").map(p => `- ${p.nome}: R$ ${(p.valorDevido || 0).toFixed(2)} (${p.pago ? 'Pago ✅' : 'Pendente ❌'})`).join('\n') || 'Nenhum participante.';
-            alert(`📦 RESUMO DA COMPRA: ${comp.nome || comp.chave}\nStatus: ${comp.status}\nRastreio: ${comp.rastreio || 'Não informado'}\n\nParticipantes e Valores:\n${listaPart}`);
+            let participantesAtivos = Object.values(participantes).filter(p => p && p.nome && p.nome.trim() !== "" && p.ativo);
+            let totalParticipantes = participantesAtivos.length;
+            let devedores = participantesAtivos.filter(p => !p.pago);
+            let pagos = participantesAtivos.filter(p => p.pago);
+
+            let modalTituloEl = document.getElementById('compra-resumo-titulo');
+            let modalCorpoEl = document.getElementById('compra-resumo-corpo');
+            if (!modalCorpoEl) return;
+
+            if (modalTituloEl) modalTituloEl.innerHTML = `📊 Resumo: ${escapeHtml(comp.nome || comp.chave)}`;
+
+            let chavePixBase = comp.chavePix || "00020126580014br.gov.pix.pix0136aac94da7-9d9a-463a-b33a-b974665b3022520400005303986540546.705802BR5925LUIS RAPHAEL";
+
+            let participantesHtml = participantesAtivos.map(p => {
+                let statusBadge = p.pago 
+                    ? `<span style="color: var(--accent-green); font-weight: 700;">Pago ✅</span>` 
+                    : `<span style="color: var(--accent-red); font-weight: 700;">Pendente ❌</span>`;
+
+                let pixBoxHtml = "";
+                if (!p.pago) {
+                    let valorStr = (p.valorDevido || 0).toFixed(2);
+                    let payloadPixPiloto = `${chavePixBase} (Valor: R$ ${valorStr} - ${p.nome})`;
+                    let qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(payloadPixPiloto)}`;
+
+                    pixBoxHtml = `
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-card); display: flex; flex-direction: column; align-items: center; gap: 10px; background: var(--bg-body); padding: 12px; border-radius: 8px;">
+                            <span style="font-size: 0.8rem; color: var(--accent-gold); font-weight: 700;">QR Code Pix para Pagamento (R$ ${valorStr})</span>
+                            <div style="background: #fff; padding: 6px; border-radius: 6px; width: 130px; height: 130px; display: flex; align-items: center; justify-content: center;">
+                                <img src="${escapeHtml(qrCodeUrl)}" alt="QR Code Pix" style="max-width: 100%; max-height: 100%;">
+                            </div>
+                            <div style="display: flex; gap: 6px; width: 100%;">
+                                <input type="text" readonly class="config-input" id="pix-resumo-${p.nome.replace(/\s+/g, '')}" value="${escapeHtml(payloadPixPiloto)}" style="font-size: 0.75rem; text-align: center; color: var(--text-muted);">
+                                <button class="btn-action-primary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="navigator.clipboard.writeText(document.getElementById('pix-resumo-${p.nome.replace(/\s+/g, '')}').value); alert('Chave Pix Copia e Cola copiada!');">Copiar</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: var(--text-title); font-size: 0.95rem;">${escapeHtml(p.nome)}</strong>
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <span style="color: var(--accent-gold); font-weight: 700; font-size: 0.95rem;">R$ ${(p.valorDevido || 0).toFixed(2)}</span>
+                                ${statusBadge}
+                            </div>
+                        </div>
+                        ${pixBoxHtml}
+                    </div>
+                `;
+            }).join('') || `<div style="text-align: center; color: var(--text-muted);">Nenhum participante marcado no rateio.</div>`;
+
+            modalCorpoEl.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: var(--bg-input); padding: 12px; border-radius: 8px; border: 1px solid var(--border-card);">
+                    <div><strong>Status:</strong> ${escapeHtml(comp.status || 'Pendente')}</div>
+                    <div><strong>Rastreio:</strong> ${escapeHtml(comp.rastreio || 'Não informado')}</div>
+                    <div><strong>Participantes Ativos:</strong> ${totalParticipantes}</div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Detalhamento dos Participantes no Rateio (${totalParticipantes})</span>
+                    <span style="font-size: 0.8rem; color: var(--accent-green);">Pagos: ${pagos.length} | Pendentes: ${devedores.length}</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px; max-height: 50vh; overflow-y: auto; padding-right: 4px;">
+                    ${participantesHtml}
+                </div>
+            `;
+
+            document.getElementById('compra-resumo-modal').style.display = 'flex';
+        };
+
+        window.fecharModalResumoCompra = function() {
+            document.getElementById('compra-resumo-modal').style.display = 'none';
         };
 
         window.abrirModalParticipar = function(key) {
@@ -2612,6 +2698,7 @@
             if (event.target === document.getElementById('campeonatos-modal')) document.getElementById('campeonatos-modal').style.display = 'none';
             if (event.target === document.getElementById('pilotos-gestao-modal')) document.getElementById('pilotos-gestao-modal').style.display = 'none';
             if (event.target === document.getElementById('compras-modal')) document.getElementById('compras-modal').style.display = 'none';
+            if (event.target === document.getElementById('compra-resumo-modal')) document.getElementById('compra-resumo-modal').style.display = 'none';
             if (event.target === document.getElementById('participar-campeonato-modal')) document.getElementById('participar-campeonato-modal').style.display = 'none';
         };
 
