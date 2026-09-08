@@ -837,24 +837,25 @@
         function ordenarParticipantesBateria(participantesValidos) {
             if (!participantesValidos || participantesValidos.length === 0) return [];
             const valorTempo = (l) => {
-                if (l && typeof l === 'object') return Number(l.tempo);
+                if (!l) return 0;
+                if (typeof l === 'object') return Number(l.tempo || 0);
                 return Number(l);
             };
-            const totalValido = (p) => (p.laps || [])
+            const totalValido = (p) => ((p && p.laps) || [])
                 .map(valorTempo)
                 .filter(t => Number.isFinite(t) && t > 0)
                 .reduce((acc, t) => acc + t, 0);
 
             return [...participantesValidos].sort((a, b) => {
-                const voltasA = (a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
-                const voltasB = (b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+                const voltasA = ((a && a.laps) || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+                const voltasB = ((b && b.laps) || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
                 if (voltasA !== voltasB) return voltasB - voltasA;
                 const tempoA = totalValido(a);
                 const tempoB = totalValido(b);
                 if (tempoA !== tempoB) return tempoA - tempoB;
-                const melhorA = Math.min(...((a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
-                const melhorB = Math.min(...((b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
-                return melhorA - melhorB;
+                const melhorA = Math.min(...(((a && a.laps) || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+                const melhorB = Math.min(...(((b && b.laps) || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+                return (melhorA === Infinity ? 0 : melhorA) - (melhorB === Infinity ? 0 : melhorB);
             });
         }
 
@@ -994,8 +995,8 @@
                 let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
                 if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
                 let meta = pilotosMetadadosCache[pReal] || {};
-                return { ...d, piloto: pReal, apelido: meta.apelido || '' };
-            }).filter(d => d.laps && d.laps.length > 0);
+                return { ...d, piloto: pReal, apelido: meta.apelido || '', laps: d.laps || [] };
+            });
 
             let ordenados = ordenarParticipantesBateria(dadosSessao);
             let showPodium = document.getElementById('pista-mod-podium')?.checked ?? true;
@@ -1062,7 +1063,7 @@
                     <div class="pista-stats-grid">
                         <div class="pista-stat-card">
                             <span class="pista-stat-label">⚡ Melhor Volta Geral</span>
-                            <span class="pista-stat-value">${melhorVoltaGeralVal < 999999 ? melhorVoltaGeralVal.toFixed(3) + 's' : '--'} <span style="font-size:0.75rem; color:var(--text-muted);">(${melhorPiloto})</span></span>
+                            <span class="pista-stat-value">${melhorVoltaGeralVal < 999999 ? melhorVoltaGeralVal.toFixed(3) + 's' : '--'} <span style="font-size:0.75rem; color:var(--text-muted);">(${melhorPiloto || 'N/A'})</span></span>
                         </div>
                         <div class="pista-stat-card">
                             <span class="pista-stat-label">🚀 Velocidade Máxima Estimada</span>
@@ -1109,15 +1110,19 @@
             conteudoEl.innerHTML = htmlParts.join('');
 
             if (showGraficos && ordenados.length > 0) {
-                renderizarGraficoRitmoPersonalizado('pista-chart-ritmo', ordenados);
-                renderizarGraficoPosicaoPersonalizado('pista-chart-posicao', ordenados);
+                try {
+                    renderizarGraficoRitmoPersonalizado('pista-chart-ritmo', ordenados);
+                    renderizarGraficoPosicaoPersonalizado('pista-chart-posicao', ordenados);
+                } catch (e) {
+                    console.warn("Aviso ao renderizar gráficos do telão:", e);
+                }
             }
         }
 
         function renderizarGraficoRitmoPersonalizado(canvasId, ordenados) {
             let canvasEl = document.getElementById(canvasId);
             if (!canvasEl) return;
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
             let datasets = ordenados.map((p, idx) => {
@@ -1138,7 +1143,7 @@
         function renderizarGraficoPosicaoPersonalizado(canvasId, ordenados) {
             let canvasEl = document.getElementById(canvasId);
             if (!canvasEl) return;
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
             let datasets = ordenados.map((p, idx) => {
@@ -3319,8 +3324,7 @@
         }
 
         function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
-            let maxVoltas = 0;
-            dadosSessao.forEach(d => { if (d.laps && d.laps.length > maxVoltas) maxVoltas = d.laps.length; });
+            let maxVoltas = Math.max(0, ...dadosSessao.map(d => d.laps ? d.laps.length : 0));
             let lapLogs = {}, posicoesAnterior = {};
 
             for (let v = 0; v < maxVoltas; v++) {
@@ -3373,8 +3377,8 @@
         function gerarTabelaGeralSessao(ordenados) {
             if (!ordenados || ordenados.length === 0) return "<div>Sem dados.</div>";
             
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.filter(l => l > 0).length : 0));
-            if (maxVoltas === 0) maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.filter(l => l > 0).length : 0));
+            if (maxVoltas === 0) maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
 
             let thVoltasHtml = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center; font-size: 0.7rem;">V${i + 1}</th>`).join('');
 
@@ -3495,7 +3499,7 @@
         function renderizarGraficoRitmo(bateriaKey, safeKey, ordenados) {
             let canvasEl = document.getElementById(`chart-ritmo-${safeKey}`);
             if (!canvasEl) return;
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
             let datasets = ordenados.map((p, idx) => {
@@ -3516,7 +3520,7 @@
         function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
             let canvasEl = document.getElementById(`chart-posicao-${safeKey}`);
             if (!canvasEl) return;
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
             let datasets = ordenados.map((p, idx) => {
@@ -3548,6 +3552,10 @@
                     scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
                 }
             }));
+        }
+
+        function gerarRelatórioPDF() {
+            window.print();
         }
     </script>
 </body>
