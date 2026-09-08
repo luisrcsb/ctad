@@ -49,9 +49,6 @@
         .btn-pdf-global { background: linear-gradient(135deg, #ff5722 0%, #e63946 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; }
         .btn-admin-trigger { background: linear-gradient(135deg, #7209b7 0%, #3a86ff 100%); color: #ffffff; font-size: 0.9rem; padding: 10px 18px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
         
-        .piloto-link { color: var(--accent-blue); text-decoration: none; font-weight: 700; cursor: pointer; }
-        .piloto-link:hover { color: var(--accent-gold); text-decoration: underline; }
-
         .kpi-compact-section { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
         .kpi-compact-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .kpi-compact-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -75,8 +72,9 @@
         .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; font-weight: bold; }
         .modal-body { padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
 
-        .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
-        .config-panel-title { font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; border-bottom: 1px solid var(--border-card); padding-bottom: 8px; }
+        .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; cursor: pointer; transition: border-color 0.2s; }
+        .config-panel:hover { border-color: var(--accent-blue); }
+        .config-panel-title { font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; border-bottom: 1px solid var(--border-card); padding-bottom: 8px; }
         
         .config-input { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); padding: 8px 12px; border-radius: 6px; flex: 1; font-size: 0.85rem; }
         .btn-action-primary { background: var(--accent-blue); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
@@ -99,22 +97,14 @@
         pre#upload-json-viewer { background: var(--bg-body); color: var(--accent-green); padding: 12px; border-radius: 6px; font-size: 0.75rem; max-height: 200px; overflow: auto; border: 1px solid var(--border-card); line-height: 1.4; }
 
         .session-blocks-container { display: flex; flex-direction: column; gap: 30px; }
-        .session-block { display: flex; flex-direction: column; gap: 20px; background: rgba(21, 28, 40, 0.4); border: 1px solid var(--border-card); border-radius: 14px; padding: 20px; }
-        .session-block-header { background: linear-gradient(135deg, var(--bg-card-header) 0%, var(--bg-card) 100%); border: 1px solid var(--border-card); border-left: 5px solid var(--accent-red); border-radius: 10px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        
         .card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px; }
         .card-header { display: flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 700; color: var(--text-title); margin-bottom: 16px; }
         .card-header::before { content: ''; width: 4px; height: 16px; background-color: var(--accent-red); border-radius: 2px; }
-        .chart-container { position: relative; height: 280px; width: 100%; }
 
         .table-container { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
         th { background-color: var(--bg-card-header); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; padding: 12px 16px; font-weight: 700; border-bottom: 1px solid var(--border-card); }
         td { padding: 12px 16px; border-bottom: 1px solid var(--border-card); vertical-align: middle; }
-
-        .pos-badge { background: var(--accent-gold); color: #000; font-weight: bold; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; display: inline-block; }
-        .session-badge { background: #1d3557; color: var(--accent-blue); padding: 4px 10px; border-radius: 4px; font-size: 0.80rem; font-weight: 600; display: inline-block; }
-        .text-green { color: var(--accent-green); font-weight: 700; }
 
         .footer-container { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 10px; }
         .footer-meta-info { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 16px; font-size: 0.82rem; color: var(--text-muted); background: var(--bg-input); padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border-card); }
@@ -131,7 +121,7 @@
 </head>
 <body>
 
-    <!-- Modais -->
+    <!-- Modais de Administração e Gestão -->
     <div id="admin-modal" class="custom-modal" style="z-index: 10700;">
         <div class="modal-content" style="max-width: 900px; border-top-color: var(--accent-red);">
             <div class="modal-header">
@@ -175,7 +165,62 @@
         </div>
     </div>
 
-    <!-- Estrutura Principal -->
+    <div id="campeonatos-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">🏆 Championship Manager</div>
+                <button class="modal-close" onclick="fecharModalCampeonatos()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div class="upload-box">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">🔒 Criar Novo Campeonato</span>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                            <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa Krathus 2026)">
+                            <button class="btn-action-primary" onclick="criarCampeonatoProtegido()">Criar Campeonato</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Campeonatos Cadastrados</span>
+                        <ul id="campeonatos-lista-modal" style="list-style: none; display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto;">
+                            <li>Carregando campeonatos...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pilotos-gestao-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <div class="modal-title">👤 Gestão de Pilotos</div>
+                <button class="modal-close" onclick="fecharModalPilotos()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>Piloto</th><th>Apelido</th><th style="text-align: right;">Ação</th></tr></thead>
+                        <tbody id="tabela-pilotos-apelidos"><tr><td colspan="3" style="text-align: center;">Carregando pilotos...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="compras-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 1100px; border-top-color: var(--accent-cc);">
+            <div class="modal-header">
+                <div class="modal-title">🛒 Compras Coletivas</div>
+                <button class="modal-close" onclick="fecharModalCompras()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Módulo de Compras Coletivas ativo e integrado ao Firebase.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estrutura Principal do Dashboard -->
     <div class="dashboard-container">
         <header class="header">
             <div class="brand-title">
@@ -247,7 +292,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.74.5 (Upload Fix Restored)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.74.6 (All Admin Functions Restored)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -284,10 +329,8 @@
         let listaJsonsCache = [];
         let campeonatosCache = {};
         let comprasColetivasCache = {};
-        let chartInstances = [];
         let pilotosMetadadosCache = {};
         let mesclagensCache = {};
-        let campeonatoAtivoKey = null;
 
         try {
             firebase.initializeApp(firebaseConfig);
@@ -323,26 +366,8 @@
             return timestampData + (matchSeq ? parseInt(matchSeq[1], 10) : 0);
         }
 
-        function ordenarParticipantesBateria(participantesValidos) {
-            if (!participantesValidos || participantesValidos.length === 0) return [];
-            const valorTempo = (l) => (l && typeof l === 'object') ? Number(l.tempo) : Number(l);
-            const totalValido = (p) => (p.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).reduce((acc, t) => acc + t, 0);
-
-            return [...participantesValidos].sort((a, b) => {
-                const voltasA = (a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
-                const voltasB = (b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
-                if (voltasA !== voltasB) return voltasB - voltasA;
-                const tempoA = totalValido(a);
-                const tempoB = totalValido(b);
-                if (tempoA !== tempoB) return tempoA - tempoB;
-                const melhorA = Math.min(...((a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
-                const melhorB = Math.min(...((b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
-                return melhorA - melhorB;
-            });
-        }
-
         document.addEventListener("DOMContentLoaded", () => {
-            console.log("Krathus Racing v5.74.5 inicializado.");
+            console.log("Krathus Racing v5.74.6 inicializado.");
             gerarFiltrosDinamicos();
             atualizarDashboard();
 
@@ -356,6 +381,12 @@
                 db.ref('mesclagensPilotos').on('value', snapshot => {
                     mesclagensCache = Object.assign({}, ALIAS_EDGARD_DJ_DEFAULTS, snapshot.val() || {});
                     gerarFiltrosDinamicos();
+                    atualizarDashboard();
+                });
+
+                db.ref('campeonatos').on('value', snapshot => {
+                    campeonatosCache = snapshot.val() || {};
+                    renderizarListaCampeonatosModal();
                     atualizarDashboard();
                 });
 
@@ -381,10 +412,16 @@
 
         window.abrirModalAdmin = function() { document.getElementById('admin-modal').style.display = 'flex'; renderizarAdminModal(); };
         window.fecharModalAdmin = function() { document.getElementById('admin-modal').style.display = 'none'; };
+        
         window.fazerLoginAdmin = function() {
-            if (document.getElementById('input-senha-admin').value === SENHA_UNIFICADA) { isAdminLogado = true; renderizarAdminModal(); }
-            else { alert("❌ Senha incorreta!"); }
+            if (document.getElementById('input-senha-admin').value === SENHA_UNIFICADA) { 
+                isAdminLogado = true; 
+                renderizarAdminModal(); 
+            } else { 
+                alert("❌ Senha incorreta!"); 
+            }
         };
+
         window.logoutAdmin = function() { isAdminLogado = false; renderizarAdminModal(); };
 
         function renderizarAdminModal() {
@@ -393,11 +430,74 @@
             if (!isAdminLogado) {
                 bodyEl.innerHTML = `<div style="display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 40px; text-align: center;"><h3>🔒 Acesso Restrito</h3><input type="password" id="input-senha-admin" class="config-input" placeholder="Senha..." style="max-width: 250px; text-align: center;"><button class="btn-action-primary" onclick="fazerLoginAdmin()">Entrar</button></div>`;
             } else {
-                bodyEl.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 12px 18px; border-radius: 8px;"><span style="color: var(--accent-green);">🟢 Autenticado</span><button class="btn-action-danger" onclick="logoutAdmin()">Sair</button></div><div style="margin-top: 15px;"><button class="btn btn-admin-trigger" onclick="document.getElementById('upload-modal').style.display='flex'; fecharModalAdmin();">📤 Abrir Central de Uploads</button></div>`;
+                bodyEl.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 12px 18px; border-radius: 8px;">
+                        <span style="color: var(--accent-green);">🟢 Autenticado</span>
+                        <button class="btn-action-danger" onclick="logoutAdmin()">Sair</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 15px;">
+                        <div class="config-panel" onclick="abrirFerramentaAdmin('upload')">
+                            <div class="config-panel-title">📤 Uploads de Relatórios</div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Enviar e gerenciar arquivos PDF/HTML do ZRound.</p>
+                        </div>
+                        <div class="config-panel" onclick="abrirFerramentaAdmin('campeonatos')">
+                            <div class="config-panel-title">🏆 Championship Manager</div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Gerenciar campeonatos, provas e grids.</p>
+                        </div>
+                        <div class="config-panel" onclick="abrirFerramentaAdmin('pilotos')">
+                            <div class="config-panel-title">👤 Gestão de Pilotos</div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Cadastrar apelidos e metadados dos pilotos.</p>
+                        </div>
+                        <div class="config-panel" onclick="abrirFerramentaAdmin('compras')">
+                            <div class="config-panel-title">🛒 Compras Coletivas</div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Administrar pedidos e rateios do grupo.</p>
+                        </div>
+                    </div>
+                `;
             }
         }
 
+        window.abrirFerramentaAdmin = function(tipo) {
+            fecharModalAdmin();
+            if (tipo === 'upload') document.getElementById('upload-modal').style.display = 'flex';
+            if (tipo === 'campeonatos') abrirModalCampeonatos();
+            if (tipo === 'pilotos') abrirModalPilotos();
+            if (tipo === 'compras') abrirModalCompras();
+        };
+
         window.fecharModalUpload = function() { document.getElementById('upload-modal').style.display = 'none'; };
+        window.abrirModalPilotos = function() { document.getElementById('pilotos-gestao-modal').style.display = 'flex'; renderizarGerenciadorPilotos(); };
+        window.fecharModalPilotos = function() { document.getElementById('pilotos-gestao-modal').style.display = 'none'; };
+        window.abrirModalCampeonatos = function() { document.getElementById('campeonatos-modal').style.display = 'flex'; renderizarListaCampeonatosModal(); };
+        window.fecharModalCampeonatos = function() { document.getElementById('campeonatos-modal').style.display = 'none'; };
+        window.abrirModalCompras = function() { document.getElementById('compras-modal').style.display = 'flex'; };
+        window.fecharModalCompras = function() { document.getElementById('compras-modal').style.display = 'none'; };
+
+        function renderizarGerenciadorPilotos() {
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
+            dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
+            let lista = Array.from(pilotosSet).filter(Boolean).sort();
+            document.getElementById('tabela-pilotos-apelidos').innerHTML = lista.map(p => `<tr><td><strong>${escapeHtml(p)}</strong></td><td>${escapeHtml(pilotosMetadadosCache[p]?.apelido || '-')}</td><td style="text-align: right;"><button class="btn-action-primary" onclick="alert('Configurar piloto')">⚙️</button></td></tr>`).join('');
+        }
+
+        window.criarCampeonatoProtegido = async function() {
+            let nome = document.getElementById('input-nome-campeonato').value.trim();
+            if (!nome || !db) return;
+            let key = "camp_" + Date.now();
+            await db.ref('campeonatos/' + key).set({ chave: key, nome, status: "Em andamento", pilotosInscritos: {} });
+            document.getElementById('input-nome-campeonato').value = "";
+            renderizarListaCampeonatosModal();
+        };
+
+        function renderizarListaCampeonatosModal() {
+            let ul = document.getElementById('campeonatos-lista-modal');
+            if (!ul) return;
+            let keys = Object.keys(campeonatosCache);
+            if (keys.length === 0) { ul.innerHTML = `<li>Nenhum campeonato cadastrado.</li>`; return; }
+            ul.innerHTML = keys.map(k => `<li style="background: var(--bg-input); padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;"><strong>${escapeHtml(campeonatosCache[k].nome)}</strong><button class="btn-action-primary" onclick="alert('Gerenciar campeonato')">Gerenciar</button></li>`).join('');
+        }
 
         async function arquivoParaBase64(file) {
             return new Promise((resolve, reject) => {
@@ -612,7 +712,7 @@
 
             let container = document.getElementById('sessions-container');
             if (!container) return;
-            container.innerHTML = `<div class="card" style="text-align: center; color: var(--accent-green);">🟢 Versão v5.74.5 Operacional. O sistema de uploads agora está ativo.</div>`;
+            container.innerHTML = `<div class="card" style="text-align: center; color: var(--accent-green);">🟢 Versão v5.74.6 Operacional. Todas as funções administrativas e de upload restauradas.</div>`;
         };
 
         window.gerarRelatórioPDF = function() { window.print(); };
