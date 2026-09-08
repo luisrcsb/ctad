@@ -33,7 +33,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
-        body { background-color: var(--bg-body); color: var(--text-main); padding: 8px; width: 100%; overflow-x: hidden; }
+        body { background-color: var(--bg-body); color: var(--text-main); padding: 8px; width: 100%; overflow-x: auto; }
         
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
@@ -42,7 +42,18 @@
         }
         input[type=number] { -moz-appearance: textfield; }
 
-        .dashboard-container { width: 100%; max-width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 0 4px; }
+        /* Com a responsividade DESATIVADA por padrão (padrão Desktop Fixo) */
+        .dashboard-container { width: 100%; min-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 0 4px; }
+        .dashboard-gestao-grid { display: grid; grid-template-columns: repeat(2, minmax(400px, 1fr)); gap: 12px; }
+
+        /* Quando a responsividade for ATIVADA via Painel Administrativo */
+        body.responsivo-ativo { overflow-x: hidden; }
+        body.responsivo-ativo .dashboard-container { min-width: 100%; max-width: 100%; }
+        body.responsivo-ativo .dashboard-gestao-grid { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+
+        @media (max-width: 768px) {
+            body.responsivo-ativo .dashboard-gestao-grid { grid-template-columns: 1fr; }
+        }
 
         .header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-card); flex-wrap: wrap; gap: 12px; }
         .brand-title h1 { font-size: 1.3rem; color: var(--text-title); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
@@ -63,12 +74,6 @@
         .kpi-compact-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .kpi-compact-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
         .kpi-compact-value { font-size: 1.05rem; font-weight: 700; color: var(--accent-gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        .dashboard-gestao-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 12px; }
-
-        @media (max-width: 768px) {
-            .dashboard-gestao-grid { grid-template-columns: 1fr; }
-        }
 
         .custom-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -598,7 +603,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.80.0 (Status de Compras Coletivas Integrado)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.81.0 (Controle de Responsividade no Admin)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -711,6 +716,12 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             if (db) {
+                // Sincronizar configuração de responsividade
+                db.ref('configuracoesGlobais/responsivo').on('value', snapshot => {
+                    let ativo = snapshot.val() === true;
+                    document.body.classList.toggle('responsivo-ativo', ativo);
+                });
+
                 db.ref('pilotos').on('value', snap => {
                     let novaLista = [];
                     if (snap.exists()) {
@@ -802,6 +813,16 @@
             renderizarAdminModal();
         };
 
+        window.alternarResponsividadeGlobal = async function(checkbox) {
+            if (!db) return;
+            let ativo = checkbox.checked;
+            try {
+                await db.ref('configuracoesGlobais/responsivo').set(ativo);
+            } catch (err) {
+                alert("Erro ao salvar configuração: " + err.message);
+            }
+        };
+
         function renderizarAdminModal() {
             let bodyEl = document.getElementById('admin-modal-body');
             if (!bodyEl) return;
@@ -819,11 +840,21 @@
                     </div>
                 `;
             } else {
+                let responsivoAtual = document.body.classList.contains('responsivo-ativo');
                 bodyEl.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
                         <span style="font-weight: 700; color: var(--accent-green); font-size: 0.82rem;">🟢 Sessão Administrativa Autenticada</span>
                         <button class="btn-action-danger" style="padding: 4px 10px; font-size: 0.75rem;" onclick="logoutAdmin()">Encerrar</button>
                     </div>
+
+                    <div class="config-panel" style="margin-top: 4px;">
+                        <div class="config-panel-title" style="color: var(--accent-gold);">⚙️ Configurações Gerais do Sistema</div>
+                        <label class="checkbox-item" style="font-weight: 600; font-size: 0.85rem; margin-top: 2px;">
+                            <input type="checkbox" id="check-responsivo-admin" ${responsivoAtual ? 'checked' : ''} onchange="alternarResponsividadeGlobal(this)" style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
+                            Ativar modo responsivo (Adapta o layout automaticamente para telas menores e dispositivos móveis)
+                        </label>
+                    </div>
+
                     <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 6px;">Ferramentas de Gestão</div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 6px;">
                         <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('upload')">
