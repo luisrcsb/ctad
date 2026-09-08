@@ -32,28 +32,6 @@
             --accent-cc: #f72585;
         }
 
-        /* Modos de Acessibilidade */
-        body.modo-alto-contraste {
-            --bg-body: #000000;
-            --bg-card: #0a0a0a;
-            --bg-card-header: #1a1a1a;
-            --bg-input: #111111;
-            --border-card: #ffffff;
-            --text-title: #ffff00;
-            --text-main: #ffffff;
-            --text-muted: #cccccc;
-            --accent-red: #ff0000;
-            --accent-green: #00ff00;
-            --accent-gold: #ffff00;
-            --accent-blue: #00ffff;
-        }
-
-        /* Filtros SVG/CSS para daltonismo */
-        body.modo-protanopia { filter: url('#protanopia-filter'); }
-        body.modo-deuteranopia { filter: url('#deuteranopia-filter'); }
-        body.modo-tritanopia { filter: url('#tritanopia-filter'); }
-        body.modo-acromatopsia { grayscale: 100%; filter: grayscale(100%); }
-
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
         body { background-color: var(--bg-body); color: var(--text-main); padding: 8px; width: 100%; overflow-x: auto; }
         
@@ -64,9 +42,11 @@
         }
         input[type=number] { -moz-appearance: textfield; }
 
+        /* Com a responsividade DESATIVADA por padrão (padrão Desktop Fixo) */
         .dashboard-container { width: 100%; min-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 0 4px; }
         .dashboard-gestao-grid { display: grid; grid-template-columns: repeat(2, minmax(400px, 1fr)); gap: 12px; }
 
+        /* Quando a responsividade for ATIVADA via Painel Administrativo */
         body.responsivo-ativo { overflow-x: hidden; }
         body.responsivo-ativo .dashboard-container { min-width: 100%; max-width: 100%; }
         body.responsivo-ativo .dashboard-gestao-grid { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
@@ -86,7 +66,6 @@
 
         .btn-pdf-global { background: linear-gradient(135deg, #ff5722 0%, #e63946 100%); color: #ffffff; font-size: 0.82rem; padding: 8px 14px; font-weight: 700; }
         .btn-admin-trigger { background: linear-gradient(135deg, #7209b7 0%, #3a86ff 100%); color: #ffffff; font-size: 0.82rem; padding: 8px 14px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-accessibility-trigger { background: linear-gradient(135deg, #2ec4b6 0%, #3a86ff 100%); color: #ffffff; font-size: 0.82rem; padding: 8px 14px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; display: none; align-items: center; gap: 6px; }
         
         .piloto-link { color: var(--accent-blue); text-decoration: none; font-weight: 700; cursor: pointer; }
         .piloto-link:hover { color: var(--accent-gold); text-decoration: underline; }
@@ -108,6 +87,11 @@
         .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-weight: bold; }
         .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
+        .dossier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+        .dossier-kpi { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 2px; text-align: center; }
+        .dossier-kpi-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .dossier-kpi-value { font-size: 1.1rem; font-weight: 700; color: var(--accent-gold); }
+
         .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         .config-panel-title { font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-card); padding-bottom: 6px; }
         
@@ -119,6 +103,10 @@
         .btn-action-danger { background: var(--accent-red); color: #fff; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 0.82rem; cursor: pointer; }
         .btn-action-danger:hover { background: #c53030; }
 
+        .zround-tabs-header { display: flex; gap: 6px; border-bottom: 2px solid var(--border-card); padding-bottom: 6px; flex-wrap: wrap; }
+        .zround-tab-btn { background: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-muted); padding: 7px 12px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+        .zround-tab-btn.active { background: var(--accent-gold); color: #000; border-color: var(--accent-gold); }
+
         .filters-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
         .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
         .filter-group { display: flex; flex-direction: column; gap: 8px; }
@@ -128,6 +116,12 @@
         .checkbox-container { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto; }
         .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-main); cursor: pointer; }
         .checkbox-item input[type="checkbox"] { accent-color: var(--accent-red); width: 15px; height: 15px; cursor: pointer; }
+
+        .upload-grid-manager { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+        .upload-box { background: var(--bg-input); border: 1px dashed var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        ul#upload-lista-historico { list-style: none; display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; padding-right: 4px; }
+        ul#upload-lista-historico li { background: var(--bg-input); padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
+        pre#upload-json-viewer { background: var(--bg-body); color: var(--accent-green); padding: 10px; border-radius: 6px; font-size: 0.72rem; max-height: 160px; overflow: auto; border: 1px solid var(--border-card); line-height: 1.4; }
 
         .session-block-header { background: linear-gradient(135deg, var(--bg-card-header) 0%, var(--bg-card) 100%); border: 1px solid var(--border-card); border-left: 5px solid var(--accent-red); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 8px; }
         .session-block-title { font-size: 1.05rem; font-weight: 700; color: var(--text-title); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -146,11 +140,15 @@
         .chart-container { position: relative; height: 280px; width: 100%; }
 
         .position-analysis-container { margin-top: 12px; background: var(--bg-input); border-left: 4px solid var(--accent-gold); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .position-analysis-title { font-size: 0.8rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; }
+        .position-log-list { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; line-height: 1.4; max-height: 180px; overflow-y: auto; }
         .position-log-item { background: rgba(21, 28, 40, 0.5); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-card); }
         .tag-gain { color: var(--accent-green); font-weight: 700; }
         .tag-loss { color: var(--accent-red); font-weight: 700; }
 
         .comments-section { margin-top: 12px; background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .comments-title { font-size: 0.8rem; font-weight: 700; color: var(--accent-blue); text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+        .comments-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
         .comment-item { background: rgba(21, 28, 40, 0.6); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-card); font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px; }
         .comment-header-row { display: flex; justify-content: space-between; align-items: center; }
         .comment-author { font-weight: 700; color: var(--accent-gold); }
@@ -170,7 +168,13 @@
 
         .pos-badge { background: var(--accent-gold); color: #000; font-weight: bold; font-size: 0.75rem; padding: 2px 5px; border-radius: 4px; display: inline-block; }
         .session-badge { background: #1d3557; color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+        .text-green { color: var(--accent-green); font-weight: 700; }
         
+        .analysis-subrow-box { background: rgba(28, 38, 59, 0.6); border-left: 4px solid var(--accent-blue); border-radius: 6px; padding: 12px 14px; font-size: 0.82rem; color: var(--text-main); line-height: 1.5; display: flex; flex-direction: column; gap: 8px; }
+        .analysis-section-block { display: flex; flex-direction: column; gap: 2px; background: rgba(13, 17, 26, 0.4); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-card); }
+        .analysis-section-title { color: var(--accent-gold); text-transform: uppercase; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+        .analysis-section-content { color: var(--text-main); font-size: 0.82rem; }
+
         .footer-container { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 8px; width: 100%; }
         .footer-meta-info { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; font-size: 0.78rem; color: var(--text-muted); background: var(--bg-input); padding: 5px 12px; border-radius: 18px; border: 1px solid var(--border-card); }
         .footer-logos { display: flex; align-items: center; justify-content: center; gap: 20px; }
@@ -186,41 +190,9 @@
 </head>
 <body>
 
-    <!-- Filtros SVG ocultos para daltonismo -->
-    <svg style="display:none">
-        <filter id="protanopia-filter">
-            <feColorMatrix type="matrix" values="0.567, 0.433, 0, 0, 0  0.558, 0.442, 0, 0, 0  0, 0.242, 0.758, 0, 0  0, 0, 0, 1, 0"/>
-        </filter>
-        <filter id="deuteranopia-filter">
-            <feColorMatrix type="matrix" values="0.625, 0.375, 0, 0, 0  0.7, 0.3, 0, 0, 0  0, 0.3, 0.7, 0, 0  0, 0, 0, 1, 0"/>
-        </filter>
-        <filter id="tritanopia-filter">
-            <feColorMatrix type="matrix" values="0.95, 0.05, 0, 0, 0  0, 0.433, 0.567, 0, 0  0, 0.475, 0.525, 0, 0  0, 0, 0, 1, 0"/>
-        </filter>
-    </svg>
-
-    <!-- Modal de Acessibilidade -->
-    <div id="accessibility-modal" class="custom-modal" style="z-index: 10800;">
-        <div class="modal-content" style="max-width: 500px; border-top-color: var(--accent-green);">
-            <div class="modal-header">
-                <div class="modal-title">♿ Opções de Acessibilidade</div>
-                <button class="modal-close" onclick="fecharModalAcessibilidade()">&times;</button>
-            </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Personalize a visualização da tela conforme sua necessidade:</p>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <button class="btn-action-primary" style="background: var(--bg-input); border: 1px solid var(--border-card); text-align: left; color: var(--text-main);" onclick="aplicarModoAcessibilidade('normal')">⚪ Padrão (Normal)</button>
-                    <button class="btn-action-primary" style="background: var(--bg-input); border: 1px solid var(--border-card); text-align: left; color: var(--accent-gold);" onclick="aplicarModoAcessibilidade('alto-contraste')">⬛ Alto Contraste</button>
-                    <button class="btn-action-primary" style="background: var(--bg-input); border: 1px solid var(--border-card); text-align: left; color: var(--text-main);" onclick="aplicarModoAcessibilidade('protanopia')">👁️ Daltonismo: Protanopia (Vermelho)</button>
-                    <button class="btn-action-primary" style="background: var(--bg-input); border: 1px solid var(--border-card); text-align: left; color: var(--text-main);" onclick="aplicarModoAcessibilidade('deuteranopia')">👁️ Daltonismo: Deuteranopia (Verde)</button>
-                    <button class="btn-action-primary" style="background: var(--bg-input); border: 1px solid var(--border-card); text-align: left; color: var(--text-main);" onclick="aplicarModoAcessibilidade('tritanopia')">👁️ Daltonismo: Tritanopia (Azul)</button>
-                    <button class="btn-action-primary" style="background: var(--bg-input); border: 1px solid var(--border-card); text-align: left; color: var(--text-main);" onclick="aplicarModoAcessibilidade('acromatopsia')">👁️ Acromatopsia (Escala de Cinza)</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Painel de Administração Central -->
+    <!-- Modais do Sistema -->
+    
+    <!-- Painel de Administração Central (Protegido por Senha) -->
     <div id="admin-modal" class="custom-modal" style="z-index: 10700;">
         <div class="modal-content" style="max-width: 800px; border-top-color: var(--accent-red);">
             <div class="modal-header">
@@ -231,7 +203,7 @@
         </div>
     </div>
 
-    <!-- Outros Modais (Piloto, Upload, Campeonatos, Compras, etc.) mantidos integrados -->
+    <!-- Ficha do Piloto / Resumo Detalhado -->
     <div id="piloto-modal" class="custom-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -242,6 +214,7 @@
         </div>
     </div>
 
+    <!-- Modal de Configuração Individual do Piloto -->
     <div id="piloto-config-modal" class="custom-modal" style="z-index: 10600;">
         <div class="modal-content" style="max-width: 700px; border-top-color: var(--accent-blue);">
             <div class="modal-header">
@@ -252,48 +225,291 @@
         </div>
     </div>
 
+    <!-- Central de Uploads -->
     <div id="upload-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">📤 Central de Upload de Relatórios</div>
+                <div class="modal-title">📤 Central de Upload de Relatórios (Banco Principal)</div>
                 <button class="modal-close" onclick="fecharModalUpload()">&times;</button>
             </div>
             <div class="modal-body">
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    <input type="file" id="input-pdf-upload" accept=".pdf,.html,.htm" multiple class="config-input">
-                    <button class="btn btn-admin-trigger" onclick="processarUploadEEnviarNuvemPrincipal()">Converter e Enviar</button>
+                <div class="upload-grid-manager">
+                    <div class="upload-box">
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Selecione relatórios PDF ou HTML oficiais do ZRound. O sistema converte automaticamente, evita duplicidades e atualiza o painel principal.</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            <input type="file" id="input-pdf-upload" accept=".pdf,.html,.htm" multiple style="background: var(--bg-card); padding: 7px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.82rem;">
+                            <button class="btn btn-admin-trigger" onclick="processarUploadEEnviarNuvemPrincipal()">Converter e Enviar</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Arquivos Carregados (Banco Principal)</span>
+                        <ul id="upload-lista-historico">
+                            <li>Carregando arquivos...</li>
+                        </ul>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 2px;">
+                            <button class="btn-action-danger" style="padding: 5px 10px; font-size: 0.78rem;" onclick="excluirArquivosSelecionadosPrincipal()">🗑️ Excluir Selecionados</button>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Inspetor de Estrutura JSON</span>
+                    <pre id="upload-json-viewer">Selecione "Inspecionar" em um arquivo ao lado para visualizar os dados...</pre>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Championship Manager -->
     <div id="campeonatos-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">🏆 Championship Manager</div>
                 <button class="modal-close" onclick="fecharModalCampeonatos()">&times;</button>
             </div>
-            <div class="modal-body" id="campeonatos-modal-body"></div>
+            <div class="modal-body">
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <div class="upload-box">
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">🔒 Criar Novo Campeonato</span>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa Krathus 2026)">
+                            <button class="btn-action-primary" onclick="criarCampeonatoProtegido()">Criar Campeonato</button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Campeonatos Cadastrados</span>
+                        <ul id="campeonatos-lista-modal" style="list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto;">
+                            <li>Carregando campeonatos...</li>
+                        </ul>
+                    </div>
+
+                    <!-- Painel ZRound com 5 Abas -->
+                    <div id="container-zround-campeonato" style="display: none; flex-direction: column; gap: 12px; border-top: 2px solid var(--border-card); padding-top: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <h3 id="zround-camp-titulo-ativo" style="font-size: 1rem; color: var(--accent-gold);">Configurando: --</h3>
+                            <button class="btn-action-danger" style="padding: 3px 8px; font-size: 0.72rem;" onclick="fecharPainelZRoundCamp()">Fechar Painel</button>
+                        </div>
+
+                        <div class="zround-tabs-header">
+                            <button class="zround-tab-btn active" onclick="mudarAbaZRound(1)">📂 1. Geral & Configs</button>
+                            <button class="zround-tab-btn" onclick="mudarAbaZRound(2)">🏎️ 2. Pilotos</button>
+                            <button class="zround-tab-btn" onclick="mudarAbaZRound(3)">📤 3. Provas</button>
+                            <button class="zround-tab-btn" onclick="mudarAbaZRound(4)">🔄 4. Grids</button>
+                            <button class="zround-tab-btn" onclick="mudarAbaZRound(5)">📊 5. Classificação</button>
+                        </div>
+
+                        <!-- Aba 1 -->
+                        <div id="zround-aba-1" class="zround-aba-content" style="display: flex; flex-direction: column; gap: 10px;">
+                            <div class="config-panel">
+                                <div class="config-panel-title">Alterar Nome do Campeonato</div>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                                    <input type="text" id="zround-edit-nome-camp" class="config-input" placeholder="Nome do Campeonato">
+                                    <button class="btn-action-primary" onclick="salvarNomeCampeonatoAtual()">Salvar Nome</button>
+                                </div>
+                            </div>
+                            <div class="config-panel">
+                                <div class="config-panel-title">Parâmetros Gerais e Sistema de Pontuação</div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
+                                    <div>
+                                        <label style="font-size: 0.7rem; color: var(--text-muted);">Número de Provas Previstas</label>
+                                        <input type="number" id="zround-num-provas" class="config-input" style="width:100%; margin-top:2px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.7rem; color: var(--text-muted);">Pilotos Máximos por Prova</label>
+                                        <input type="number" id="zround-pilotos-prova" class="config-input" style="width:100%; margin-top:2px;">
+                                    </div>
+                                </div>
+                                <div style="margin-top: 6px;">
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Tabela de Pontuação (1º ao 10º)</label>
+                                    <input type="text" id="zround-tabela-pontos-input" class="config-input" style="width:100%; margin-top:2px;" value="25, 18, 15, 12, 10, 8, 6, 4, 2, 1">
+                                </div>
+                                <div style="margin-top: 8px; background: rgba(58, 134, 255, 0.08); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card);">
+                                    <label class="checkbox-item" style="font-weight: 600;">
+                                        <input type="checkbox" id="zround-usa-grid-treino" style="width: 15px; height: 15px;">
+                                        Formar grid a partir de treino (pega os 3 melhores tempos de cada piloto e descarta o pior)
+                                    </label>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px;">
+                                    <button class="btn-action-danger" onclick="excluirCampeonatoAtual()">🗑️ Excluir</button>
+                                    <button class="btn-action-primary" onclick="salvarAba1ConfigGeral()">Salvar Configurações</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aba 2 -->
+                        <div id="zround-aba-2" class="zround-aba-content" style="display: none; flex-direction: column; gap: 8px;">
+                            <div class="config-panel">
+                                <div class="config-panel-title">Inscrição de Pilotos</div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                    <select id="zround-select-piloto-geral" class="config-select">
+                                        <option value="">Selecione um piloto já cadastrado...</option>
+                                    </select>
+                                    <button class="btn-action-primary" onclick="importarPilotoBancoGeral()">Adicionar do Banco Geral</button>
+                                </div>
+                                <div class="config-row" style="margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <input type="text" id="zround-novo-piloto-manual" class="config-input" placeholder="Ou digite o nome de um novo piloto">
+                                    <button class="btn-action-primary" onclick="adicionarPilotoManualZRound()">Cadastrar Novo</button>
+                                </div>
+                                <div class="table-container" style="margin-top: 6px;">
+                                    <table>
+                                        <thead><tr><th>Piloto Inscrito</th><th style="text-align: right;">Ações</th></tr></thead>
+                                        <tbody id="zround-tabela-pilotos-inscritos">
+                                            <tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum piloto inscrito.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aba 3 -->
+                        <div id="zround-aba-3" class="zround-aba-content" style="display: none; flex-direction: column; gap: 8px;">
+                            <div class="upload-box" style="border-color: var(--accent-gold); background: rgba(255, 183, 3, 0.04);">
+                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">⏱️ Sessão de Treino para Grid (3 Melhores Voltas)</span>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 2px;">
+                                    <input type="file" id="zround-input-file-treino-grid" accept=".pdf,.html,.htm" style="background: var(--bg-card); padding: 5px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.78rem;">
+                                    <button class="btn-action-primary" style="background: var(--accent-gold); color: #000; font-weight: 700;" onclick="processarTreinoParaGrid()">Processar Treino</button>
+                                </div>
+                                <div id="status-treino-grid-info" style="font-size: 0.75rem; color: var(--accent-green); margin-top: 2px;">Nenhum treino processado.</div>
+                            </div>
+
+                            <div class="upload-box">
+                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">📥 Importar Provas do Banco Principal</span>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 2px;">
+                                    <select id="zround-select-prova-banco-principal" class="config-select">
+                                        <option value="">Selecione uma prova...</option>
+                                    </select>
+                                    <button class="btn-action-primary" onclick="importarProvaDoBancoPrincipalParaCampeonato()">Importar</button>
+                                </div>
+                            </div>
+
+                            <div class="upload-box">
+                                <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-blue); text-transform: uppercase;">📤 Upload de Provas (Banco Separado)</span>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 2px;">
+                                    <input type="file" id="zround-input-file-prova" accept=".pdf,.html,.htm" multiple style="background: var(--bg-card); padding: 5px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.78rem;">
+                                    <button class="btn btn-admin-trigger" style="padding: 7px 10px; font-size: 0.78rem;" onclick="uploadProvasBancoSeparado()">Enviar Prova</button>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Provas Registradas</span>
+                                <ul id="zround-lista-provas-banco-separado" style="list-style: none; display: flex; flex-direction: column; gap: 4px; max-height: 130px; overflow-y: auto;">
+                                    <li>Nenhuma prova registrada.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Aba 4 -->
+                        <div id="zround-aba-4" class="zround-aba-content" style="display: none; flex-direction: column; gap: 8px;">
+                            <div class="config-panel">
+                                <div class="config-panel-title">Grids de Largada</div>
+                                <div style="margin-bottom: 2px;">
+                                    <label class="checkbox-item"><input type="checkbox" id="zround-inverter-segunda" onchange="atualizarInterfacePainelZRound()"> Inverter ordem da bateria seguinte com base no resultado anterior</label>
+                                </div>
+                                <div id="container-todos-grids-gerados" style="display: flex; flex-direction: column; gap: 10px; margin-top: 6px;">
+                                    <div style="text-align: center; color: var(--text-muted);">Envie ou selecione provas para gerar os grids.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Aba 5 -->
+                        <div id="zround-aba-5" class="zround-aba-content" style="display: none; flex-direction: column; gap: 8px;">
+                            <div class="config-panel">
+                                <div class="config-panel-title">Classificação Geral do Campeonato</div>
+                                <div class="table-container" style="margin-top: 2px;">
+                                    <table id="zround-tabela-classificacao-completa">
+                                        <thead id="zround-thead-classificacao">
+                                            <tr><th>Pos</th><th>Piloto</th><th style="text-align: right;">Total</th></tr>
+                                        </thead>
+                                        <tbody id="zround-tabela-classificacao-geral">
+                                            <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pontuação computada.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                                    <button class="btn-action-danger" style="background: linear-gradient(135deg, #2ec4b6 0%, #3a86ff 100%); color: #fff; font-weight: 700; padding: 8px 16px;" onclick="finalizarCampeonatoAtual()">🏁 Finalizar Campeonato</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Gestão de Pilotos -->
     <div id="pilotos-gestao-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <div class="modal-title">👤 Gestão e Configuração de Pilotos</div>
                 <button class="modal-close" onclick="fecharModalPilotos()">&times;</button>
             </div>
-            <div class="modal-body" id="pilotos-gestao-corpo"></div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+                <div class="config-panel">
+                    <div class="config-panel-title">Apelidos e Nomes de Exibição</div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Clique em "Configurar" ao lado de cada piloto para gerenciar apelidos, aliases e cadastrar carros.</p>
+                    <div class="table-container" style="margin-top: 6px;">
+                        <table>
+                            <thead><tr><th>Piloto Original</th><th>Apelido / Nome Exibição</th><th style="text-align: right;">Ação</th></tr></thead>
+                            <tbody id="tabela-pilotos-apelidos">
+                                <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Carregando pilotos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Módulo de Compras Coletivas -->
     <div id="compras-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 1000px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
                 <div class="modal-title" id="compras-modal-titulo">🛒 Gestão de Compras Coletivas</div>
                 <button class="modal-close" onclick="fecharModalCompras()">&times;</button>
             </div>
-            <div class="modal-body" id="compras-modal-body"></div>
+            <div class="modal-body" id="compras-modal-body" style="display: flex; flex-direction: column; gap: 14px;"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Resumo de Compra Coletiva -->
+    <div id="compra-resumo-modal" class="custom-modal" style="z-index: 10600;">
+        <div class="modal-content" style="max-width: 550px; border-top-color: var(--accent-cc);">
+            <div class="modal-header">
+                <div class="modal-title" id="compra-resumo-titulo">📊 Resumo da Compra Coletiva</div>
+                <button class="modal-close" onclick="fecharModalResumoCompra()">&times;</button>
+            </div>
+            <div class="modal-body" id="compra-resumo-corpo" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        </div>
+    </div>
+
+    <!-- Participar do Campeonato -->
+    <div id="participar-campeonato-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 500px; border-top-color: var(--accent-gold);">
+            <div class="modal-header" style="background: var(--bg-card-header);">
+                <div class="modal-title" id="participar-modal-titulo">🏎️ Participar do Campeonato</div>
+                <button class="modal-close" onclick="fecharModalParticipar()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Selecione um piloto para inscrever neste campeonato:</p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <select id="participar-select-piloto" class="config-select">
+                        <option value="">Selecione um piloto...</option>
+                    </select>
+                    <button class="btn-action-primary" onclick="adicionarPilotoPorModalParticipar()">Inscrever</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+                    <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pilotos Inscritos</span>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Piloto</th><th style="text-align: right;">Ação</th></tr></thead>
+                            <tbody id="participar-tabela-inscritos">
+                                <tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum piloto inscrito.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -305,7 +521,6 @@
                 <p>Central de Telemetria e Análise de Desempenho</p>
             </div>
             <div class="header-actions">
-                <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
                 <button class="btn btn-admin-trigger" onclick="abrirModalAdmin()">🔐 Administração</button>
                 <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
             </div>
@@ -324,7 +539,7 @@
 
                     <div class="filter-group">
                         <div class="filter-group-header">
-                            <label class="group-title">PILOTOS</label>
+                            <label class="group-title">PILOTOS (Resumo compacto)</label>
                             <button class="btn-text-action" onclick="limparSelecao('filter-piloto')">🗑️ Limpar</button>
                         </div>
                         <div class="checkbox-container" id="filtro-pilotos-container"></div>
@@ -347,6 +562,7 @@
                 </div>
             </section>
 
+            <!-- KPIs Compactos e Elegantes -->
             <section class="kpi-compact-section">
                 <div class="kpi-compact-card">
                     <span class="kpi-compact-label">👑 Piloto com Mais Vitórias</span>
@@ -366,6 +582,7 @@
                 </div>
             </section>
 
+            <!-- Gestão Grid -->
             <section class="dashboard-gestao-grid" style="margin-top: 12px;">
                 <div class="card" style="margin-bottom: 0;">
                     <div class="card-header">🏆 Championship Manager & Status</div>
@@ -386,7 +603,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.83.0 (Módulo de Acessibilidade Integrado)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.82.0 (Ultrapassagens Concatenadas por Volta)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -421,12 +638,80 @@
         let chartInstances = [];
         let pilotosMetadadosCache = {};
         let mesclagensCache = {};
+        let campeonatoAtivoKey = null;
+        let campeonatoParticiparKey = null;
+        let compraGerenciandoKey = null;
+        let pilotoSendoConfigurado = null;
 
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
         } catch (e) {
             console.warn("Erro Firebase:", e);
+        }
+
+        const ALIAS_EDGARD_DJ_DEFAULTS = {
+            "edgard": "Edgard Camilo (DJ)",
+            "Edgard": "Edgard Camilo (DJ)",
+            "edgar": "Edgard Camilo (DJ)",
+            "Edgar": "Edgard Camilo (DJ)",
+            "Dj_Edgar": "Edgard Camilo (DJ)",
+            "DJ": "Edgard Camilo (DJ)"
+        };
+
+        function formatarNomeSessao(sessaoStr) {
+            if (!sessaoStr) return "Bateria";
+            let match = sessaoStr.match(/(\d{2})[-/](\d{2})[-/](\d{2}).*?\((\d+)\)/);
+            if (match) {
+                let dia = match[1], mes = match[2], anoCompleto = "20" + match[3];
+                let numBateria = match[4].padStart(2, '0');
+                return `Bateria ${numBateria} (${dia}/${mes}/${anoCompleto})`;
+            }
+            let matchSeq = sessaoStr.match(/\((\d+)\)/);
+            if (matchSeq) {
+                let numBateria = matchSeq[1].padStart(2, '0');
+                return `Bateria ${numBateria} - ${sessaoStr.replace(/\(?\d+[-/]\d+[-/]\d+\)?/, '').trim()}`;
+            }
+            return sessaoStr;
+        }
+
+        function extrairPesoOrdenacao(sessaoStr) {
+            if (!sessaoStr) return 0;
+            let matchData = sessaoStr.match(/(\d{2})[-/](\d{2})[-/](\d{2})/);
+            let timestampData = 0;
+            if (matchData) {
+                let dia = parseInt(matchData[1], 10);
+                let mes = parseInt(matchData[2], 10) - 1;
+                let ano = parseInt(matchData[3], 10) + 2000;
+                timestampData = new Date(ano, mes, dia).getTime();
+            }
+            let matchSeq = sessaoStr.match(/\((\d+)\)/) || sessaoStr.match(/bateria\s*(\d+)/i) || sessaoStr.match(/(\d+)/);
+            let sequencial = matchSeq ? parseInt(matchSeq[1], 10) : 0;
+            return timestampData + sequencial;
+        }
+
+        function ordenarParticipantesBateria(participantesValidos) {
+            if (!participantesValidos || participantesValidos.length === 0) return [];
+            const valorTempo = (l) => {
+                if (l && typeof l === 'object') return Number(l.tempo);
+                return Number(l);
+            };
+            const totalValido = (p) => (p.laps || [])
+                .map(valorTempo)
+                .filter(t => Number.isFinite(t) && t > 0)
+                .reduce((acc, t) => acc + t, 0);
+
+            return [...participantesValidos].sort((a, b) => {
+                const voltasA = (a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+                const voltasB = (b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+                if (voltasA !== voltasB) return voltasB - voltasA;
+                const tempoA = totalValido(a);
+                const tempoB = totalValido(b);
+                if (tempoA !== tempoB) return tempoA - tempoB;
+                const melhorA = Math.min(...((a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+                const melhorB = Math.min(...((b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+                return melhorA - melhorB;
+            });
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -436,17 +721,46 @@
                     document.body.classList.toggle('responsivo-ativo', ativo);
                 });
 
-                db.ref('configuracoesGlobais/acessibilidadeHabilitada').on('value', snapshot => {
-                    let ativo = snapshot.val() === true;
-                    let btnAcess = document.getElementById('btn-accessibility');
-                    if (btnAcess) {
-                        btnAcess.style.display = ativo ? 'inline-flex' : 'none';
+                db.ref('pilotos').on('value', snap => {
+                    let novaLista = [];
+                    if (snap.exists()) {
+                        snap.forEach(child => {
+                            let pData = child.val();
+                            let pNome = typeof pData === 'string' ? pData : (pData.nome || child.key);
+                            if (pNome && pNome.trim() && !novaLista.includes(pNome.trim())) novaLista.push(pNome.trim());
+                        });
                     }
                 });
 
                 db.ref('pilotosMetadados').on('value', snapshot => {
                     pilotosMetadadosCache = snapshot.val() || {};
                     gerarFiltrosDinamicos();
+                    atualizarDashboard();
+                    preencherSelectPilotosGerais();
+                });
+
+                db.ref('mesclagensPilotos').on('value', snapshot => {
+                    let servidorMesclagens = snapshot.val() || {};
+                    mesclagensCache = Object.assign({}, ALIAS_EDGARD_DJ_DEFAULTS, servidorMesclagens);
+                    gerarFiltrosDinamicos();
+                    atualizarDashboard();
+                });
+
+                db.ref('campeonatos').on('value', snapshot => {
+                    campeonatosCache = snapshot.val() || {};
+                    renderizarListaCampeonatosModal();
+                    if (campeonatoAtivoKey && campeonatosCache[campeonatoAtivoKey]) {
+                        atualizarInterfacePainelZRound();
+                    }
+                    if (campeonatoParticiparKey && campeonatosCache[campeonatoParticiparKey]) {
+                        renderizarTabelaInscritosParticipar();
+                    }
+                    atualizarDashboard();
+                });
+
+                db.ref('comprasColetivas').on('value', snapshot => {
+                    comprasColetivasCache = snapshot.val() || {};
+                    renderizarModalComprasColetivas();
                     atualizarDashboard();
                 });
 
@@ -455,40 +769,24 @@
                     snapshot.forEach(childSnapshot => {
                         let val = childSnapshot.val();
                         if (val && val.dados && val.dados.length > 0) {
+                            if (!val.historicoNomesOriginais) val.historicoNomesOriginais = {};
                             listaJsonsCache.push({ firebaseKey: childSnapshot.key, ...val });
                         }
                     });
+                    
+                    listaJsonsCache.sort((a, b) => {
+                        let nomeA = a.sessao || (a.dados && a.dados[0] ? a.dados[0].sessao : '') || '';
+                        let nomeB = b.sessao || (b.dados && b.dados[0] ? b.dados[0].sessao : '') || '';
+                        return extrairPesoOrdenacao(nomeB) - extrairPesoOrdenacao(nomeA);
+                    });
+
                     gerarFiltrosDinamicos();
+                    atualizarListaUploadHistoricoPrincipal();
+                    preencherSelectProvasBancoPrincipal();
                     atualizarDashboard();
                 });
             }
         });
-
-        window.abrirModalAcessibilidade = function() {
-            document.getElementById('accessibility-modal').style.display = 'flex';
-        };
-
-        window.fecharModalAcessibilidade = function() {
-            document.getElementById('accessibility-modal').style.display = 'none';
-        };
-
-        window.aplicarModoAcessibilidade = function(modo) {
-            document.body.classList.remove('modo-alto-contraste', 'modo-protanopia', 'modo-deuteranopia', 'modo-tritanopia', 'modo-acromatopsia');
-            if (modo !== 'normal') {
-                document.body.classList.add(`modo-${modo}`);
-            }
-            fecharModalAcessibilidade();
-        };
-
-        window.alternarAcessibilidadeGlobal = async function(checkbox) {
-            if (!db) return;
-            let ativo = checkbox.checked;
-            try {
-                await db.ref('configuracoesGlobais/acessibilidadeHabilitada').set(ativo);
-            } catch (err) {
-                alert("Erro ao salvar configuração: " + err.message);
-            }
-        };
 
         window.abrirModalAdmin = function() {
             document.getElementById('admin-modal').style.display = 'flex';
@@ -542,7 +840,6 @@
                 `;
             } else {
                 let responsivoAtual = document.body.classList.contains('responsivo-ativo');
-                let acessibilidadeHabilitada = document.getElementById('btn-accessibility').style.display === 'inline-flex';
                 bodyEl.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
                         <span style="font-weight: 700; color: var(--accent-green); font-size: 0.82rem;">🟢 Sessão Administrativa Autenticada</span>
@@ -553,25 +850,1490 @@
                         <div class="config-panel-title" style="color: var(--accent-gold);">⚙️ Configurações Gerais do Sistema</div>
                         <label class="checkbox-item" style="font-weight: 600; font-size: 0.85rem; margin-top: 2px;">
                             <input type="checkbox" id="check-responsivo-admin" ${responsivoAtual ? 'checked' : ''} onchange="alternarResponsividadeGlobal(this)" style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
-                            Ativar modo responsivo (Adapta o layout automaticamente para telas menores)
+                            Ativar modo responsivo (Adapta o layout automaticamente para telas menores e dispositivos móveis)
                         </label>
-                        <label class="checkbox-item" style="font-weight: 600; font-size: 0.85rem; margin-top: 6px;">
-                            <input type="checkbox" id="check-acessibilidade-admin" ${acessibilidadeHabilitada ? 'checked' : ''} onchange="alternarAcessibilidadeGlobal(this)" style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
-                            Ativar Módulo de Acessibilidade no Header (Exibe o ícone de daltonismo e contraste)
-                        </label>
+                    </div>
+
+                    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 6px;">Ferramentas de Gestão</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 6px;">
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('upload')">
+                            <div class="config-panel-title" style="color: var(--accent-blue);">📤 Central de Uploads</div>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Envie, converte e gerencie relatórios PDF/HTML no banco principal.</p>
+                        </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('campeonatos')">
+                            <div class="config-panel-title" style="color: var(--accent-gold);">🏆 Championship Manager</div>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Crie e configure campeonatos, provas, inscrições e grids.</p>
+                        </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('pilotos')">
+                            <div class="config-panel-title" style="color: var(--accent-cc);">👤 Gestão de Pilotos</div>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Configure apelidos, mesclagens de nomes (aliases) e carros.</p>
+                        </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('compras')">
+                            <div class="config-panel-title" style="color: var(--accent-green);">🛒 Compras Coletivas</div>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Gerencie cotas, itens, fretes e recibos de pagamento Pix.</p>
+                        </div>
                     </div>
                 `;
             }
         }
 
+        window.abrirFerramentaAdmin = function(tipo) {
+            fecharModalAdmin();
+            if (tipo === 'upload') abrirModalUpload();
+            if (tipo === 'campeonatos') abrirModalCampeonatos();
+            if (tipo === 'pilotos') abrirModalPilotos();
+            if (tipo === 'compras') abrirModalCompras();
+        };
+
         window.abrirModalUpload = function() { document.getElementById('upload-modal').style.display = 'flex'; };
         window.fecharModalUpload = function() { document.getElementById('upload-modal').style.display = 'none'; };
-        window.abrirModalCampeonatos = function() { document.getElementById('campeonatos-modal').style.display = 'flex'; };
+
+        window.abrirModalPilotos = function() {
+            document.getElementById('pilotos-gestao-modal').style.display = 'flex';
+            renderizarGerenciadorPilotos();
+        };
+        window.fecharModalPilotos = function() {
+            document.getElementById('pilotos-gestao-modal').style.display = 'none';
+        };
+
+        window.abrirModalConfigurarPiloto = function(nomePiloto) {
+            pilotoSendoConfigurado = nomePiloto;
+            document.getElementById('modal-config-piloto-titulo').innerHTML = `⚙️ Configurar Piloto: <span style="color: var(--accent-gold);">${escapeHtml(nomePiloto)}</span>`;
+            renderizarCorpoConfigurarPiloto();
+            document.getElementById('piloto-config-modal').style.display = 'flex';
+        };
+
+        window.fecharModalConfigurarPiloto = function() {
+            document.getElementById('piloto-config-modal').style.display = 'none';
+            pilotoSendoConfigurado = null;
+        };
+
+        window.abrirModalCampeonatos = function() {
+            document.getElementById('campeonatos-modal').style.display = 'flex';
+            renderizarListaCampeonatosModal();
+            preencherSelectPilotosGerais();
+            preencherSelectProvasBancoPrincipal();
+        };
         window.fecharModalCampeonatos = function() { document.getElementById('campeonatos-modal').style.display = 'none'; };
-        window.abrirModalPilotos = function() { document.getElementById('pilotos-gestao-modal').style.display = 'flex'; };
-        window.fecharModalPilotos = function() { document.getElementById('pilotos-gestao-modal').style.display = 'none'; };
-        window.abrirModalCompras = function() { document.getElementById('compras-modal').style.display = 'flex'; };
+
+        window.abrirModalCompras = function() {
+            compraGerenciandoKey = null;
+            document.getElementById('compras-modal').style.display = 'flex';
+            renderizarModalComprasColetivas();
+        };
         window.fecharModalCompras = function() { document.getElementById('compras-modal').style.display = 'none'; };
+
+        function renderizarGerenciadorPilotos() {
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
+            dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
+
+            let listaPilotos = Array.from(pilotosSet).filter(p => p && p.trim()).sort();
+            let tbodyApelidos = document.getElementById('tabela-pilotos-apelidos');
+
+            if (listaPilotos.length === 0) {
+                tbodyApelidos.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Nenhum piloto encontrado.</td></tr>`;
+            } else {
+                tbodyApelidos.innerHTML = listaPilotos.map(p => {
+                    let meta = pilotosMetadadosCache[p] || {};
+                    let apelidoVal = meta.apelido || "(Sem apelido)";
+                    return `
+                        <tr>
+                            <td><strong>${escapeHtml(p)}</strong></td>
+                            <td><span style="color: var(--accent-gold);">${escapeHtml(apelidoVal)}</span></td>
+                            <td style="text-align: right;"><button class="btn-action-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="abrirModalConfigurarPiloto('${escapeHtml(p)}')">⚙️ Configurar</button></td>
+                        </tr>`;
+                }).join('');
+            }
+        }
+
+        function renderizarCorpoConfigurarPiloto() {
+            let nomePiloto = pilotoSendoConfigurado;
+            if (!nomePiloto) return;
+            let meta = pilotosMetadadosCache[nomePiloto] || {};
+            let apelidoVal = meta.apelido || "";
+            let carrosObj = meta.carros || {};
+            let carrosArr = Object.keys(carrosObj).map(k => ({ key: k, ...carrosObj[k] }));
+
+            let aliasesPiloto = Object.keys(mesclagensCache).filter(alias => mesclagensCache[alias] === nomePiloto);
+
+            let aliasHtml = aliasesPiloto.length === 0 ? 
+                `<div style="font-size: 0.78rem; color: var(--text-muted);">Nenhum nome alternativo mapeado.</div>` :
+                aliasesPiloto.map(alias => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 3px;">
+                        <span style="font-weight: 600; color: var(--accent-gold); font-size: 0.82rem;">${escapeHtml(alias)}</span>
+                        <button class="btn-text-action" style="color: var(--accent-red);" onclick="removerAliasPiloto('${escapeHtml(alias)}')">Remover</button>
+                    </div>
+                `).join('');
+
+            let carrosHtml = carrosArr.length === 0 ?
+                `<div style="font-size: 0.78rem; color: var(--text-muted);">Nenhum carro cadastrado.</div>` :
+                carrosArr.map(car => `
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-card); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 4px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            ${car.imagem ? `<div style="background: #fff; padding: 2px; border-radius: 4px; width: 40px; height: 28px; display: flex; align-items: center; justify-content: center;"><img src="${escapeHtml(car.imagem)}" style="max-width: 100%; max-height: 100%; object-fit: contain;"></div>` : `<div style="background: var(--bg-input); width: 40px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--text-muted);">Foto</div>`}
+                            <div>
+                                <strong style="color: var(--text-title); font-size: 0.85rem;">${escapeHtml(car.modelo)}</strong>
+                                <div style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(car.categoria || '1/28 4x4')}</div>
+                            </div>
+                        </div>
+                        <button class="btn-action-danger" style="padding: 3px 6px; font-size: 0.72rem;" onclick="removerCarroPiloto('${escapeHtml(nomePiloto)}', '${car.key}')">🗑️</button>
+                    </div>
+                `).join('');
+
+            let bodyEl = document.getElementById('modal-config-piloto-corpo');
+            bodyEl.innerHTML = `
+                <div class="config-panel">
+                    <div class="config-panel-title">1. Apelido / Nome de Exibição</div>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                        <input type="text" id="input-config-apelido" class="config-input" value="${escapeHtml(apelidoVal)}" placeholder="Digite o apelido...">
+                        <button class="btn-action-primary" onclick="salvarApelidoPilotoModal('${escapeHtml(nomePiloto)}')">Salvar</button>
+                    </div>
+                </div>
+
+                <div class="config-panel">
+                    <div class="config-panel-title">2. Mesclagem de Nomes (Aliases)</div>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                        <input type="text" id="input-config-alias" class="config-input" placeholder="Ex: Edgar">
+                        <button class="btn-action-primary" onclick="adicionarAliasParaPiloto('${escapeHtml(nomePiloto)}')">Adicionar</button>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+                        ${aliasHtml}
+                    </div>
+                </div>
+
+                <div class="config-panel">
+                    <div class="config-panel-title">3. Gestão de Carros</div>
+                    <div style="display: flex; flex-direction: column; gap: 6px; background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-top: 2px;">
+                        <input type="text" id="input-carro-modelo" class="config-input" placeholder="Modelo (Ex: WLtoys K989)">
+                        <input type="text" id="input-carro-categoria" class="config-input" placeholder="Categoria (Ex: 1/28 4x4)">
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <input type="file" id="input-carro-foto" accept="image/*" style="background: var(--bg-body); padding: 4px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); font-size: 0.75rem; flex: 1;">
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarCarroPiloto('${escapeHtml(nomePiloto)}')">+ Carro</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+                        ${carrosHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        window.salvarApelidoPilotoModal = async function(nomePiloto) {
+            if (!db) return;
+            let inputEl = document.getElementById('input-config-apelido');
+            let novoApelido = inputEl ? inputEl.value.trim() : "";
+            let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
+            try {
+                await db.ref(`pilotosMetadados/${metaKey}/apelido`).set(novoApelido);
+                alert(`Apelido salvo com sucesso!`);
+                renderizarGerenciadorPilotos();
+                renderizarCorpoConfigurarPiloto();
+                atualizarDashboard();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.adicionarAliasParaPiloto = async function(nomePiloto) {
+            if (!db) return;
+            let aliasInput = document.getElementById('input-config-alias').value.trim();
+            if (!aliasInput) return;
+            let aliasKey = aliasInput.replace(/[.#$\/\[\]]/g, "_");
+            try {
+                await db.ref(`mesclagensPilotos/${aliasKey}`).set(nomePiloto);
+                document.getElementById('input-config-alias').value = "";
+                renderizarCorpoConfigurarPiloto();
+                atualizarDashboard();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.removerAliasPiloto = async function(aliasKey) {
+            if (!db) return;
+            let safeKey = aliasKey.replace(/[.#$\/\[\]]/g, "_");
+            try {
+                await db.ref(`mesclagensPilotos/${safeKey}`).remove();
+                renderizarCorpoConfigurarPiloto();
+                atualizarDashboard();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.adicionarCarroPiloto = async function(nomePiloto) {
+            if (!db) return;
+            let modeloInput = document.getElementById('input-carro-modelo').value.trim();
+            let categoriaInput = document.getElementById('input-carro-categoria').value.trim();
+            let fileInput = document.getElementById('input-carro-foto');
+            if (!modeloInput) return;
+
+            let imagemBase64 = "";
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                imagemBase64 = await arquivoParaBase64(fileInput.files[0]);
+            }
+
+            let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
+            let carKey = "car_" + Date.now();
+            try {
+                await db.ref(`pilotosMetadados/${metaKey}/carros/${carKey}`).set({
+                    modelo: modeloInput, categoria: categoriaInput || "1/28 4x4", imagem: imagemBase64
+                });
+                renderizarCorpoConfigurarPiloto();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.removerCarroPiloto = async function(nomePiloto, carKey) {
+            if (!db) return;
+            let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
+            try {
+                await db.ref(`pilotosMetadados/${metaKey}/carros/${carKey}`).remove();
+                renderizarCorpoConfigurarPiloto();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.criarCompraColetiva = async function() {
+            if (!db) return;
+            let item = document.getElementById('input-compra-item').value.trim();
+            let preco = parseFloat(document.getElementById('input-compra-preco').value) || 0;
+            let qtdMin = parseInt(document.getElementById('input-compra-qtd-min').value, 10) || 1;
+            if (!item) return;
+
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
+            dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
+
+            let participantesObj = {};
+            Array.from(pilotosSet).filter(p => p && p.trim()).sort().forEach(pNome => {
+                let pKey = "part_" + pNome.toLowerCase().replace(/[^a-z0-9]/g, "_");
+                participantesObj[pKey] = {
+                    nome: pNome, ativo: true, comprador: (pNome === "Raphael"), valorDevido: 0, pago: (pNome === "Raphael"), pixPersonalizado: ""
+                };
+            });
+
+            let compraKey = "compra_" + Date.now();
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set({
+                    chave: compraKey, nome: item, precoUnitario: preco, qtdMinima: qtdMin, status: "EM ANDAMENTO / PENDENTE",
+                    entregue: false, rastreio: "", financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
+                    chavePix: "", itens: [{ imagem: "", descricao: item, link: "", valor: preco, qtd: 1, atribuidoA: "TODOS" }],
+                    participantes: participantesObj
+                });
+                document.getElementById('input-compra-item').value = "";
+                document.getElementById('input-compra-preco').value = "";
+                document.getElementById('input-compra-qtd-min').value = "";
+            } catch(err) { alert("Erro: " + err.message); }
+        };
+
+        window.gerenciarCompraColetiva = function(compraKey) {
+            compraGerenciandoKey = compraKey;
+            renderizarModalComprasColetivas();
+        };
+
+        window.voltarParaListaCompras = function() {
+            compraGerenciandoKey = null;
+            renderizarModalComprasColetivas();
+        };
+
+        function sincronizarParticipantesCompra(comp) {
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
+            dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
+            if (!comp.participantes) comp.participantes = {};
+
+            pilotosSet.forEach(pNome => {
+                if (!pNome || !pNome.trim()) return;
+                let pKey = "part_" + pNome.toLowerCase().replace(/[^a-z0-9]/g, "_");
+                if (!comp.participantes[pKey]) {
+                    comp.participantes[pKey] = { nome: pNome.trim(), ativo: true, comprador: false, valorDevido: 0, pago: false, pixPersonalizado: "" };
+                }
+            });
+        }
+
+        function calcularValoresDevidosCompra(comp) {
+            let itens = comp.itens || [];
+            let participantes = comp.participantes || {};
+            let fin = comp.financeiro || { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 };
+
+            let pKeys = Object.keys(participantes).filter(pk => participantes[pk] && participantes[pk].nome && participantes[pk].nome.trim() !== "");
+            let activeKeys = pKeys.filter(pk => participantes[pk].ativo);
+            let totalAtivos = activeKeys.length;
+
+            let ajusteTotal = -(fin.desconto || 0) + (fin.frete || 0) + (fin.imposto || 0) + (fin.icms || 0) + (fin.outros || 0);
+            let ajustePorAtivo = totalAtivos > 0 ? (ajusteTotal / totalAtivos) : 0;
+
+            let totalItensTodos = itens.filter(it => it.atribuidoA === 'TODOS').reduce((acc, it) => acc + ((it.valor || 0) * (it.qtd || 1)), 0);
+            let valorTodosPorAtivo = totalAtivos > 0 ? (totalItensTodos / totalAtivos) : 0;
+
+            pKeys.forEach(pk => {
+                let p = participantes[pk];
+                let specificCost = itens.filter(it => it.atribuidoA === p.nome).reduce((acc, it) => acc + ((it.valor || 0) * (it.qtd || 1)), 0);
+                let sharedCost = p.ativo ? valorTodosPorAtivo : 0;
+                let adjCost = p.ativo ? ajustePorAtivo : 0;
+                p.valorDevido = parseFloat((specificCost + sharedCost + adjCost).toFixed(2));
+            });
+        }
+
+        window.alternarEntregueCompra = async function(compraKey) {
+            if (!db) return;
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            comp.entregue = !comp.entregue;
+
+            let participantes = comp.participantes || {};
+            let ativos = Object.values(participantes).filter(p => p && p.ativo);
+            let quitada = (ativos.length > 0 && ativos.filter(p => p.pago).length === ativos.length);
+
+            if (quitada && comp.entregue) comp.status = "FINALIZADA / CONCLUÍDA";
+            else if (comp.entregue) comp.status = "ENTREGUE";
+            else if (quitada) comp.status = "QUITADA";
+            else comp.status = "EM ANDAMENTO / PENDENTE";
+
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro: " + err.message); }
+        };
+
+        window.salvarCompraGerenciada = async function(compraKey) {
+            if (!db) return;
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+
+            let nomeInput = document.getElementById('det-nome-compra');
+            if (nomeInput) comp.nome = nomeInput.value.trim();
+            comp.entregue = document.getElementById('det-entregue')?.checked || false;
+
+            comp.financeiro = {
+                subtotal: parseFloat(document.getElementById('fin-subtotal')?.value) || 0,
+                desconto: parseFloat(document.getElementById('fin-desconto')?.value) || 0,
+                frete: parseFloat(document.getElementById('fin-frete')?.value) || 0,
+                imposto: parseFloat(document.getElementById('fin-imposto')?.value) || 0,
+                icms: parseFloat(document.getElementById('fin-icms')?.value) || 0,
+                outros: parseFloat(document.getElementById('fin-outros')?.value) || 0
+            };
+
+            comp.chavePix = document.getElementById('det-chave-pix')?.value.trim() || "";
+            comp.rastreio = document.getElementById('det-rastreio')?.value.trim() || "";
+
+            let novasItens = [];
+            document.querySelectorAll('.det-item-row').forEach(row => {
+                let idx = row.getAttribute('data-index');
+                novasItens.push({
+                    imagem: document.getElementById(`item-img-${idx}`)?.value || "",
+                    descricao: document.getElementById(`item-desc-${idx}`)?.value || "",
+                    link: document.getElementById(`item-link-${idx}`)?.value || "",
+                    valor: parseFloat(document.getElementById(`item-val-${idx}`)?.value) || 0,
+                    qtd: parseInt(document.getElementById(`item-qtd-${idx}`)?.value, 10) || 1,
+                    atribuidoA: document.getElementById(`item-atr-${idx}`)?.value || "TODOS"
+                });
+            });
+            comp.itens = novasItens;
+
+            let novosParticipantes = {};
+            document.querySelectorAll('.det-part-row').forEach(row => {
+                let pKey = row.getAttribute('data-pkey');
+                let nome = row.getAttribute('data-nome');
+                if (!nome || !nome.trim()) return;
+                novosParticipantes[pKey] = {
+                    nome: nome.trim(),
+                    ativo: document.getElementById(`part-ativo-${pKey}`)?.checked || false,
+                    comprador: document.getElementById(`part-comprador-${pKey}`)?.checked || false,
+                    valorDevido: 0,
+                    pago: document.getElementById(`part-pago-${pKey}`)?.checked || false,
+                    pixPersonalizado: document.getElementById(`part-recibo-${pKey}`)?.value || ""
+                };
+            });
+            comp.participantes = novosParticipantes;
+            calcularValoresDevidosCompra(comp);
+
+            let ativos = Object.values(novosParticipantes).filter(p => p && p.ativo);
+            let quitada = (ativos.length > 0 && ativos.filter(p => p.pago).length === ativos.length);
+            if (quitada && comp.entregue) comp.status = "FINALIZADA / CONCLUÍDA";
+            else if (comp.entregue) comp.status = "ENTREGUE";
+            else if (quitada) comp.status = "QUITADA";
+            else comp.status = "EM ANDAMENTO / PENDENTE";
+
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                alert("Salvo com sucesso!");
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro: " + err.message); }
+        };
+
+        window.adicionarItemCompra = async function(compraKey) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            if (!comp.itens) comp.itens = [];
+            comp.itens.push({ imagem: "", descricao: "Novo Item", link: "", valor: 0.0, qtd: 1, atribuidoA: "TODOS" });
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro: " + err.message); }
+        };
+
+        window.removerItemCompra = async function(compraKey, index) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp || !comp.itens) return;
+            comp.itens.splice(index, 1);
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro: " + err.message); }
+        };
+
+        window.adicionarParticipanteCompra = async function(compraKey) {
+            let nomeInput = document.getElementById('input-novo-participante-compra');
+            let nome = nomeInput ? nomeInput.value.trim() : "";
+            if (!nome) return;
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            if (!comp.participantes) comp.participantes = {};
+            let pKey = "part_" + nome.toLowerCase().replace(/[^a-z0-9]/g, "_");
+            comp.participantes[pKey] = { nome, ativo: true, comprador: false, valorDevido: 0, pago: false, pixPersonalizado: "" };
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                if (nomeInput) nomeInput.value = "";
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro: " + err.message); }
+        };
+
+        window.removerParticipanteCompra = async function(compraKey, pKey) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp || !comp.participantes) return;
+            delete comp.participantes[pKey];
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro: " + err.message); }
+        };
+
+        window.finalizarCompraColetivaStatus = async function(compraKey) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            comp.entregue = true;
+            comp.status = "FINALIZADA / CONCLUÍDA";
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch(err) { alert("Erro: " + err.message); }
+        };
+
+        window.excluirCompraColetiva = async function(compraKey) {
+            let senha = prompt("🔒 Digite a senha unificada (1234):");
+            if (senha !== SENHA_UNIFICADA) { alert("❌ Incorreta!"); return; }
+            if (confirm("Excluir esta compra coletiva?")) {
+                try {
+                    await db.ref(`comprasColetivas/${compraKey}`).remove();
+                    compraGerenciandoKey = null;
+                    renderizarModalComprasColetivas();
+                } catch(err) { alert("Erro: " + err.message); }
+            }
+        };
+
+        function renderizarModalComprasColetivas() {
+            let tituloEl = document.getElementById('compras-modal-titulo');
+            let bodyEl = document.getElementById('compras-modal-body');
+            if (!bodyEl) return;
+
+            if (compraGerenciandoKey && comprasColetivasCache[compraGerenciandoKey]) {
+                let comp = comprasColetivasCache[compraGerenciandoKey];
+                sincronizarParticipantesCompra(comp);
+                calcularValoresDevidosCompra(comp);
+
+                if (tituloEl) tituloEl.innerHTML = `🛒 Gestão de Compra Coletiva`;
+
+                let itens = comp.itens || [];
+                let participantes = comp.participantes || {};
+                let fin = comp.financeiro || { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 };
+                let calcSubtotal = itens.reduce((acc, it) => acc + ((it.valor || 0) * (it.qtd || 1)), 0);
+                let valorGlobalFinal = calcSubtotal - (fin.desconto || 0) + (fin.frete || 0) + (fin.imposto || 0) + (fin.icms || 0) + (fin.outros || 0);
+
+                let ativosArr = Object.values(participantes).filter(p => p && p.ativo);
+                let pagosAtivos = ativosArr.filter(p => p.pago).length;
+                let quitada = (ativosArr.length > 0 && pagosAtivos === ativosArr.length);
+
+                let dadosBase = obterTodosDadosConsolidados();
+                let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
+                dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+                Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
+                Object.values(participantes).forEach(p => { if (p && p.nome && p.nome.trim()) pilotosSet.add(p.nome.trim()); });
+                let listaPilotosDisponiveis = Array.from(pilotosSet).filter(p => p && p.trim()).sort();
+
+                let itensHtml = itens.map((it, idx) => {
+                    let subtotalItem = (it.valor || 0) * (it.qtd || 1);
+                    let optionsPilotos = `<option value="TODOS" ${it.atribuidoA === 'TODOS' ? 'selected' : ''}>TODOS</option>` +
+                        listaPilotosDisponiveis.map(p => `<option value="${escapeHtml(p)}" ${it.atribuidoA === p ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('');
+                    
+                    return `
+                        <div class="det-item-row" data-index="${idx}" style="display: grid; grid-template-columns: 1fr 1.8fr 1.2fr 75px 45px 85px 1.2fr 32px; gap: 6px; align-items: center; margin-bottom: 6px;">
+                            <input type="text" id="item-img-${idx}" class="config-input" value="${escapeHtml(it.imagem || '')}" placeholder="Img URL" style="font-size: 0.75rem;">
+                            <input type="text" id="item-desc-${idx}" class="config-input" value="${escapeHtml(it.descricao || '')}" placeholder="Descrição" style="font-size: 0.75rem;">
+                            <input type="text" id="item-link-${idx}" class="config-input" value="${escapeHtml(it.link || '')}" placeholder="Link" style="font-size: 0.75rem;">
+                            <input type="number" step="0.001" id="item-val-${idx}" class="config-input" value="${it.valor || 0}" placeholder="Valor" style="font-size: 0.75rem;">
+                            <input type="number" id="item-qtd-${idx}" class="config-input" value="${it.qtd || 1}" placeholder="Qtd" style="font-size: 0.75rem;">
+                            <span style="color: var(--accent-gold); font-weight: 700; font-size: 0.78rem;">R$ ${subtotalItem.toFixed(2)}</span>
+                            <select id="item-atr-${idx}" class="config-select" style="font-size: 0.75rem;">${optionsPilotos}</select>
+                            <button class="btn-action-danger" style="padding: 3px 6px;" onclick="removerItemCompra('${compraGerenciandoKey}', ${idx})">🗑️</button>
+                        </div>
+                    `;
+                }).join('');
+
+                let participantesHtml = Object.keys(participantes).filter(pk => participantes[pk] && participantes[pk].nome).map(pk => {
+                    let p = participantes[pk];
+                    return `
+                        <div class="det-part-row" data-pkey="${pk}" data-nome="${escapeHtml(p.nome)}" style="display: grid; grid-template-columns: 40px 1.8fr 60px 80px 60px 2fr 32px; gap: 6px; align-items: center; background: rgba(21,28,40,0.6); padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 4px;">
+                            <div style="text-align: center;"><input type="checkbox" id="part-ativo-${pk}" ${p.ativo ? 'checked' : ''} style="width: 15px; height: 15px; accent-color: var(--accent-green); cursor: pointer;"></div>
+                            <div><strong style="font-size: 0.82rem;">${escapeHtml(p.nome)}</strong></div>
+                            <div style="text-align: center;"><input type="radio" name="comprador_radio" id="part-comprador-${pk}" ${p.comprador ? 'checked' : ''} style="width: 15px; height: 15px; accent-color: var(--accent-blue); cursor: pointer;"></div>
+                            <div style="color: var(--accent-gold); font-weight: 700; font-size: 0.82rem;">R$ ${(p.valorDevido || 0).toFixed(2)}</div>
+                            <div style="text-align: center;"><input type="checkbox" id="part-pago-${pk}" ${p.pago ? 'checked' : ''} style="width: 15px; height: 15px; accent-color: var(--accent-green); cursor: pointer;"></div>
+                            <div><input type="text" id="part-recibo-${pk}" class="config-input" value="${escapeHtml(p.pixPersonalizado || '')}" placeholder="Pix Copia e Cola" style="width: 100%; font-size: 0.75rem;"></div>
+                            <div style="text-align: right;"><button class="btn-action-danger" style="padding: 3px 6px;" onclick="removerParticipanteCompra('${compraGerenciandoKey}', '${pk}')">🗑️</button></div>
+                        </div>
+                    `;
+                }).join('');
+
+                bodyEl.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card);">
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent-gold);">Gerenciando: ${escapeHtml(comp.chave)}</span>
+                        <button class="btn-action-primary" style="background: #3a86ff; padding: 5px 10px; font-size: 0.75rem;" onclick="voltarParaListaCompras()">⬅️ Voltar</button>
+                    </div>
+
+                    <div class="config-panel" style="background: rgba(46,196,182,0.06); border: 1px solid var(--accent-green);">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: space-between;">
+                            <label class="checkbox-item" style="font-weight: 700; font-size: 0.82rem;">
+                                <input type="checkbox" id="det-entregue" ${comp.entregue ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
+                                Produto Entregue ✅
+                            </label>
+                            <div style="font-size: 0.8rem;">Pagamentos: <strong style="color: ${quitada ? 'var(--accent-green)' : 'var(--accent-gold)'};">${pagosAtivos}/${ativosArr.length} pagos</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="config-panel">
+                        <div class="config-panel-title">1. Nome da Compra</div>
+                        <input type="text" id="det-nome-compra" class="config-input" value="${escapeHtml(comp.nome || '')}">
+                    </div>
+
+                    <div class="config-panel">
+                        <div class="config-panel-title">2. Itens da Compra</div>
+                        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 2px;">
+                            ${itensHtml}
+                        </div>
+                        <div><button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarItemCompra('${compraGerenciandoKey}')">+ Item</button></div>
+                    </div>
+
+                    <div class="config-panel">
+                        <div class="config-panel-title">3. Financeiro & Impostos</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px;">
+                            <div>
+                                <label style="font-size: 0.65rem; color: var(--text-muted);">SUBTOTAL</label>
+                                <input type="number" step="0.01" id="fin-subtotal" class="config-input" value="${calcSubtotal.toFixed(2)}" readonly style="width: 100%; margin-top: 2px; background: var(--bg-body); font-size: 0.78rem;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.65rem; color: var(--text-muted);">DESCONTO</label>
+                                <input type="number" step="0.01" id="fin-desconto" class="config-input" value="${fin.desconto || 0}" style="width: 100%; margin-top: 2px; font-size: 0.78rem;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.65rem; color: var(--text-muted);">FRETE</label>
+                                <input type="number" step="0.01" id="fin-frete" class="config-input" value="${fin.frete || 0}" style="width: 100%; margin-top: 2px; font-size: 0.78rem;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.65rem; color: var(--text-muted);">IMPOSTO</label>
+                                <input type="number" step="0.01" id="fin-imposto" class="config-input" value="${fin.imposto || 0}" style="width: 100%; margin-top: 2px; font-size: 0.78rem;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.65rem; color: var(--text-muted);">ICMS</label>
+                                <input type="number" step="0.01" id="fin-icms" class="config-input" value="${fin.icms || 0}" style="width: 100%; margin-top: 2px; font-size: 0.78rem;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.65rem; color: var(--text-muted);">OUTROS</label>
+                                <input type="number" step="0.01" id="fin-outros" class="config-input" value="${fin.outros || 0}" style="width: 100%; margin-top: 2px; font-size: 0.78rem;">
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,183,3,0.1); border: 1px dashed var(--accent-gold); border-radius: 6px; padding: 8px; display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent-gold);">VALOR GLOBAL FINAL:</span>
+                            <span style="font-size: 1.05rem; font-weight: 700; color: var(--accent-gold);">R$ ${valorGlobalFinal.toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <div class="config-panel">
+                        <div class="config-panel-title">4. Participantes & Rateio</div>
+                        <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px; flex-wrap: wrap;">
+                            <input type="text" id="input-novo-participante-compra" class="config-input" placeholder="Novo participante (Ex: Carlos)" style="max-width: 220px; font-size: 0.78rem;">
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarParticipanteCompra('${compraGerenciandoKey}')">+ Participante</button>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+                            ${participantesHtml}
+                        </div>
+                    </div>
+
+                    <div class="config-panel">
+                        <div class="config-panel-title">5. Chave Pix / Rastreio</div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
+                            <input type="text" id="det-chave-pix" class="config-input" value="${escapeHtml(comp.chavePix || '')}" placeholder="Chave Pix Copia e Cola Global" style="font-size: 0.78rem;">
+                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 6px;">
+                        <button class="btn-action-danger" style="padding: 7px 14px; font-size: 0.78rem;" onclick="excluirCompraColetiva('${compraGerenciandoKey}')">🗑️ Excluir</button>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="btn-action-primary" style="background: #3a86ff; padding: 7px 14px; font-size: 0.78rem;" onclick="finalizarCompraColetivaStatus('${compraGerenciandoKey}')">✔️ Concluir</button>
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; padding: 7px 14px; font-size: 0.78rem;" onclick="salvarCompraGerenciada('${compraGerenciandoKey}')">💾 Salvar</button>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (tituloEl) tituloEl.innerHTML = `🛒 Gestão de Compras Coletivas`;
+            let keys = Object.keys(comprasColetivasCache);
+
+            if (keys.length === 0) {
+                bodyEl.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <div style="color: var(--text-muted); text-align: center; padding: 14px;">Nenhuma compra coletiva cadastrada.</div>
+                        <div class="config-panel" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px;">
+                            <div class="config-panel-title" style="color: var(--accent-gold); border-bottom: none; padding-bottom: 0;">🔒 CRIAR NOVA COMPRA COLETIVA</div>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
+                                <input type="text" id="input-compra-item" class="config-input" placeholder="Nome da Compra (Ex: Peças RC)" style="flex: 2; background: var(--bg-input);">
+                                <input type="number" step="0.01" id="input-compra-preco" class="config-input" placeholder="Preço (R$)" style="flex: 0.8; background: var(--bg-input);">
+                                <input type="number" id="input-compra-qtd-min" class="config-input" placeholder="Qtd" style="flex: 0.8; background: var(--bg-input);">
+                                <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 7px 14px;" onclick="criarCompraColetiva()">Criar</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let cardsHtml = keys.map(k => {
+                let comp = comprasColetivasCache[k];
+                sincronizarParticipantesCompra(comp);
+                calcularValoresDevidosCompra(comp);
+
+                let participantes = comp.participantes || {};
+                let ativosArr = Object.values(participantes).filter(p => p && p.ativo);
+                let pagosAtivos = ativosArr.filter(p => p.pago).length;
+                let quitada = (ativosArr.length > 0 && pagosAtivos === ativosArr.length);
+                let entregue = !!comp.entregue;
+                let finalizada = quitada && entregue;
+
+                let statusExibicao = finalizada ? "Finalizada" : (quitada ? "Quitada" : (entregue ? "Entregue" : "Em Andamento"));
+                let badgeColor = finalizada ? "rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green);" : (quitada ? "rgba(58,134,255,0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue);" : "rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold);");
+
+                return `
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 5px solid ${finalizada ? 'var(--accent-green)' : (quitada ? 'var(--accent-blue)' : 'var(--accent-gold)')}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 0.95rem; font-weight: 700; color: var(--text-title);">🛒 ${escapeHtml(comp.nome || comp.chave)}</span>
+                                <span style="font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${badgeColor}">${statusExibicao}</span>
+                            </div>
+                            <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                                <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="alternarEntregueCompra('${k}')">${entregue ? '✅ Entregue' : '📦 Marcar Entregue'}</button>
+                                <button class="btn" style="background: rgba(114,9,183,0.25); color: #e0aaff; border: 1px solid #7209b7; padding: 4px 8px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${k}')">📊 Resumo</button>
+                                <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="gerenciarCompraColetiva('${k}')">⚙️ Gerenciar</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            bodyEl.innerHTML = `
+                <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">COMPRAS COLETIVAS</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    ${cardsHtml}
+                </div>
+                <div class="config-panel" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; margin-top: 4px;">
+                    <div class="config-panel-title" style="color: var(--accent-gold); border-bottom: none; padding-bottom: 0;">🔒 CRIAR NOVA COMPRA COLETIVA</div>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
+                        <input type="text" id="input-compra-item" class="config-input" placeholder="Nome da Compra (Ex: Peças RC)" style="flex: 2; background: var(--bg-input);">
+                        <input type="number" step="0.01" id="input-compra-preco" class="config-input" placeholder="Preço (R$)" style="flex: 0.8; background: var(--bg-input);">
+                        <input type="number" id="input-compra-qtd-min" class="config-input" placeholder="Qtd" style="flex: 0.8; background: var(--bg-input);">
+                        <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 7px 14px;" onclick="criarCompraColetiva()">Criar</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.resumirCompraColetiva = function(compraKey) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            sincronizarParticipantesCompra(comp);
+            calcularValoresDevidosCompra(comp);
+
+            let participantes = comp.participantes || {};
+            let participantesAtivos = Object.values(participantes).filter(p => p && p.nome && p.nome.trim() !== "" && p.ativo);
+
+            let modalTituloEl = document.getElementById('compra-resumo-titulo');
+            let modalCorpoEl = document.getElementById('compra-resumo-corpo');
+            if (!modalCorpoEl) return;
+
+            if (modalTituloEl) modalTituloEl.innerHTML = `📊 Resumo: ${escapeHtml(comp.nome || comp.chave)}`;
+
+            let chavePixBase = comp.chavePix || "00020126580014br.gov.pix.pix0136aac94da7-9d9a-463a-b33a-b974665b3022520400005303986540546.705802BR5925LUIS RAPHAEL";
+
+            let participantesHtml = participantesAtivos.map(p => {
+                let statusBadge = p.pago ? `<span style="color: var(--accent-green); font-weight: 700;">Pago ✅</span>` : `<span style="color: var(--accent-red); font-weight: 700;">Pendente ❌</span>`;
+                let pixBoxHtml = "";
+                if (!p.pago) {
+                    let valorStr = (p.valorDevido || 0).toFixed(2);
+                    let payloadPixPiloto = (p.pixPersonalizado && p.pixPersonalizado.trim() !== "") ? p.pixPersonalizado : `${chavePixBase} (Valor: R$ ${valorStr} - ${p.nome})`;
+                    let qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(payloadPixPiloto)}`;
+
+                    pixBoxHtml = `
+                        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-card); display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--bg-body); padding: 6px; border-radius: 6px;">
+                            <span style="font-size: 0.72rem; color: var(--accent-gold); font-weight: 700;">Pix (R$ ${valorStr})</span>
+                            <div style="background: #fff; padding: 3px; border-radius: 4px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;">
+                                <img src="${escapeHtml(qrCodeUrl)}" alt="QR Code Pix" style="max-width: 100%; max-height: 100%;">
+                            </div>
+                            <div style="display: flex; gap: 4px; width: 100%;">
+                                <input type="text" readonly class="config-input" id="pix-resumo-${p.nome.replace(/\s+/g, '')}" value="${escapeHtml(payloadPixPiloto)}" style="font-size: 0.68rem; text-align: center; color: var(--text-muted);">
+                                <button class="btn-action-primary" style="padding: 3px 6px; font-size: 0.68rem;" onclick="navigator.clipboard.writeText(document.getElementById('pix-resumo-${p.nome.replace(/\s+/g, '')}').value); alert('Pix Copia e Cola copiado!');">Copiar</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong style="color: var(--text-title); font-size: 0.85rem;">${escapeHtml(p.nome)}</strong>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span style="color: var(--accent-gold); font-weight: 700; font-size: 0.85rem;">R$ ${(p.valorDevido || 0).toFixed(2)}</span>
+                                ${statusBadge}
+                            </div>
+                        </div>
+                        ${pixBoxHtml}
+                    </div>
+                `;
+            }).join('') || `<div style="text-align: center; color: var(--text-muted);">Nenhum participante.</div>`;
+
+            modalCorpoEl.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; padding-right: 4px;">
+                    ${participantesHtml}
+                </div>
+            `;
+            document.getElementById('compra-resumo-modal').style.display = 'flex';
+        };
+
+        window.fecharModalResumoCompra = function() {
+            document.getElementById('compra-resumo-modal').style.display = 'none';
+        };
+
+        window.abrirModalParticipar = function(key) {
+            campeonatoParticiparKey = key;
+            let camp = campeonatosCache[key];
+            if (!camp) return;
+
+            document.getElementById('participar-modal-titulo').innerHTML = `🏎️ Participar: <span style="color: var(--accent-gold);">${escapeHtml(camp.nome)}</span>`;
+            let select = document.getElementById('participar-select-piloto');
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
+            dadosBase.forEach(d => { if(d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
+
+            let optionsHtml = `<option value="">Selecione um piloto...</option>`;
+            Array.from(pilotosSet).filter(p => p && p.trim()).sort().forEach(p => {
+                let meta = pilotosMetadadosCache[p] || {};
+                let label = meta.apelido ? `${p} (${meta.apelido})` : p;
+                optionsHtml += `<option value="${escapeHtml(p)}">${escapeHtml(label)}</option>`;
+            });
+            select.innerHTML = optionsHtml;
+
+            renderizarTabelaInscritosParticipar();
+            document.getElementById('participar-campeonato-modal').style.display = 'flex';
+        };
+
+        window.fecharModalParticipar = function() {
+            document.getElementById('participar-campeonato-modal').style.display = 'none';
+            campeonatoParticiparKey = null;
+        };
+
+        function renderizarTabelaInscritosParticipar() {
+            if (!campeonatoParticiparKey || !campeonatosCache[campeonatoParticiparKey]) return;
+            let camp = campeonatosCache[campeonatoParticiparKey];
+            let tbody = document.getElementById('participar-tabela-inscritos');
+            let pilotosInscritos = camp.pilotosInscritos || {};
+            let pKeys = Object.keys(pilotosInscritos);
+
+            if (pKeys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum piloto inscrito.</td></tr>`;
+            } else {
+                tbody.innerHTML = pKeys.map(pk => `
+                    <tr>
+                        <td><strong>${escapeHtml(pilotosInscritos[pk].nome)}</strong></td>
+                        <td style="text-align: right;"><button class="btn-text-action" style="color: var(--accent-red);" onclick="removerPilotoParticipar('${pk}')">Remover</button></td>
+                    </tr>`).join('');
+            }
+        }
+
+        window.adicionarPilotoPorModalParticipar = async function() {
+            if (!campeonatoParticiparKey || !db) return;
+            let select = document.getElementById('participar-select-piloto');
+            let nomeP = select.value.trim();
+            if (!nomeP) return;
+
+            let camp = campeonatosCache[campeonatoParticiparKey];
+            let inscritos = camp.pilotosInscritos || {};
+            if (Object.values(inscritos).some(p => p.nome === nomeP)) { alert("Piloto já inscrito."); return; }
+
+            let pKey = "pil_" + nomeP.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+            try {
+                await db.ref(`campeonatos/${campeonatoParticiparKey}/pilotosInscritos/${pKey}`).set({ nome: nomeP });
+                select.value = "";
+                renderizarTabelaInscritosParticipar();
+                if (campeonatoAtivoKey === campeonatoParticiparKey) atualizarInterfacePainelZRound();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.removerPilotoParticipar = async function(pk) {
+            if (!campeonatoParticiparKey || !db) return;
+            try {
+                await db.ref(`campeonatos/${campeonatoParticiparKey}/pilotosInscritos/${pk}`).remove();
+                renderizarTabelaInscritosParticipar();
+                if (campeonatoAtivoKey === campeonatoParticiparKey) atualizarInterfacePainelZRound();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.criarCampeonatoProtegido = async function() {
+            let nomeCamp = document.getElementById('input-nome-campeonato').value.trim();
+            if (!nomeCamp || !db) return;
+            let campKey = "camp_" + nomeCamp.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+            try {
+                await db.ref('campeonatos/' + campKey).set({
+                    chave: campKey, nome: nomeCamp, status: "Em andamento",
+                    configuracoes: { numeroProvas: 4, pilotosPorProva: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+                    pilotosInscritos: {}, bateriasBancoSeparado: {}, gridTreinoDados: null
+                });
+                document.getElementById('input-nome-campeonato').value = "";
+                renderizarListaCampeonatosModal();
+            } catch(err) { alert("Erro: " + err.message); }
+        };
+
+        function renderizarListaCampeonatosModal() {
+            const ul = document.getElementById('campeonatos-lista-modal');
+            if (!ul) return;
+            ul.innerHTML = "";
+            let keys = Object.keys(campeonatosCache);
+            if (keys.length === 0) {
+                ul.innerHTML = `<li style="color: var(--text-muted); text-align: center; padding: 6px;">Nenhum campeonato.</li>`;
+                return;
+            }
+
+            keys.forEach(key => {
+                let camp = campeonatosCache[key];
+                let statusCamp = camp.status || "Em andamento";
+                const li = document.createElement('li');
+                li.style.cssText = "background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 4px;";
+
+                let botaoParticiparHtml = statusCamp === 'Finalizada' ? '' : `<button class="btn-action-primary" style="padding: 3px 8px; font-size: 0.72rem; background: var(--accent-gold); color: #000;" onclick="abrirModalParticipar('${key}')">Participar</button>`;
+
+                let topoHtml = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                        <div>
+                            <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-title);">🏆 ${escapeHtml(camp.nome)}</span>
+                            <span style="font-size: 0.7rem; font-weight: 700; padding: 2px 5px; border-radius: 4px; margin-left: 6px; background: ${statusCamp === 'Finalizada' ? 'rgba(46,196,182,0.15); color: var(--accent-green);' : 'rgba(255,183,3,0.15); color: var(--accent-gold);'}">${statusCamp}</span>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            ${botaoParticiparHtml}
+                            <button class="btn-action-primary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="selecionarCampeonatoZRound('${key}')">⚙️ Gerenciar</button>
+                        </div>
+                    </div>`;
+                li.innerHTML = topoHtml;
+                ul.appendChild(li);
+            });
+        }
+
+        window.selecionarCampeonatoZRound = function(key) {
+            campeonatoAtivoKey = key;
+            let camp = campeonatosCache[key];
+            if (!camp) return;
+
+            document.getElementById('zround-camp-titulo-ativo').innerText = `Configurando: ${camp.nome}`;
+            document.getElementById('container-zround-campeonato').style.display = 'flex';
+            document.getElementById('zround-edit-nome-camp').value = camp.nome || "";
+
+            let conf = camp.configuracoes || { numeroProvas: 4, pilotosPorProva: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] };
+            document.getElementById('zround-num-provas').value = conf.numeroProvas;
+            document.getElementById('zround-pilotos-prova').value = conf.pilotosPorProva;
+            document.getElementById('zround-inverter-segunda').checked = conf.inverterSegundaBateria;
+            document.getElementById('zround-usa-grid-treino').checked = conf.usaGridTreino || false;
+            if (conf.pontuacaoTabela) document.getElementById('zround-tabela-pontos-input').value = conf.pontuacaoTabela.join(', ');
+
+            atualizarInterfacePainelZRound();
+            mudarAbaZRound(1);
+        };
+
+        window.fecharPainelZRoundCamp = function() {
+            campeonatoAtivoKey = null;
+            document.getElementById('container-zround-campeonato').style.display = 'none';
+        };
+
+        window.mudarAbaZRound = function(numAba) {
+            document.querySelectorAll('#campeonatos-modal .zround-tab-btn').forEach((b, idx) => {
+                if (idx === numAba - 1) b.classList.add('active'); else b.classList.remove('active');
+            });
+            document.querySelectorAll('#campeonatos-modal .zround-aba-content').forEach((c, idx) => {
+                if (idx === numAba - 1) c.style.display = 'flex'; else c.style.display = 'none';
+            });
+        };
+
+        function preencherSelectPilotosGerais() {
+            let select = document.getElementById('zround-select-piloto-geral');
+            if (!select) return;
+            let dadosBase = obterTodosDadosConsolidados();
+            let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
+            dadosBase.forEach(d => { if(d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+            Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
+
+            let optionsHtml = `<option value="">Selecione um piloto...</option>`;
+            Array.from(pilotosSet).filter(p => p && p.trim()).sort().forEach(p => {
+                let meta = pilotosMetadadosCache[p] || {};
+                let label = meta.apelido ? `${p} (${meta.apelido})` : p;
+                optionsHtml += `<option value="${escapeHtml(p)}">${escapeHtml(label)}</option>`;
+            });
+            select.innerHTML = optionsHtml;
+        }
+
+        function preencherSelectProvasBancoPrincipal() {
+            let select = document.getElementById('zround-select-prova-banco-principal');
+            if (!select) return;
+            let optionsHtml = `<option value="">Selecione uma prova...</option>`;
+            listaJsonsCache.forEach(arq => {
+                let nomeExib = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : arq.bateriaKey);
+                optionsHtml += `<option value="${arq.firebaseKey}">${escapeHtml(formatarNomeSessao(nomeExib))}</option>`;
+            });
+            select.innerHTML = optionsHtml;
+        }
+
+        window.salvarNomeCampeonatoAtual = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let novoNome = document.getElementById('zround-edit-nome-camp').value.trim();
+            if (!novoNome) return;
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/nome`).set(novoNome);
+                document.getElementById('zround-camp-titulo-ativo').innerText = `Configurando: ${novoNome}`;
+                renderizarListaCampeonatosModal();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.importarPilotoBancoGeral = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let select = document.getElementById('zround-select-piloto-geral');
+            let nomeP = select.value.trim();
+            if (!nomeP) return;
+            let pKey = "pil_" + nomeP.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/pilotosInscritos/${pKey}`).set({ nome: nomeP });
+                select.value = "";
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.adicionarPilotoManualZRound = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let nomeP = document.getElementById('zround-novo-piloto-manual').value.trim();
+            if (!nomeP) return;
+            let pKey = "pil_" + nomeP.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/pilotosInscritos/${pKey}`).set({ nome: nomeP });
+                document.getElementById('zround-novo-piloto-manual').value = "";
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.removerPilotoCampeonatoZRound = async function(pKey) {
+            if (!campeonatoAtivoKey || !db) return;
+            await db.ref(`campeonatos/${campeonatoAtivoKey}/pilotosInscritos/${pKey}`).remove();
+        };
+
+        window.salvarAba1ConfigGeral = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let numProvas = parseInt(document.getElementById('zround-num-provas').value, 10) || 4;
+            let pilotosProva = parseInt(document.getElementById('zround-pilotos-prova').value, 10) || 10;
+            let inverter = document.getElementById('zround-inverter-segunda').checked;
+            let usaGridTreino = document.getElementById('zround-usa-grid-treino').checked;
+            let pontosArr = document.getElementById('zround-tabela-pontos-input').value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/configuracoes`).set({
+                    numeroProvas: numProvas, pilotosPorProva: pilotosProva, inverterSegundaBateria: inverter,
+                    usaGridTreino: usaGridTreino, pontuacaoTabela: pontosArr.length > 0 ? pontosArr : [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
+                });
+                alert("Salvo com sucesso!");
+                atualizarInterfacePainelZRound();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.excluirCampeonatoAtual = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let senha = prompt("🔒 Digite a senha (1234):");
+            if (senha !== SENHA_UNIFICADA) { alert("❌ Incorreta!"); return; }
+            if (confirm("Excluir este campeonato?")) {
+                try {
+                    await db.ref(`campeonatos/${campeonatoAtivoKey}`).remove();
+                    fecharPainelZRoundCamp();
+                    renderizarListaCampeonatosModal();
+                } catch (err) { alert("Erro: " + err.message); }
+            }
+        };
+
+        window.processarTreinoParaGrid = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let inputEl = document.getElementById('zround-input-file-treino-grid');
+            if (!inputEl || !inputEl.files || inputEl.files.length === 0) return;
+            let file = inputEl.files[0];
+            try {
+                let textoExtraido = "";
+                const extensao = file.name.split('.').pop().toLowerCase();
+                if (extensao === 'html' || extensao === 'htm') {
+                    textoExtraido = new DOMParser().parseFromString(await file.text(), 'text/html').body.innerText;
+                } else {
+                    textoExtraido = await converterPdfParaTexto(file);
+                }
+
+                let dadosTreino = parsearTextoConvertido(textoExtraido, "Treino Grid", "treino_grid");
+                let rankingGridTreino = [];
+                dadosTreino.forEach(d => {
+                    let laps = (d.laps || []).filter(t => !isNaN(t) && t > 0).sort((a,b) => a - b);
+                    if (laps.length > 0) {
+                        let top3 = laps.slice(0, 3);
+                        let melhorTempoDefinitivo = top3[0];
+                        if (top3.length >= 3) {
+                            let tresMelhores = [...top3].sort((a,b) => a - b);
+                            tresMelhores.pop();
+                            melhorTempoDefinitivo = Math.min(...tresMelhores);
+                        }
+                        rankingGridTreino.push({ piloto: d.piloto, melhorTempo: melhorTempoDefinitivo });
+                    }
+                });
+
+                rankingGridTreino.sort((a, b) => a.melhorTempo - b.melhorTempo);
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/gridTreinoDados`).set(rankingGridTreino);
+                document.getElementById('status-treino-grid-info').innerText = `✅ Treino processado! (${rankingGridTreino.length} pilotos).`;
+                inputEl.value = "";
+                atualizarInterfacePainelZRound();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.uploadProvasBancoSeparado = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let inputEl = document.getElementById('zround-input-file-prova');
+            if (!inputEl || !inputEl.files || !inputEl.files.length) return;
+
+            for (let file of inputEl.files) {
+                let nomeArq = file.name;
+                let sessaoNome = nomeArq.replace(/\.[^/.]+$/, "").trim();
+                let batKey = "bat_sep_" + sessaoNome.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+                try {
+                    let textoExtraido = "";
+                    const extensao = nomeArq.split('.').pop().toLowerCase();
+                    if (extensao === 'html' || extensao === 'htm') {
+                        textoExtraido = new DOMParser().parseFromString(await file.text(), 'text/html').body.innerText;
+                    } else {
+                        textoExtraido = await converterPdfParaTexto(file);
+                    }
+
+                    const dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, batKey);
+                    let pdfBase64 = await arquivoParaBase64(file);
+                    await db.ref(`campeonatos/${campeonatoAtivoKey}/bateriasBancoSeparado/${batKey}`).set({
+                        bateriaKey: batKey, sessao: sessaoNome, id: Date.now(), dados: dadosExtraidos, pdfBase64: pdfBase64, nomeArquivoOriginal: nomeArq
+                    });
+                } catch (err) { alert("Erro: " + err.message); }
+            }
+            inputEl.value = "";
+            atualizarInterfacePainelZRound();
+        };
+
+        window.importarProvaDoBancoPrincipalParaCampeonato = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            let select = document.getElementById('zround-select-prova-banco-principal');
+            let firebaseKey = select.value;
+            if (!firebaseKey) return;
+
+            let provaObj = listaJsonsCache.find(item => item.firebaseKey === firebaseKey);
+            if (!provaObj) return;
+
+            let batKey = "bat_sep_imp_" + Date.now();
+            try {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/bateriasBancoSeparado/${batKey}`).set({
+                    bateriaKey: batKey, sessao: provaObj.sessao || "Prova Importada", id: Date.now(),
+                    dados: provaObj.dados || [], pdfBase64: provaObj.pdfBase64 || "", nomeArquivoOriginal: provaObj.nomeArquivoOriginal || "relatorio.pdf"
+                });
+                select.value = "";
+                atualizarInterfacePainelZRound();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.excluirProvaBancoSeparado = async function(batKey) {
+            if (!campeonatoAtivoKey || !db) return;
+            await db.ref(`campeonatos/${campeonatoAtivoKey}/bateriasBancoSeparado/${batKey}`).remove();
+            atualizarInterfacePainelZRound();
+        };
+
+        window.finalizarCampeonatoAtual = async function() {
+            if (!campeonatoAtivoKey || !db) return;
+            if (confirm("Finalizar este campeonato?")) {
+                await db.ref(`campeonatos/${campeonatoAtivoKey}/status`).set("Finalizada");
+                fecharPainelZRoundCamp();
+                renderizarListaCampeonatosModal();
+            }
+        };
+
+        function atualizarInterfacePainelZRound() {
+            if (!campeonatoAtivoKey || !campeonatosCache[campeonatoAtivoKey]) return;
+            let camp = campeonatosCache[campeonatoAtivoKey];
+            let tbodyPilotos = document.getElementById('zround-tabela-pilotos-inscritos');
+            let pilotosInscritos = camp.pilotosInscritos || {};
+            let pKeys = Object.keys(pilotosInscritos);
+            
+            if (pKeys.length === 0) {
+                tbodyPilotos.innerHTML = `<tr><td colspan="2" style="text-align: center; color: var(--text-muted);">Nenhum piloto inscrito.</td></tr>`;
+            } else {
+                tbodyPilotos.innerHTML = pKeys.map(pk => `
+                    <tr>
+                        <td><strong>${escapeHtml(pilotosInscritos[pk].nome)}</strong></td>
+                        <td style="text-align: right;"><button class="btn-text-action" style="color: var(--accent-red);" onclick="removerPilotoCampeonatoZRound('${pk}')">Remover</button></td>
+                    </tr>`).join('');
+            }
+
+            let ulProvas = document.getElementById('zround-lista-provas-banco-separado');
+            let provasSep = camp.bateriasBancoSeparado || {};
+            let provKeys = Object.keys(provasSep);
+            if (provKeys.length === 0) {
+                ulProvas.innerHTML = `<li>Nenhuma prova registrada.</li>`;
+            } else {
+                ulProvas.innerHTML = provKeys.map(pk => {
+                    let pObj = provasSep[pk];
+                    return `
+                        <li style="background: var(--bg-card); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                            <span>📄 <strong>${escapeHtml(pObj.sessao || pk)}</strong></span>
+                            <button class="btn-text-action" style="color: var(--accent-red);" onclick="excluirProvaBancoSeparado('${pk}')">Excluir</button>
+                        </li>`;
+                }).join('');
+            }
+
+            let containerGrids = document.getElementById('container-todos-grids-gerados');
+            let numProvasPrevistas = camp.configuracoes?.numeroProvas || 4;
+            let inverterAtivo = camp.configuracoes?.inverterSegundaBateria ?? true;
+            let usaGridTreino = camp.configuracoes?.usaGridTreino ?? false;
+
+            let gridBaseInicial = [];
+            if (usaGridTreino && camp.gridTreinoDados && camp.gridTreinoDados.length > 0) {
+                gridBaseInicial = camp.gridTreinoDados.map(d => d.piloto);
+            } else {
+                let inscritosArr = Object.values(pilotosInscritos).map(p => p.nome);
+                if (inscritosArr.length === 0 && provKeys.length > 0) {
+                    let primeiraP = provasSep[provKeys[0]];
+                    if (primeiraP && primeiraP.dados) inscritosArr = primeiraP.dados.filter(d => d.laps && d.laps.length > 0).map(d => d.piloto);
+                }
+                gridBaseInicial = inscritosArr;
+            }
+
+            let gridsHtml = '';
+            for (let g = 0; g < numProvasPrevistas; g++) {
+                let pilotoGridAtual = [];
+                let criterioTexto = "";
+                if (g === 0) {
+                    pilotoGridAtual = gridBaseInicial;
+                    criterioTexto = usaGridTreino ? "Treino" : "Padrão";
+                } else {
+                    let provaAnteriorKey = provKeys[g - 1];
+                    if (provaAnteriorKey && provasSep[provaAnteriorKey] && provasSep[provaAnteriorKey].dados) {
+                        let ordenadosAnt = ordenarParticipantesBateria(provasSep[provaAnteriorKey].dados.filter(d => d.laps && d.laps.length > 0));
+                        let ordemAnt = ordenadosAnt.map(d => d.piloto);
+                        pilotoGridAtual = inverterAtivo ? [...ordemAnt].reverse() : ordemAnt;
+                        criterioTexto = inverterAtivo ? "Invertido" : "Direto";
+                    } else {
+                        pilotoGridAtual = gridBaseInicial;
+                        criterioTexto = "Aguardando";
+                    }
+                }
+
+                let linhasGridHtml = pilotoGridAtual.length === 0 ? `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pilotos.</td></tr>` :
+                    pilotoGridAtual.map((pilotoNome, idx) => `
+                        <tr>
+                            <td><span class="pos-badge">${idx + 1}º</span></td>
+                            <td><strong>${escapeHtml(pilotoNome)}</strong></td>
+                            <td><span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(criterioTexto)}</span></td>
+                        </tr>
+                    `).join('');
+
+                gridsHtml += `
+                    <div class="card" style="padding: 8px; background: var(--bg-input);">
+                        <div class="card-header" style="margin-bottom: 6px; font-size: 0.82rem;">🏁 Grid - Prova ${g + 1}</div>
+                        <div class="table-container">
+                            <table>
+                                <thead><tr><th>Pos</th><th>Piloto</th><th>Critério</th></tr></thead>
+                                <tbody>${linhasGridHtml}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            containerGrids.innerHTML = gridsHtml;
+
+            let theadEl = document.getElementById('zround-thead-classificacao');
+            let tbodyClass = document.getElementById('zround-tabela-classificacao-geral');
+            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
+            let ranking = calcularClassificacaoBancoSeparado(camp);
+
+            let thProvasHtml = provasArr.map((arq, idx) => `<th style="text-align: center;">P${idx + 1}</th>`).join('');
+            theadEl.innerHTML = `<tr><th>Pos</th><th>Piloto</th>${thProvasHtml}<th style="text-align: right;">Total</th></tr>`;
+
+            if (ranking.length === 0) {
+                tbodyClass.innerHTML = `<tr><td colspan="${3 + provasArr.length}" style="text-align: center; color: var(--text-muted);">Sem pontuação.</td></tr>`;
+            } else {
+                tbodyClass.innerHTML = ranking.map((r, idx) => {
+                    let provasCelulasHtml = (r.provas || []).map(pts => `<td style="text-align: center; color: ${pts > 0 ? 'var(--text-main)' : 'var(--text-muted)'};">${pts}</td>`).join('');
+                    return `
+                        <tr>
+                            <td><span class="pos-badge">${idx + 1}º</span></td>
+                            <td><strong>${escapeHtml(r.piloto)}</strong></td>
+                            ${provasCelulasHtml}
+                            <td style="text-align: right; color: var(--accent-gold); font-weight: 700;">${r.pontos} pts</td>
+                        </tr>`;
+                }).join('');
+            }
+        }
+
+        function calcularClassificacaoBancoSeparado(camp) {
+            let provasSep = camp.bateriasBancoSeparado || {};
+            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
+            let conf = camp.configuracoes || {};
+            let tabelaPontosArr = conf.pontuacaoTabela || [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+            let pilotoDados = {};
+
+            provasArr.forEach((arq, provaIndex) => {
+                if (arq && arq.dados && Array.isArray(arq.dados)) {
+                    let ordenadosBateria = ordenarParticipantesBateria(arq.dados.filter(d => d.laps && d.laps.length > 0));
+                    ordenadosBateria.forEach((d, index) => {
+                        let posNum = index + 1;
+                        let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
+                        if (pts > 0) {
+                            let pNome = d.piloto;
+                            let sKey = pNome.replace(/[.#$\/\[\]]/g, "_");
+                            if (mesclagensCache[sKey]) pNome = mesclagensCache[sKey];
+
+                            if (!pilotoDados[pNome]) pilotoDados[pNome] = { piloto: pNome, provas: new Array(provasArr.length).fill(0), pontos: 0 };
+                            pilotoDados[pNome].provas[provaIndex] = pts;
+                        }
+                    });
+                }
+            });
+
+            let ranking = Object.values(pilotoDados).map(p => {
+                while(p.provas.length < provasArr.length) p.provas.push(0);
+                p.pontos = p.provas.reduce((acc, val) => acc + val, 0);
+                return p;
+            });
+            ranking.sort((a, b) => b.pontos - a.pontos);
+            return ranking;
+        }
+
+        async function arquivoParaBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function converterPdfParaTexto(arquivo) {
+            const arrayBuffer = await arquivo.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdfDoc = await loadingTask.promise;
+            let textoCompleto = "";
+
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                const pagina = await pdfDoc.getPage(pageNum);
+                const tokenTextos = await pagina.getTextContent();
+                let linhasY = {};
+                tokenTextos.items.forEach(item => {
+                    let y = Math.round(item.transform[5] / 3) * 3;
+                    if (!linhasY[y]) linhasY[y] = [];
+                    linhasY[y].push({ x: item.transform[4], str: item.str });
+                });
+                Object.keys(linhasY).sort((a, b) => b - a).forEach(y => {
+                    let linhaItens = linhasY[y].sort((a, b) => a.x - b.x);
+                    textoCompleto += linhaItens.map(i => i.str).join(" | ") + "\n";
+                });
+            }
+            return textoCompleto;
+        }
+
+        function parsearTextoConvertido(texto, sessaoNome, batKey) {
+            let pilotosMap = {};
+            let linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            let ordemPilotos = [];
+            let capturandoResumo = false;
+            let capturandoVoltas = false;
+
+            linhas.forEach(linha => {
+                let linhaLimpa = linha.replace(/\|/g, ' ').trim();
+                let partes = linhaLimpa.split(/\s+/).filter(Boolean);
+                if (partes.length === 0) return;
+
+                let linhaLower = linhaLimpa.toLowerCase();
+                if (linhaLower.startsWith("top ") || linhaLower.includes("top 10")) {
+                    capturandoResumo = false;
+                    capturandoVoltas = false;
+                    return;
+                }
+
+                if ((linhaLimpa.includes("Piloto") || linhaLimpa.includes("Pos")) && (linhaLimpa.includes("Voltas") || linhaLimpa.includes("Tempo"))) {
+                    capturandoResumo = true;
+                    capturandoVoltas = false;
+                    return;
+                }
+
+                if (linhaLower.includes("volta por piloto") || linhaLower.includes("lap by lap") || (partes[0] === "Num." && capturandoResumo)) {
+                    capturandoResumo = false;
+                    capturandoVoltas = true;
+                    return;
+                }
+
+                if (capturandoResumo) {
+                    let posDetectada = null;
+                    let startIndex = 0;
+                    if (/^\d{1,2}º?$/.test(partes[0])) {
+                        posDetectada = partes[0].includes('º') ? partes[0] : partes[0] + 'º';
+                        startIndex = 1;
+                        if (/^\d+$/.test(partes[1])) startIndex = 2;
+                    }
+
+                    let nomePartes = [];
+                    for (let i = startIndex; i < partes.length; i++) {
+                        let p = partes[i];
+                        if (/^\d+$/.test(p) && i > startIndex + 1) break;
+                        if (/^\d+[:.,]\d+/.test(p)) break;
+                        if (p === 'º' || p === '°') continue;
+                        nomePartes.push(p);
+                    }
+
+                    if (nomePartes.length > 0) {
+                        let pilotoNome = nomePartes.join(' ').replace(/\s+\d+$/, '').trim();
+                        if (pilotoNome && !pilotosMap[pilotoNome]) {
+                            pilotosMap[pilotoNome] = {
+                                pos: posDetectada || ((ordemPilotos.length + 1) + 'º'),
+                                piloto: pilotoNome, bateriaKey: batKey, sessao: sessaoNome, voltasTotais: 0,
+                                melhorVoltaVal: 0, melhorVoltaTxt: "00,000s", mediaVal: 0, mediaTxt: "00,000s", desvioVal: 0, desvio: "±0,000s", laps: []
+                            };
+                            ordemPilotos.push(pilotoNome);
+                        }
+                    }
+                }
+
+                if (capturandoVoltas && (/^\d+$/.test(partes[0]) || /^\d+[º°]?$/.test(partes[0]))) {
+                    let numVolta = parseInt(partes[0].replace(/[º°]/g, ''), 10);
+                    if (isNaN(numVolta)) return;
+                    let temposLinha = [];
+                    for (let i = 1; i < partes.length; i++) {
+                        let token = partes[i].split('-')[0].trim().replace(/[^\d:,.]/g, '');
+                        if (token && /\d+[,.]\d+/.test(token)) {
+                            let tempoNum = token.includes(':') ? (parseInt(token.split(':')[0], 10) * 60) + parseFloat(token.split(':')[1].replace(',', '.')) : parseFloat(token.replace(',', '.'));
+                            if (!isNaN(tempoNum) && tempoNum > 0) temposLinha.push(parseFloat(tempoNum.toFixed(3)));
+                        }
+                    }
+                    temposLinha.forEach((tempoVal, idx) => {
+                        if (ordemPilotos[idx]) {
+                            let pName = ordemPilotos[idx];
+                            if (!pilotosMap[pName].laps) pilotosMap[pName].laps = [];
+                            pilotosMap[pName].laps[numVolta - 1] = tempoVal;
+                        }
+                    });
+                }
+            });
+
+            let resultadoFinal = [];
+            Object.keys(pilotosMap).forEach(pName => {
+                let pObj = pilotosMap[pName];
+                let lapsLimpos = (pObj.laps || []).filter(t => t !== undefined && !isNaN(t) && t > 0);
+                pObj.laps = lapsLimpos;
+                if (pObj.laps.length === 0) return;
+
+                let melhor = Math.min(...pObj.laps);
+                let media = pObj.laps.reduce((a, b) => a + b, 0) / pObj.laps.length;
+                let desvio = Math.sqrt(pObj.laps.reduce((sum, t) => sum + Math.pow(t - media, 2), 0) / pObj.laps.length);
+
+                pObj.melhorVoltaVal = parseFloat(melhor.toFixed(3));
+                pObj.melhorVoltaTxt = melhor.toFixed(3).replace('.', ',') + 's';
+                pObj.mediaVal = parseFloat(media.toFixed(3));
+                pObj.mediaTxt = media.toFixed(3).replace('.', ',') + 's';
+                pObj.desvioVal = parseFloat(desvio.toFixed(3));
+                pObj.desvio = `±${desvio.toFixed(3).replace('.', ',')}s`;
+                pObj.voltasTotais = pObj.laps.length;
+                resultadoFinal.push(pObj);
+            });
+            return resultadoFinal;
+        }
+
+        window.processarUploadEEnviarNuvemPrincipal = async function() {
+            let inputEl = document.getElementById('input-pdf-upload');
+            if (!inputEl || !inputEl.files || inputEl.files.length === 0 || !db) return;
+
+            for (let file of inputEl.files) {
+                let nomeArq = file.name;
+                let sessaoNome = nomeArq.replace(/\.[^/.]+$/, "").trim();
+                let batKey = "bat_" + sessaoNome.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
+                try {
+                    let textoExtraido = "";
+                    const extensao = nomeArq.split('.').pop().toLowerCase();
+                    if (extensao === 'html' || extensao === 'htm') {
+                        textoExtraido = new DOMParser().parseFromString(await file.text(), 'text/html').body.innerText;
+                    } else {
+                        textoExtraido = await converterPdfParaTexto(file);
+                    }
+
+                    const dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, batKey);
+                    let pdfBase64 = await arquivoParaBase64(file);
+                    let historicoOriginal = {};
+                    dadosExtraidos.forEach(d => { historicoOriginal[d.piloto] = d.piloto; });
+
+                    await db.ref('baterias/' + batKey).set({
+                        bateriaKey: batKey, sessao: sessaoNome, id: Date.now(), dados: dadosExtraidos,
+                        pdfBase64: pdfBase64, nomeArquivoOriginal: nomeArq, historicoNomesOriginais: historicoOriginal
+                    });
+                } catch (err) { alert("Erro: " + err.message); }
+            }
+            inputEl.value = "";
+            fecharModalUpload();
+        };
+
+        function atualizarListaUploadHistoricoPrincipal() {
+            const ul = document.getElementById('upload-lista-historico');
+            if (!ul) return;
+            ul.innerHTML = "";
+            if (!listaJsonsCache || listaJsonsCache.length === 0) {
+                ul.innerHTML = `<li style="color: var(--text-muted); text-align: center; padding: 6px;">Nenhum arquivo.</li>`;
+                return;
+            }
+            listaJsonsCache.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <input type="checkbox" class="checkbox-excluir-lote-principal" value="${item.firebaseKey}" style="accent-color: var(--accent-red); width: 15px; height: 15px; cursor: pointer;">
+                        <span style="overflow: hidden; text-overflow: ellipsis;">📄 <strong>${escapeHtml(item.sessao || item.nomeArquivoOriginal)}</strong></span>
+                    </div>
+                    <button class="btn-text-action" onclick="inspecionarJsonUploadPrincipal(${index})">Inspecionar</button>
+                `;
+                ul.appendChild(li);
+            });
+        }
+
+        window.excluirArquivosSelecionadosPrincipal = async function() {
+            let checkboxes = document.querySelectorAll('.checkbox-excluir-lote-principal:checked');
+            if (checkboxes.length === 0 || !db) return;
+            if (confirm(`Excluir ${checkboxes.length} arquivo(s)?`)) {
+                try {
+                    await Promise.all(Array.from(checkboxes).map(cb => db.ref('baterias/' + cb.value).remove()));
+                } catch (err) { alert("Erro: " + err.message); }
+            }
+        };
+
+        window.inspecionarJsonUploadPrincipal = function(index) {
+            const item = listaJsonsCache[index];
+            if (item) document.getElementById('upload-json-viewer').textContent = JSON.stringify(item, null, 4);
+        };
 
         function obterTodosDadosConsolidados() {
             let consolidado = [];
@@ -581,8 +2343,10 @@
                         arq.dados.forEach(d => {
                             if (!d.laps || d.laps.length === 0 || !d.piloto || !d.piloto.trim()) return;
                             let pilotoReal = d.piloto.trim();
+                            let safeNomeKey = pilotoReal.replace(/[.#$\/\[\]]/g, "_");
+                            if (mesclagensCache[safeNomeKey]) pilotoReal = mesclagensCache[safeNomeKey];
                             let meta = pilotosMetadadosCache[pilotoReal] || {};
-                            consolidado.push({ ...d, piloto: pilotoReal, bateriaKey: arq.firebaseKey });
+                            consolidado.push({ ...d, piloto: pilotoReal, pilotoOriginal: d.piloto, bateriaKey: arq.firebaseKey, pilotoExibicao: meta.apelido ? `${pilotoReal} (${meta.apelido})` : pilotoReal, apelido: meta.apelido || '' });
                         });
                     }
                 });
@@ -598,18 +2362,53 @@
             const pilotosSet = new Set(PILOTOS_CORE_PADRAO);
             listaJsonsCache.forEach(arq => {
                 if (arq.dados && Array.isArray(arq.dados)) {
-                    arq.dados.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
+                    arq.dados.forEach(d => { 
+                        if (d.piloto && d.piloto.trim() && d.laps && d.laps.length > 0) {
+                            let pReal = d.piloto.trim();
+                            let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                            if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
+                            pilotosSet.add(pReal); 
+                        } 
+                    });
                 }
             });
 
+            Object.keys(pilotosMetadadosCache).forEach(p => {
+                if (p && p.trim()) pilotosSet.add(mesclagensCache[p.replace(/[.#$\/\[\]]/g, "_")] || p.trim());
+            });
+
+            let bateriasSelecionadasAntigas = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
+            let pilotosSelecionadosAntigos = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
+            let primeiraVezBat = bateriasSelecionadasAntigas.length === 0;
+            let primeiraVezPil = pilotosSelecionadosAntigos.length === 0;
+
             batContainer.innerHTML = listaJsonsCache.map(arq => {
                 let key = arq.firebaseKey;
-                let sessaoOriginal = arq.sessao || key;
-                return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" checked onchange="atualizarDashboard()"> ${sessaoOriginal}</label>`;
+                let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
+                let marcado = (primeiraVezBat || bateriasSelecionadasAntigas.includes(key)) ? 'checked' : '';
+                return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(formatarNomeSessao(sessaoOriginal))}</label>`;
             }).join('');
 
-            pilContainer.innerHTML = Array.from(pilotosSet).sort().map(piloto => {
-                return `<label class="checkbox-item"><input type="checkbox" value="${piloto}" class="filter-piloto" checked onchange="atualizarDashboard()"> ${piloto}</label>`;
+            let listaNomesUnicos = Array.from(pilotosSet).filter(p => {
+                if (!p || !p.trim()) return false;
+                let sKey = p.replace(/[.#$\/\[\]]/g, "_");
+                if (mesclagensCache[sKey]) return false;
+                return true;
+            });
+
+            pilContainer.innerHTML = listaNomesUnicos.sort().map(piloto => {
+                let meta = pilotosMetadadosCache[piloto] || {};
+                let labelExib = meta.apelido ? `${piloto} (${meta.apelido})` : piloto;
+                let marcado = primeiraVezPil || pilotosSelecionadosAntigos.includes(piloto) ? 'checked' : '';
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0; border-bottom: 1px solid rgba(34, 45, 66, 0.4); gap: 6px;">
+                        <label class="checkbox-item" style="flex: 1; margin: 0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <input type="checkbox" value="${escapeHtml(piloto)}" class="filter-piloto" ${marcado} onchange="atualizarDashboard()"> 
+                            ${escapeHtml(labelExib)}
+                        </label>
+                        <button class="btn-text-action" onclick="abrirDossiePiloto('${escapeHtml(piloto)}')">Resumo</button>
+                    </div>
+                `;
             }).join('');
         }
 
@@ -618,8 +2417,697 @@
             atualizarDashboard();
         };
 
+        window.abrirDossiePiloto = function(nomePiloto) {
+            const modal = document.getElementById('piloto-modal');
+            let meta = pilotosMetadadosCache[nomePiloto] || {};
+            let tituloNome = meta.apelido ? `${nomePiloto} (${meta.apelido})` : nomePiloto;
+            document.getElementById('modal-piloto-nome').innerHTML = `🏎️ Resumo do Piloto: <span style="color: var(--accent-gold);">${escapeHtml(tituloNome)}</span>`;
+            
+            let dadosBase = obterTodosDadosConsolidados();
+            let participacoes = dadosBase.filter(d => d.piloto === nomePiloto && d.laps && d.laps.length > 0);
+            let bodyEl = document.getElementById('modal-piloto-corpo');
+
+            if (participacoes.length === 0) {
+                bodyEl.innerHTML = `<div style="text-align:center; padding: 16px; color: var(--text-muted);">Nenhum dado registrado.</div>`;
+                modal.style.display = 'flex';
+                return;
+            }
+
+            let totalSessoes = participacoes.length;
+            let vitorias = 0, podios = 0, totalVoltasDadas = 0, melhorVoltaGeral = 999999, somaDesvios = 0;
+            let historicoSessaoHtml = [];
+
+            listaJsonsCache.forEach(arq => {
+                let todosBat = (arq.dados || []).map(d => {
+                    let pReal = d.piloto ? d.piloto.trim() : "";
+                    let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                    if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
+                    return { ...d, piloto: pReal };
+                }).filter(d => d.piloto && d.laps && d.laps.length > 0);
+
+                let ordenados = ordenarParticipantesBateria(todosBat);
+                let idxPiloto = ordenados.findIndex(o => o.piloto === nomePiloto);
+
+                if (idxPiloto !== -1) {
+                    let pos = idxPiloto + 1;
+                    if (pos === 1) vitorias++;
+                    if (pos <= 3) podios++;
+
+                    let pData = ordenados[idxPiloto];
+                    let melhorV = pData.melhorVoltaVal || 0;
+                    if (melhorV > 0 && melhorV < melhorVoltaGeral) melhorVoltaGeral = melhorV;
+
+                    let qtdV = pData.laps ? pData.laps.length : 0;
+                    totalVoltasDadas += qtdV;
+                    if (pData.desvioVal) somaDesvios += pData.desvioVal;
+
+                    historicoSessaoHtml.push(`
+                        <tr>
+                            <td><span class="session-badge">${formatarNomeSessao(arq.sessao || arq.nomeArquivoOriginal)}</span></td>
+                            <td><span class="pos-badge">${pos}º</span></td>
+                            <td class="text-green">${pData.melhorVoltaTxt || '--'}</td>
+                            <td>${qtdV}v</td>
+                        </tr>
+                    `);
+                }
+            });
+
+            let velMax = melhorVoltaGeral < 999999 ? ((26 / melhorVoltaGeral) * 3.6 * 28).toFixed(1) : "0.0";
+            let consistenciaMedia = totalSessoes > 0 ? (somaDesvios / totalSessoes).toFixed(3) : "0.000";
+
+            let conquistasHtml = [];
+            if (vitorias > 0) conquistasHtml.push(`<span class="session-podium-tag podium-gold">🏆 Vencedor (${vitorias}x)</span>`);
+            if (podios > 0) conquistasHtml.push(`<span class="session-podium-tag podium-silver">🥈 Pódio (${podios}x)</span>`);
+            if (totalVoltasDadas >= 50) conquistasHtml.push(`<span class="session-podium-tag podium-bronze">🏁 Maratonista (${totalVoltasDadas}v)</span>`);
+
+            bodyEl.innerHTML = `
+                <div class="dossier-grid">
+                    <div class="dossier-kpi"><span class="dossier-kpi-label">Corridas</span><span class="dossier-kpi-value">${totalSessoes}</span></div>
+                    <div class="dossier-kpi"><span class="dossier-kpi-label">Pódios</span><span class="dossier-kpi-value">${podios}</span></div>
+                    <div class="dossier-kpi"><span class="dossier-kpi-label">Voltas</span><span class="dossier-kpi-value">${totalVoltasDadas}</span></div>
+                    <div class="dossier-kpi"><span class="dossier-kpi-label">Velocidade Máxima</span><span class="dossier-kpi-value">${velMax} km/h</span></div>
+                </div>
+
+                <div class="dossier-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                    <div class="dossier-kpi"><span class="dossier-kpi-label">Melhor Volta</span><span class="dossier-kpi-value" style="color: var(--accent-green);">${melhorVoltaGeral < 999999 ? melhorVoltaGeral.toFixed(3) + 's' : '--'}</span></div>
+                    <div class="dossier-kpi"><span class="dossier-kpi-label">Consistência</span><span class="dossier-kpi-value" style="color: var(--accent-blue);">±${consistenciaMedia}s</span></div>
+                </div>
+
+                <div class="config-panel">
+                    <div class="config-panel-title">🏅 Conquistas</div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">${conquistasHtml.join('') || '<span style="color:var(--text-muted); font-size:0.78rem;">Nenhuma conquista ainda.</span>'}</div>
+                </div>
+
+                <div class="card" style="padding: 10px;">
+                    <div class="card-header" style="margin-bottom: 6px;">📜 Histórico de Corridas</div>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Sessão</th><th>Pos</th><th>Melhor Volta</th><th>Voltas</th></tr></thead>
+                            <tbody>${historicoSessaoHtml.join('')}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            modal.style.display = 'flex';
+        };
+
+        window.fecharDossiePiloto = function() { document.getElementById('piloto-modal').style.display = 'none'; };
+
+        window.onclick = function(event) {
+            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal'].forEach(id => {
+                if (event.target === document.getElementById(id)) document.getElementById(id).style.display = 'none';
+            });
+        };
+
+        window.curtirSessao = function(bateriaKey) {
+            if (!db) return;
+            db.ref('likes/' + bateriaKey.replace(/[.#$\/\[\]]/g, "_")).transaction(c => (c || 0) + 1);
+        };
+
+        function escutarCurtidas(bateriaKey) {
+            if (!db) return;
+            let safeKey = bateriaKey.replace(/[.#$\/\[\]]/g, "_");
+            db.ref('likes/' + safeKey).on('value', snap => {
+                let el = document.getElementById(`like-count-${safeKey}`);
+                if (el) el.innerText = snap.val() || 0;
+            });
+        }
+
+        window.enviarComentario = function(bateriaKey) {
+            if (!db) return;
+            let safeKey = bateriaKey.replace(/[.#$\/\[\]]/g, "_");
+            let autor = document.getElementById(`comment-name-${safeKey}`).value.trim() || "Convidado";
+            let texto = document.getElementById(`comment-text-${safeKey}`).value.trim();
+            if (!texto) return;
+            db.ref('comments/' + safeKey).push({ autor, texto, timestamp: Date.now(), likes: 0, dislikes: 0 });
+            document.getElementById(`comment-text-${safeKey}`).value = "";
+        };
+
+        window.reagirComentario = function(bateriaKey, comId, tipo) {
+            if (!db) return;
+            db.ref(`comments/${bateriaKey.replace(/[.#$\/\[\]]/g, "_")}/${comId}/${tipo}`).transaction(c => (c || 0) + 1);
+        };
+
+        function escutarComentarios(bateriaKey) {
+            if (!db) return;
+            let safeKey = bateriaKey.replace(/[.#$\/\[\]]/g, "_");
+            let container = document.getElementById(`comments-list-${safeKey}`);
+            db.ref('comments/' + safeKey).on('value', snap => {
+                let html = '';
+                if (!snap.exists()) {
+                    container.innerHTML = `<div style="font-size:0.78rem; color: var(--text-muted); text-align:center;">Nenhum comentário.</div>`;
+                    return;
+                }
+                snap.forEach(child => {
+                    let c = child.val();
+                    html += `
+                        <div class="comment-item">
+                            <div class="comment-header-row"><span class="comment-author">${escapeHtml(c.autor)}</span></div>
+                            <div class="comment-text">${escapeHtml(c.texto)}</div>
+                            <div class="comment-reactions">
+                                <button class="btn-comment-reaction" onclick="reagirComentario('${bateriaKey}', '${child.key}', 'likes')">👍 (${c.likes || 0})</button>
+                                <button class="btn-comment-reaction" onclick="reagirComentario('${bateriaKey}', '${child.key}', 'dislikes')">👎 (${c.dislikes || 0})</button>
+                            </div>
+                        </div>`;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            let map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
+        window.compartilharCorrida = function(bateriaKey, nomeSessao) {
+            let dadosBateria = obterTodosDadosConsolidados().filter(d => d.bateriaKey === bateriaKey && d.laps && d.laps.length > 0);
+            let ordenados = ordenarParticipantesBateria(dadosBateria);
+            let linkPainel = window.location.href.split('#')[0];
+            if (ordenados.length === 0) return;
+
+            let textoPilotos = ordenados.map((p, idx) => `*${idx + 1}º: ${p.piloto}* — ${p.melhorVoltaTxt || '--'}`).join('\n');
+            let txt = `🏁 *KRATHUS RACING* 🏁\n🗓️ Sessão: *${nomeSessao}*\n\n${textoPilotos}\n\n🔎 ${linkPainel}`;
+            if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => alert("Copiado!"));
+        };
+
+        function atualizarKPIsCompactos() {
+            let dadosBase = obterTodosDadosConsolidados();
+            const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
+            const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
+            const dadosFiltrados = dadosBase.filter(item => bateriasSel.includes(item.bateriaKey) && (pilotosSel.length === 0 || pilotosSel.includes(item.piloto)));
+
+            let kpiMaisVitorioso = "--", kpiMelhorVolta = "--", kpiTotalVoltas = dadosFiltrados.reduce((acc, item) => acc + (item.laps ? item.laps.length : 0), 0), kpiMediaGlobal = "--";
+
+            if (listaJsonsCache.length > 0) {
+                let vencedorContadorGlobal = {};
+                listaJsonsCache.forEach(arq => {
+                    let itensDaBateria = (arq.dados || []).map(d => {
+                        let pReal = d.piloto ? d.piloto.trim() : ""; 
+                        let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                        if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
+                        return { ...d, piloto: pReal };
+                    }).filter(d => d.piloto && d.laps && d.laps.length > 0);
+                    let ordenados = ordenarParticipantesBateria(itensDaBateria);
+                    if (ordenados.length > 0) vencedorContadorGlobal[ordenados[0].piloto] = (vencedorContadorGlobal[ordenados[0].piloto] || 0) + 1;
+                });
+
+                let maxV = -1;
+                for (let [p, v] of Object.entries(vencedorContadorGlobal)) { if (v > maxV) { maxV = v; kpiMaisVitorioso = `${p} (${v}v)`; } }
+
+                let melhorVoltaValGeral = 999999, melhorVoltaPiloto = "", melhorVoltaInfoExtra = "";
+                dadosFiltrados.forEach(item => {
+                    if (item.laps) {
+                        item.laps.forEach((l, lIdx) => {
+                            let t = typeof l === 'object' ? l.tempo : l;
+                            if (t && t < melhorVoltaValGeral) { melhorVoltaValGeral = t; melhorVoltaPiloto = item.piloto; melhorVoltaInfoExtra = `V${lIdx + 1}`; }
+                        });
+                    }
+                });
+                if (melhorVoltaValGeral < 999999) {
+                    let vel = (26 / melhorVoltaValGeral) * 3.6 * 28;
+                    kpiMelhorVolta = `${melhorVoltaValGeral.toFixed(3)}s <span style="font-size:0.72rem;">(${vel.toFixed(1)}km/h)</span><div style="font-size:0.68rem; color:var(--accent-green);">${melhorVoltaPiloto} (${melhorVoltaInfoExtra})</div>`;
+                }
+
+                let somaTemposValidos = 0, totalVoltasValidas = 0;
+                dadosFiltrados.forEach(item => {
+                    if (item.laps) {
+                        item.laps.forEach(l => {
+                            let t = typeof l === 'object' ? l.tempo : l;
+                            if (t && !isNaN(t) && t > 0) { somaTemposValidos += t; totalVoltasValidas++; }
+                        });
+                    }
+                });
+                if (totalVoltasValidas > 0) {
+                    let mediaSeg = somaTemposValidos / totalVoltasValidas;
+                    kpiMediaGlobal = `${mediaSeg.toFixed(3)}s <span style="font-size:0.72rem;">(${((26 / mediaSeg) * 3.6 * 28).toFixed(1)}km/h)</span>`;
+                }
+            }
+
+            document.getElementById('kpi-val-vitorias').innerText = kpiMaisVitorioso;
+            document.getElementById('kpi-val-melhor').innerHTML = kpiMelhorVolta;
+            document.getElementById('kpi-val-voltas').innerHTML = `${kpiTotalVoltas}`;
+            document.getElementById('kpi-val-media').innerHTML = kpiMediaGlobal;
+        }
+
+        function renderizarKpisGestaoDashboard() {
+            let campContainer = document.getElementById('kpi-campeonatos-conteudo');
+            if (campContainer) {
+                let keys = Object.keys(campeonatosCache);
+                if (keys.length === 0) {
+                    campContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.78rem;">Nenhum campeonato.</div>`;
+                } else {
+                    campContainer.innerHTML = keys.map(k => {
+                        let camp = campeonatosCache[k];
+                        let status = camp.status || "Em andamento";
+                        let isEncerrado = status === "Finalizada";
+                        
+                        let infoExtraHtml = "";
+                        if (isEncerrado) {
+                            let ranking = calcularClassificacaoBancoSeparado(camp);
+                            let podiumStr = ranking.length > 0 ? ranking.slice(0, 3).map((r, i) => `${i+1}º ${r.piloto} (${r.pontos} pts)`).join(' • ') : "Sem pontuação registrada";
+                            infoExtraHtml = `<div style="font-size: 0.72rem; color: var(--text-main); margin-top: 3px;">🏅 <strong>Resultado:</strong> ${escapeHtml(podiumStr)}</div>`;
+                        } else {
+                            let inscritosObj = camp.pilotosInscritos || {};
+                            let inscritosNomes = Object.values(inscritosObj).map(p => p.nome);
+                            let inscritosStr = inscritosNomes.length > 0 ? inscritosNomes.join(', ') : "Nenhum piloto inscrito";
+                            infoExtraHtml = `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">👥 <strong>Inscritos:</strong> ${escapeHtml(inscritosStr)}</div>`;
+                        }
+
+                        let acaoBtn = isEncerrado ? 
+                            `<button class="btn-action-primary" style="background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.72rem;" onclick="abrirModalCampeonatos()">Resultado</button>` : 
+                            `<button class="btn-action-primary" style="background: var(--accent-gold); color: #000; font-weight: 700; padding: 3px 8px; font-size: 0.72rem;" onclick="abrirModalParticipar('${k}')">Participar</button>`;
+                        return `
+                            <div style="background: var(--bg-input); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
+                                <div style="display: flex; flex-direction: column; gap: 2px;">
+                                    <strong style="color: var(--text-title); font-size: 0.82rem;">🏆 ${escapeHtml(camp.nome)}</strong>
+                                    <div style="font-size: 0.68rem; color: ${isEncerrado ? 'var(--accent-green)' : 'var(--accent-gold)'}; font-weight: 600;">${status}</div>
+                                    ${infoExtraHtml}
+                                </div>
+                                ${acaoBtn}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            let comprasContainer = document.getElementById('kpi-compras-conteudo');
+            if (comprasContainer) {
+                let keys = Object.keys(comprasColetivasCache);
+                if (keys.length === 0) {
+                    comprasContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.78rem;">Nenhuma compra coletiva.</div>`;
+                } else {
+                    comprasContainer.innerHTML = keys.map(k => {
+                        let comp = comprasColetivasCache[k];
+                        sincronizarParticipantesCompra(comp);
+                        calcularValoresDevidosCompra(comp);
+                        let ativos = Object.values(comp.participantes || {}).filter(p => p && p.ativo);
+                        let pagos = ativos.filter(p => p.pago).length;
+                        let quitada = (ativos.length > 0 && pagos === ativos.length);
+                        let entregue = !!comp.entregue;
+                        let finalizada = quitada && entregue;
+
+                        let statusTexto = "";
+                        let corStatus = "";
+                        if (finalizada) {
+                            statusTexto = "Finalizado ✅";
+                            corStatus = "var(--accent-green)";
+                        } else if (quitada && !entregue) {
+                            statusTexto = "Quitado - Aguardando Entrega 📦";
+                            corStatus = "var(--accent-blue)";
+                        } else if (!quitada && entregue) {
+                            statusTexto = "Entregue - Com Pendência de Pagamento ⚠️";
+                            corStatus = "var(--accent-gold)";
+                        } else {
+                            statusTexto = "Com Pendência ⏳";
+                            corStatus = "var(--accent-red)";
+                        }
+
+                        return `
+                            <div style="background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                <div>
+                                    <strong style="color: var(--text-title); font-size: 0.85rem;">🛒 ${escapeHtml(comp.nome || comp.chave)}</strong>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; display: flex; gap: 8px; align-items: center;">
+                                        <span>Pagos: <strong style="color: var(--text-main);">${pagos}/${ativos.length}</strong></span>
+                                        <span>•</span>
+                                        <span style="color: ${corStatus}; font-weight: 600;">${statusTexto}</span>
+                                    </div>
+                                </div>
+                                <button class="btn-action-primary" style="background: #3a86ff; padding: 4px 10px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${k}')">Resumo</button>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
         function atualizarDashboard() {
-            // Renderização principal do dashboard simplificada para manter a estrutura funcional
+            let dadosBase = obterTodosDadosConsolidados();
+            const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
+            const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
+            const modulosSel = Array.from(document.querySelectorAll('.filter-modulo:checked')).map(cb => cb.value);
+
+            atualizarKPIsCompactos();
+            renderizarKpisGestaoDashboard();
+            renderizarSessõesCompletas(dadosBase, bateriasSel, pilotosSel, modulosSel);
+        }
+
+        function renderizarSessõesCompletas(dadosBase, bateriasSel, pilotosSel, modulosSel) {
+            chartInstances.forEach(c => c.destroy()); chartInstances = [];
+            const mainContainer = document.getElementById('sessions-container');
+            if (!mainContainer) return;
+            mainContainer.innerHTML = '';
+
+            if (dadosBase.length === 0 || bateriasSel.length === 0) return;
+
+            bateriasSel.forEach(batKey => {
+                let sessaoObj = listaJsonsCache.find(i => i.firebaseKey === batKey);
+                let nomeSessao = sessaoObj ? (sessaoObj.sessao || sessaoObj.nomeArquivoOriginal || batKey) : batKey;
+                let nomeFormatado = formatarNomeSessao(nomeSessao);
+
+                let dadosSessao = dadosBase.filter(d => d.bateriaKey === batKey && (pilotosSel.length === 0 || pilotosSel.includes(d.piloto)));
+                if (dadosSessao.length === 0) return;
+
+                let participantesValidos = dadosSessao.filter(d => d.laps && d.laps.length > 0);
+                let ordenados = ordenarParticipantesBateria(participantesValidos);
+                let safeKey = batKey.replace(/[.#$\/\[\]]/g, "_");
+
+                setTimeout(() => { escutarCurtidas(batKey); escutarComentarios(batKey); }, 100);
+
+                let blocoHtml = document.createElement('div');
+                blocoHtml.className = 'session-block';
+
+                let podiumTags = "";
+                if (ordenados.length > 0) {
+                    let p1 = ordenados[0];
+                    podiumTags += `<span class="session-podium-tag podium-gold">🏆 1º <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p1.piloto)}')">${escapeHtml(p1.piloto)}</a></span>`;
+                }
+                if (ordenados.length > 1) {
+                    let p2 = ordenados[1];
+                    podiumTags += `<span class="session-podium-tag podium-silver">🥈 2º <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p2.piloto)}')">${escapeHtml(p2.piloto)}</a></span>`;
+                }
+                if (ordenados.length > 2) {
+                    let p3 = ordenados[2];
+                    podiumTags += `<span class="session-podium-tag podium-bronze">🥉 3º <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p3.piloto)}')">${escapeHtml(p3.piloto)}</a></span>`;
+                }
+
+                blocoHtml.innerHTML = `
+                    <div class="session-block-header">
+                        <div class="session-block-title"><span>🏁 ${escapeHtml(nomeFormatado)}</span></div>
+                        <div class="session-block-meta">
+                            ${podiumTags}
+                            <button class="btn" style="background: rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 4px 8px; font-size: 0.75rem;" onclick="compartilharCorrida('${batKey}', '${escapeHtml(nomeFormatado)}')">📤</button>
+                            <button class="btn" style="background: rgba(230, 57, 70, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 4px 8px; font-size: 0.75rem;" onclick="curtirSessao('${batKey}')">❤️ <span id="like-count-${safeKey}">0</span></button>
+                        </div>
+                    </div>
+                `;
+
+                let cardConteudoGrid = document.createElement('div');
+                cardConteudoGrid.style.cssText = "display: flex; flex-direction: column; gap: 12px;";
+
+                if (modulosSel.includes('mod-grafico')) {
+                    let cardGraf = document.createElement('div');
+                    cardGraf.className = 'card';
+                    cardGraf.innerHTML = `<div class="card-header">📈 Evolução de Ritmo</div><div class="chart-container"><canvas id="chart-ritmo-${safeKey}"></canvas></div>`;
+                    cardConteudoGrid.appendChild(cardGraf);
+                }
+
+                if (modulosSel.includes('mod-grafico-posicao')) {
+                    let cardPos = document.createElement('div');
+                    cardPos.className = 'card';
+                    cardPos.innerHTML = `<div class="card-header">📊 Posição Volta a Volta</div><div class="chart-container"><canvas id="chart-posicao-${safeKey}"></canvas></div>`;
+                    cardConteudoGrid.appendChild(cardPos);
+                }
+
+                if (modulosSel.includes('mod-log-posicao')) {
+                    let lapLogs = calcularRelatorioUltrapassagens(ordenados, dadosSessao);
+                    let lapKeys = Object.keys(lapLogs);
+                    let logHtml = lapKeys.length === 0 ? '<div style="color:var(--text-muted); font-size:0.78rem;">Sem alterações.</div>' :
+                        lapKeys.map(voltaNum => {
+                            let mudancas = lapLogs[voltaNum];
+                            let descricoes = mudancas.map(m => {
+                                let corClasse = m.tipo === 'ganho' ? 'tag-gain' : 'tag-loss';
+                                let acao = m.tipo === 'ganho' ? 'ganhou' : 'perdeu';
+                                return `<strong>${escapeHtml(m.piloto)}</strong> ${acao} <span class="${corClasse}">(${m.posAnterior}º ➔ ${m.posAtual}º)</span>`;
+                            }).join(' • ');
+                            return `<div class="position-log-item">Volta ${voltaNum}: ${descricoes}</div>`;
+                        }).join('');
+
+                    let cardLog = document.createElement('div');
+                    cardLog.className = 'card';
+                    cardLog.innerHTML = `<div class="card-header">📝 Ultrapassagens</div><div class="position-analysis-container"><div class="position-log-list">${logHtml}</div></div>`;
+                    cardConteudoGrid.appendChild(cardLog);
+                }
+
+                if (modulosSel.includes('mod-classificacao-analise')) {
+                    let cardLaudo = document.createElement('div');
+                    cardLaudo.className = 'card';
+                    cardLaudo.innerHTML = `<div class="card-header">📋 Laudo Técnico</div><div class="analysis-subrow-box">${gerarLaudoTecnicoSessao(ordenados)}</div>`;
+                    cardConteudoGrid.appendChild(cardLaudo);
+                }
+
+                if (modulosSel.includes('mod-tabela-geral')) {
+                    let cardTabela = document.createElement('div');
+                    cardTabela.className = 'card';
+                    cardTabela.innerHTML = `<div class="card-header">⏱️ Tabela Geral Volta a Volta (com Gaps e Líder)</div><div class="table-container">${gerarTabelaGeralSessao(ordenados)}</div>`;
+                    cardConteudoGrid.appendChild(cardTabela);
+                }
+
+                if (modulosSel.includes('mod-comentarios')) {
+                    let cardComentarios = document.createElement('div');
+                    cardComentarios.className = 'card';
+                    cardComentarios.innerHTML = `
+                        <div class="card-header">💬 Comentários</div>
+                        <div class="comments-section">
+                            <div class="comments-list" id="comments-list-${safeKey}"></div>
+                            <div class="comment-form">
+                                <input type="text" id="comment-name-${safeKey}" class="comment-input-name" placeholder="Nome">
+                                <input type="text" id="comment-text-${safeKey}" class="comment-input-text" placeholder="Comentário..." onkeydown="if(event.key === 'Enter') enviarComentario('${batKey}')">
+                                <button class="btn-comment" onclick="enviarComentario('${batKey}')">Enviar</button>
+                            </div>
+                        </div>
+                    `;
+                    cardConteudoGrid.appendChild(cardComentarios);
+                }
+
+                blocoHtml.appendChild(cardConteudoGrid);
+                mainContainer.appendChild(blocoHtml);
+
+                if (modulosSel.includes('mod-grafico')) renderizarGraficoRitmo(batKey, safeKey, ordenados);
+                if (modulosSel.includes('mod-grafico-posicao')) renderizarGraficoPosicao(batKey, safeKey, ordenados);
+            });
+        }
+
+        function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
+            let maxVoltas = 0;
+            dadosSessao.forEach(d => { if (d.laps && d.laps.length > maxVoltas) maxVoltas = d.laps.length; });
+            let lapLogs = {}, posicoesAnterior = {};
+
+            for (let v = 0; v < maxVoltas; v++) {
+                let rankingVolta = [];
+                dadosSessao.forEach(p => {
+                    let somaTemp = 0, valido = true;
+                    for (let j = 0; j <= v; j++) {
+                        let l = p.laps ? p.laps[j] : null;
+                        if (l === undefined || l === null || isNaN(l) || l <= 0) { valido = false; break; }
+                        somaTemp += (typeof l === 'object' ? l.tempo : l);
+                    }
+                    if (valido) rankingVolta.push({ piloto: p.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
+                });
+                rankingVolta.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
+                
+                let mudancasNestaVolta = [];
+                rankingVolta.forEach((item, index) => {
+                    let posAtual = index + 1;
+                    if (posicoesAnterior[item.piloto] !== undefined) {
+                        let posAnt = posicoesAnterior[item.piloto];
+                        if (posAtual !== posAnt) {
+                            let tipo = posAtual < posAnt ? 'ganho' : 'perda';
+                            mudancasNestaVolta.push({
+                                piloto: item.piloto,
+                                posAnterior: posAnt,
+                                posAtual: posAtual,
+                                tipo: tipo
+                            });
+                        }
+                    }
+                    posicoesAnterior[item.piloto] = posAtual;
+                });
+
+                if (mudancasNestaVolta.length > 0) {
+                    lapLogs[v + 1] = mudancasNestaVolta;
+                }
+            }
+            return lapLogs;
+        }
+
+        function gerarLaudoTecnicoSessao(ordenados) {
+            return ordenados.map((p, idx) => `
+                <div class="analysis-section-block">
+                    <div class="analysis-section-title">🏎️ ${idx + 1}º - <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p.piloto)}')">${escapeHtml(p.piloto)}</a></div>
+                    <div class="analysis-section-content">Melhor volta: <strong>${p.melhorVoltaTxt}</strong> | Média: <strong>${p.mediaTxt}</strong> (${p.voltasTotais}v)</div>
+                </div>
+            `).join('');
+        }
+
+        function gerarTabelaGeralSessao(ordenados) {
+            if (!ordenados || ordenados.length === 0) return "<div>Sem dados.</div>";
+            
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.filter(l => l > 0).length : 0));
+            if (maxVoltas === 0) maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+
+            let thVoltasHtml = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center; font-size: 0.7rem;">V${i + 1}</th>`).join('');
+
+            let driverData = ordenados.map(p => {
+                let laps = (p.laps || []).map(l => (l && typeof l === 'object') ? Number(l.tempo) : Number(l));
+                let validLaps = laps.filter(t => !isNaN(t) && t > 0);
+                let bestLap = validLaps.length > 0 ? Math.min(...validLaps) : Infinity;
+                let totalTime = validLaps.reduce((acc, t) => acc + t, 0);
+                
+                let cumTimes = [];
+                let runningSum = 0;
+                for (let i = 0; i < laps.length; i++) {
+                    let t = laps[i];
+                    if (!isNaN(t) && t > 0) {
+                        runningSum += t;
+                        cumTimes.push(runningSum);
+                    } else {
+                        cumTimes.push(null);
+                    }
+                }
+                return { piloto: p.piloto, laps, validLaps, bestLap, totalTime, cumTimes };
+            });
+
+            let lapLeaders = [];
+            for (let v = 0; v < maxVoltas; v++) {
+                let activeOnLap = [];
+                driverData.forEach((d, dIdx) => {
+                    if (d.cumTimes[v] !== null && d.cumTimes[v] !== undefined) {
+                        activeOnLap.push({ dIdx, cumTime: d.cumTimes[v], lapsCompleted: v + 1 });
+                    } else {
+                        let lastValidLap = -1;
+                        for (let k = v; k >= 0; k--) {
+                            if (d.cumTimes[k] !== null && d.cumTimes[k] !== undefined) {
+                                lastValidLap = k;
+                                break;
+                            }
+                        }
+                        if (lastValidLap !== -1) {
+                            activeOnLap.push({ dIdx, cumTime: d.cumTimes[lastValidLap], lapsCompleted: lastValidLap + 1 });
+                        }
+                    }
+                });
+
+                activeOnLap.sort((a, b) => {
+                    if (b.lapsCompleted !== a.lapsCompleted) return b.lapsCompleted - a.lapsCompleted;
+                    return a.cumTime - b.cumTime;
+                });
+
+                lapLeaders.push(activeOnLap.length > 0 ? activeOnLap[0] : null);
+            }
+
+            let linhas = driverData.map(d => {
+                let totalV = d.validLaps.length;
+                let totalT = d.totalTime.toFixed(3);
+
+                let voltasCelulasHtml = Array.from({ length: maxVoltas }, (_, v) => {
+                    let t = d.laps[v];
+                    let hasLap = (t !== undefined && t !== null && !isNaN(t) && t > 0);
+                    
+                    if (!hasLap) {
+                        return `<td style="text-align: center; font-size: 0.78rem; color: var(--text-muted);">--</td>`;
+                    }
+
+                    let lapTimeFormatted = Number(t).toFixed(3).replace('.', ',') + 's';
+                    let isPersonalBest = (Number(t) === d.bestLap);
+                    let timeColor = isPersonalBest ? 'var(--accent-green)' : 'var(--text-main)';
+                    let timeWeight = isPersonalBest ? 'bold' : 'normal';
+
+                    let leaderInfo = lapLeaders[v];
+                    let statusHtml = '';
+
+                    if (leaderInfo && leaderInfo.dIdx === driverData.indexOf(d)) {
+                        statusHtml = `<div style="font-size: 0.68rem; color: var(--accent-gold); font-weight: bold; margin-top: 1px;">LÍDER</div>`;
+                    } else if (leaderInfo) {
+                        let driverCum = d.cumTimes[v];
+                        let leaderCum = leaderInfo.cumTime;
+                        
+                        if (driverCum !== null && driverCum !== undefined) {
+                            let leaderLaps = leaderInfo.lapsCompleted;
+                            let driverLaps = v + 1;
+                            if (driverLaps === leaderLaps) {
+                                let diff = driverCum - leaderCum;
+                                statusHtml = `<div style="font-size: 0.68rem; color: var(--accent-red); margin-top: 1px;">+${diff.toFixed(3)}s</div>`;
+                            } else {
+                                let lapDiff = leaderLaps - driverLaps;
+                                statusHtml = `<div style="font-size: 0.68rem; color: var(--accent-red); margin-top: 1px;">+${lapDiff}v</div>`;
+                            }
+                        } else {
+                            statusHtml = `<div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 1px;">--</div>`;
+                        }
+                    } else {
+                        statusHtml = `<div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 1px;">--</div>`;
+                    }
+
+                    return `
+                        <td style="text-align: center; padding: 6px 4px; white-space: nowrap;">
+                            <div style="font-size: 0.82rem; color: ${timeColor}; font-weight: ${timeWeight};">${lapTimeFormatted}</div>
+                            ${statusHtml}
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <tr>
+                        <td style="white-space: nowrap;"><strong>${escapeHtml(d.piloto)}</strong></td>
+                        <td style="white-space: nowrap;">
+                            <div style="font-weight: bold; color: var(--accent-gold);">${totalV}v</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">(${totalT}s)</div>
+                        </td>
+                        ${voltasCelulasHtml}
+                    </tr>
+                `;
+            }).join('');
+
+            return `<table><thead><tr><th>PILOTO</th><th>TOTAL</th>${thVoltasHtml}</tr></thead><tbody>${linhas}</tbody></table>`;
+        }
+
+        function renderizarGraficoRitmo(bateriaKey, safeKey, ordenados) {
+            let canvasEl = document.getElementById(`chart-ritmo-${safeKey}`);
+            if (!canvasEl) return;
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
+
+            let datasets = ordenados.map((p, idx) => {
+                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
+                return {
+                    label: p.piloto,
+                    data: Array.from({ length: maxVoltas }, (_, i) => { let l = p.laps ? p.laps[i] : null; return l ? (typeof l === 'object' ? l.tempo : l) : null; }),
+                    borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true
+                };
+            });
+
+            chartInstances.push(new Chart(canvasEl.getContext('2d'), {
+                type: 'line', data: { labels, datasets },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3' } } } }
+            }));
+        }
+
+        function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
+            let canvasEl = document.getElementById(`chart-posicao-${safeKey}`);
+            if (!canvasEl) return;
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
+
+            let datasets = ordenados.map((p, idx) => {
+                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
+                let posicoesVolta = [];
+                for (let v = 0; v < maxVoltas; v++) {
+                    let mapaVoltaPilotos = [];
+                    ordenados.forEach(pilotoObj => {
+                        let somaTemp = 0, valido = true;
+                        for (let j = 0; j <= v; j++) {
+                            let l = pilotoObj.laps ? pilotoObj.laps[j] : null;
+                            if (l === undefined || l === null || l <= 0) { valido = false; break; }
+                            somaTemp += (typeof l === 'object' ? l.tempo : l);
+                        }
+                        if (valido) mapaVoltaPilotos.push({ piloto: pilotoObj.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
+                    });
+                    mapaVoltaPilotos.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
+                    let pos = mapaVoltaPilotos.findIndex(item => item.piloto === p.piloto);
+                    posicoesVolta.push(pos !== -1 ? pos + 1 : null);
+                }
+                return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true };
+            });
+
+            chartInstances.push(new Chart(canvasEl.getContext('2d'), {
+                type: 'line', data: { labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#d0d7e3' } } },
+                    scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
+                }
+            }));
         }
 
         window.gerarRelatórioPDF = function() { window.print(); };
