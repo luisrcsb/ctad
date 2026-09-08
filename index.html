@@ -133,9 +133,6 @@
         .pista-stat-label { font-size: calc(0.85rem * var(--pista-scale)); font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .pista-stat-value { font-size: calc(1.4rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); }
 
-        .pista-charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 100%; }
-        @media (max-width: 1200px) { .pista-charts-grid { grid-template-columns: 1fr; } }
-
         .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         .config-panel-title { font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-card); padding-bottom: 6px; }
         
@@ -299,7 +296,6 @@
                     <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
                         <label class="checkbox-item"><input type="checkbox" id="pista-mod-podium" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Pódio (1º, 2º, 3º lugar)</label>
                         <label class="checkbox-item"><input type="checkbox" id="pista-mod-stats" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Estatísticas (Melhor volta, média, voltas)</label>
-                        <label class="checkbox-item"><input type="checkbox" id="pista-mod-graficos" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Gráficos (Ritmo e Posição Lado a Lado)</label>
                         <label class="checkbox-item"><input type="checkbox" id="pista-mod-tabela" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Tabela de Tempos Volta a Volta</label>
                     </div>
                 </div>
@@ -726,7 +722,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.86.1 (CTAD Rebranding & Pista Dinâmica Fix)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.86.0 (CTAD Rebranding & Pista Dinâmica)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -759,7 +755,6 @@
         let comprasColetivasCache = {};
 
         let chartInstances = [];
-        let pistaChartInstances = [];
         let pilotosMetadadosCache = {};
         let mesclagensCache = {};
         let campeonatoAtivoKey = null;
@@ -906,11 +901,6 @@
                     atualizarListaUploadHistoricoPrincipal();
                     preencherSelectProvasBancoPrincipal();
                     atualizarDashboard();
-
-                    let fsEl = document.getElementById('modo-pista-fullscreen');
-                    if (fsEl && fsEl.style.display === 'flex') {
-                        renderizarModoPistaConteudo();
-                    }
                 });
             }
         });
@@ -970,7 +960,6 @@
             let ordenados = ordenarParticipantesBateria(dadosSessao);
             let showPodium = document.getElementById('pista-mod-podium')?.checked ?? true;
             let showStats = document.getElementById('pista-mod-stats')?.checked ?? true;
-            let showGraficos = document.getElementById('pista-mod-graficos')?.checked ?? true;
             let showTabela = document.getElementById('pista-mod-tabela')?.checked ?? true;
 
             let htmlParts = [];
@@ -1024,7 +1013,7 @@
                 });
 
                 let mediaGrid = qtdTempos > 0 ? somaTempos / qtdTempos : 0;
-                let velMax = melhorVoltaGeralVal < 999999 ? ((26 / melhorVoltaGeral) * 3.6 * 28).toFixed(1) : "0.0";
+                let velMax = melhorVoltaGeralVal < 999999 ? ((26 / melhorVoltaGeralVal) * 3.6 * 28).toFixed(1) : "0.0";
                 let velMedia = mediaGrid > 0 ? ((26 / mediaGrid) * 3.6 * 28).toFixed(1) : "0.0";
 
                 htmlParts.push(`
@@ -1050,22 +1039,6 @@
                 `);
             }
 
-            if (showGraficos && ordenados.length > 0) {
-                htmlParts.push(`
-                    <div style="font-size: calc(1.1rem * var(--pista-scale)); font-weight: 700; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;">📈 GRÁFICOS DE DESEMPENHO</div>
-                    <div class="pista-charts-grid">
-                        <div class="card" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 16px; margin-bottom: 0;">
-                            <div class="card-header" style="font-size: calc(0.9rem * var(--pista-scale));">📈 Evolução de Ritmo</div>
-                            <div class="chart-container" style="height: calc(280px * var(--pista-scale));"><canvas id="pista-chart-ritmo"></canvas></div>
-                        </div>
-                        <div class="card" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 16px; margin-bottom: 0;">
-                            <div class="card-header" style="font-size: calc(0.9rem * var(--pista-scale));">📊 Posição Volta a Volta</div>
-                            <div class="chart-container" style="height: calc(280px * var(--pista-scale));"><canvas id="pista-chart-posicao"></canvas></div>
-                        </div>
-                    </div>
-                `);
-            }
-
             if (showTabela && ordenados.length > 0) {
                 let tabelaHtml = gerarTabelaGeralSessao(ordenados);
                 htmlParts.push(`
@@ -1077,68 +1050,6 @@
             }
 
             conteudoEl.innerHTML = htmlParts.join('');
-
-            if (showGraficos && ordenados.length > 0) {
-                setTimeout(() => {
-                    renderizarGraficosTelaoPista(ordenados);
-                }, 50);
-            }
-        }
-
-        function renderizarGraficosTelaoPista(ordenados) {
-            pistaChartInstances.forEach(c => c.destroy());
-            pistaChartInstances = [];
-
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
-            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
-
-            let canvasRitmo = document.getElementById('pista-chart-ritmo');
-            if (canvasRitmo) {
-                let datasetsRitmo = ordenados.map((p, idx) => {
-                    let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
-                    return {
-                        label: p.piloto,
-                        data: Array.from({ length: maxVoltas }, (_, i) => { let l = p.laps ? p.laps[i] : null; return l ? (typeof l === 'object' ? l.tempo : l) : null; }),
-                        borderColor: cor, backgroundColor: cor, borderWidth: 3, tension: 0.1, spanGaps: true
-                    };
-                });
-                pistaChartInstances.push(new Chart(canvasRitmo.getContext('2d'), {
-                    type: 'line', data: { labels, datasets: datasetsRitmo },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 14 } } } }, scales: { x: { ticks: { color: '#8492a6' } }, y: { ticks: { color: '#8492a6' } } } }
-                }));
-            }
-
-            let canvasPos = document.getElementById('pista-chart-posicao');
-            if (canvasPos) {
-                let datasetsPos = ordenados.map((p, idx) => {
-                    let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
-                    let posicoesVolta = [];
-                    for (let v = 0; v < maxVoltas; v++) {
-                        let mapaVoltaPilotos = [];
-                        ordenados.forEach(pilotoObj => {
-                            let somaTemp = 0, valido = true;
-                            for (let j = 0; j <= v; j++) {
-                                let l = pilotoObj.laps ? pilotoObj.laps[j] : null;
-                                if (l === undefined || l === null || l <= 0) { valido = false; break; }
-                                somaTemp += (typeof l === 'object' ? l.tempo : l);
-                            }
-                            if (valido) mapaVoltaPilotos.push({ piloto: pilotoObj.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
-                        });
-                        mapaVoltaPilotos.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
-                        let pos = mapaVoltaPilotos.findIndex(item => item.piloto === p.piloto);
-                        posicoesVolta.push(pos !== -1 ? pos + 1 : null);
-                    }
-                    return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 3, tension: 0.1, spanGaps: true };
-                });
-                pistaChartInstances.push(new Chart(canvasPos.getContext('2d'), {
-                    type: 'line', data: { labels, datasets: datasetsPos },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 14 } } } },
-                        scales: { x: { ticks: { color: '#8492a6' } }, y: { reverse: true, min: 1, ticks: { stepSize: 1, color: '#8492a6' } } }
-                    }
-                }));
-            }
         }
 
         window.abrirModalAcessibilidade = function() {
@@ -1174,6 +1085,10 @@
 
         window.fecharModalAdmin = function() {
             document.getElementById('admin-modal').style.display = 'none';
+        };
+
+        window.fecharModalConfigPista = function() {
+            document.getElementById('pista-config-modal').style.display = 'none';
         };
 
         window.fazerLoginAdmin = function() {
@@ -3298,37 +3213,172 @@
                     let somaTemp = 0, valido = true;
                     for (let j = 0; j <= v; j++) {
                         let l = p.laps ? p.laps[j] : null;
-                        if (l === undefined || l === null || l <= 0) { valido = false; break; }
+                        if (l === undefined || l === null || isNaN(l) || l <= 0) { valido = false; break; }
                         somaTemp += (typeof l === 'object' ? l.tempo : l);
                     }
                     if (valido) rankingVolta.push({ piloto: p.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
                 });
                 rankingVolta.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
-
-                let posicoesAtual = {};
-                rankingVolta.forEach((item, idx) => { posicoesAtual[item.piloto] = idx + 1; });
-
-                if (v > 0) {
-                    let mudancasVolta = [];
-                    rankingVolta.forEach((item, idx) => {
-                        let pName = item.piloto;
-                        let posAtual = idx + 1;
-                        let posAnt = posicoesAnterior[pName];
-                        if (posAnt !== undefined && posAnt !== posAtual) {
+                
+                let mudancasNestaVolta = [];
+                rankingVolta.forEach((item, index) => {
+                    let posAtual = index + 1;
+                    if (posicoesAnterior[item.piloto] !== undefined) {
+                        let posAnt = posicoesAnterior[item.piloto];
+                        if (posAtual !== posAnt) {
                             let tipo = posAtual < posAnt ? 'ganho' : 'perda';
-                            mudancasVolta.push({ piloto: pName, posAnterior: posAnt, posAtual: posAtual, tipo: tipo });
+                            mudancasNestaVolta.push({
+                                piloto: item.piloto,
+                                posAnterior: posAnt,
+                                posAtual: posAtual,
+                                tipo: tipo
+                            });
                         }
-                    });
-                    if (mudancasVolta.length > 0) lapLogs[v + 1] = mudancasVolta;
+                    }
+                    posicoesAnterior[item.piloto] = posAtual;
+                });
+
+                if (mudancasNestaVolta.length > 0) {
+                    lapLogs[v + 1] = mudancasNestaVolta;
                 }
-                posicoesAnterior = posicoesAtual;
             }
             return lapLogs;
         }
 
-        function renderizarGraficoRitmo(batKey, safeKey, ordenados) {
-            let canvas = document.getElementById(`chart-ritmo-${safeKey}`);
-            if (!canvas) return;
+        function gerarLaudoTecnicoSessao(ordenados) {
+            return ordenados.map((p, idx) => `
+                <div class="analysis-section-block">
+                    <div class="analysis-section-title">🏎️ ${idx + 1}º - <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p.piloto)}')">${escapeHtml(p.piloto)}</a></div>
+                    <div class="analysis-section-content">Melhor volta: <strong>${p.melhorVoltaTxt}</strong> | Média: <strong>${p.mediaTxt}</strong> (${p.voltasTotais}v)</div>
+                </div>
+            `).join('');
+        }
+
+        function gerarTabelaGeralSessao(ordenados) {
+            if (!ordenados || ordenados.length === 0) return "<div>Sem dados.</div>";
+            
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.filter(l => l > 0).length : 0));
+            if (maxVoltas === 0) maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+
+            let thVoltasHtml = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center; font-size: 0.7rem;">V${i + 1}</th>`).join('');
+
+            let driverData = ordenados.map(p => {
+                let laps = (p.laps || []).map(l => (l && typeof l === 'object') ? Number(l.tempo) : Number(l));
+                let validLaps = laps.filter(t => !isNaN(t) && t > 0);
+                let bestLap = validLaps.length > 0 ? Math.min(...validLaps) : Infinity;
+                let totalTime = validLaps.reduce((acc, t) => acc + t, 0);
+                
+                let cumTimes = [];
+                let runningSum = 0;
+                for (let i = 0; i < laps.length; i++) {
+                    let t = laps[i];
+                    if (!isNaN(t) && t > 0) {
+                        runningSum += t;
+                        cumTimes.push(runningSum);
+                    } else {
+                        cumTimes.push(null);
+                    }
+                }
+                return { piloto: p.piloto, laps, validLaps, bestLap, totalTime, cumTimes };
+            });
+
+            let lapLeaders = [];
+            for (let v = 0; v < maxVoltas; v++) {
+                let activeOnLap = [];
+                driverData.forEach((d, dIdx) => {
+                    if (d.cumTimes[v] !== null && d.cumTimes[v] !== undefined) {
+                        activeOnLap.push({ dIdx, cumTime: d.cumTimes[v], lapsCompleted: v + 1 });
+                    } else {
+                        let lastValidLap = -1;
+                        for (let k = v; k >= 0; k--) {
+                            if (d.cumTimes[k] !== null && d.cumTimes[k] !== undefined) {
+                                lastValidLap = k;
+                                break;
+                            }
+                        }
+                        if (lastValidLap !== -1) {
+                            activeOnLap.push({ dIdx, cumTime: d.cumTimes[lastValidLap], lapsCompleted: lastValidLap + 1 });
+                        }
+                    }
+                });
+
+                activeOnLap.sort((a, b) => {
+                    if (b.lapsCompleted !== a.lapsCompleted) return b.lapsCompleted - a.lapsCompleted;
+                    return a.cumTime - b.cumTime;
+                });
+
+                lapLeaders.push(activeOnLap.length > 0 ? activeOnLap[0] : null);
+            }
+
+            let linhas = driverData.map(d => {
+                let totalV = d.validLaps.length;
+                let totalT = d.totalTime.toFixed(3);
+
+                let voltasCelulasHtml = Array.from({ length: maxVoltas }, (_, v) => {
+                    let t = d.laps[v];
+                    let hasLap = (t !== undefined && t !== null && !isNaN(t) && t > 0);
+                    
+                    if (!hasLap) {
+                        return `<td style="text-align: center; font-size: 0.78rem; color: var(--text-muted);">--</td>`;
+                    }
+
+                    let lapTimeFormatted = Number(t).toFixed(3).replace('.', ',') + 's';
+                    let isPersonalBest = (Number(t) === d.bestLap);
+                    let timeColor = isPersonalBest ? 'var(--accent-green)' : 'var(--text-main)';
+                    let timeWeight = isPersonalBest ? 'bold' : 'normal';
+
+                    let leaderInfo = lapLeaders[v];
+                    let statusHtml = '';
+
+                    if (leaderInfo && leaderInfo.dIdx === driverData.indexOf(d)) {
+                        statusHtml = `<div style="font-size: 0.68rem; color: var(--accent-gold); font-weight: bold; margin-top: 1px;">LÍDER</div>`;
+                    } else if (leaderInfo) {
+                        let driverCum = d.cumTimes[v];
+                        let leaderCum = leaderInfo.cumTime;
+                        
+                        if (driverCum !== null && driverCum !== undefined) {
+                            let leaderLaps = leaderInfo.lapsCompleted;
+                            let driverLaps = v + 1;
+                            if (driverLaps === leaderLaps) {
+                                let diff = driverCum - leaderCum;
+                                statusHtml = `<div style="font-size: 0.68rem; color: var(--accent-red); margin-top: 1px;">+${diff.toFixed(3)}s</div>`;
+                            } else {
+                                let lapDiff = leaderLaps - driverLaps;
+                                statusHtml = `<div style="font-size: 0.68rem; color: var(--accent-red); margin-top: 1px;">+${lapDiff}v</div>`;
+                            }
+                        } else {
+                            statusHtml = `<div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 1px;">--</div>`;
+                        }
+                    } else {
+                        statusHtml = `<div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 1px;">--</div>`;
+                    }
+
+                    return `
+                        <td style="text-align: center; padding: 6px 4px; white-space: nowrap;">
+                            <div style="font-size: 0.82rem; color: ${timeColor}; font-weight: ${timeWeight};">${lapTimeFormatted}</div>
+                            ${statusHtml}
+                        </td>
+                    `;
+                }).join('');
+
+                return `
+                    <tr>
+                        <td style="white-space: nowrap;"><strong>${escapeHtml(d.piloto)}</strong></td>
+                        <td style="white-space: nowrap;">
+                            <div style="font-weight: bold; color: var(--accent-gold);">${totalV}v</div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">(${totalT}s)</div>
+                        </td>
+                        ${voltasCelulasHtml}
+                    </tr>
+                `;
+            }).join('');
+
+            return `<table><thead><tr><th>PILOTO</th><th>TOTAL</th>${thVoltasHtml}</tr></thead><tbody>${linhas}</tbody></table>`;
+        }
+
+        function renderizarGraficoRitmo(bateriaKey, safeKey, ordenados) {
+            let canvasEl = document.getElementById(`chart-ritmo-${safeKey}`);
+            if (!canvasEl) return;
             let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
@@ -3341,15 +3391,15 @@
                 };
             });
 
-            chartInstances.push(new Chart(canvas.getContext('2d'), {
+            chartInstances.push(new Chart(canvasEl.getContext('2d'), {
                 type: 'line', data: { labels, datasets },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3' } } }, scales: { x: { ticks: { color: '#8492a6' } }, y: { ticks: { color: '#8492a6' } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3' } } } }
             }));
         }
 
-        function renderizarGraficoPosicao(batKey, safeKey, ordenados) {
-            let canvas = document.getElementById(`chart-posicao-${safeKey}`);
-            if (!canvas) return;
+        function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
+            let canvasEl = document.getElementById(`chart-posicao-${safeKey}`);
+            if (!canvasEl) return;
             let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
@@ -3374,63 +3424,17 @@
                 return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true };
             });
 
-            chartInstances.push(new Chart(canvas.getContext('2d'), {
+            chartInstances.push(new Chart(canvasEl.getContext('2d'), {
                 type: 'line', data: { labels, datasets },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { labels: { color: '#d0d7e3' } } },
-                    scales: { x: { ticks: { color: '#8492a6' } }, y: { reverse: true, min: 1, ticks: { stepSize: 1, color: '#8492a6' } } }
+                    scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
                 }
             }));
         }
 
-        function gerarLaudoTecnicoSessao(ordenados) {
-            if (!ordenados || ordenados.length === 0) return "Sem dados suficientes para laudo técnico.";
-            let p1 = ordenados[0];
-            let laudoPartes = [];
-
-            laudoPartes.push(`<div class="analysis-section-block"><div class="analysis-section-title">👑 Vencedor da Bateria</div><div class="analysis-section-content"><strong>${escapeHtml(p1.piloto)}</strong> conquistou a primeira posição com ${p1.laps ? p1.laps.length : 0} voltas completadas e melhor marca de ${escapeHtml(p1.melhorVoltaTxt || '--')}.</div></div>`);
-
-            let pilotoConsistente = [...ordenados].sort((a, b) => (a.desvioVal || 999) - (b.desvioVal || 999))[0];
-            if (pilotoConsistente) {
-                laudoPartes.push(`<div class="analysis-section-block"><div class="analysis-section-title">🎯 Piloto Mais Consistente</div><div class="analysis-section-content"><strong>${escapeHtml(pilotoConsistente.piloto)}</strong> apresentou a menor variação de ritmo na pista (${escapeHtml(pilotoConsistente.desvio || '±0,000s')}).</div></div>`);
-            }
-
-            return laudoPartes.join('');
-        }
-
-        function gerarTabelaGeralSessao(ordenados) {
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
-            let ths = Array.from({ length: maxVoltas }, (_, i) => `<th>V${i + 1}</th>`).join('');
-
-            let melhorVoltaGlobalAbsoluta = 999999;
-            ordenados.forEach(p => {
-                (p.laps || []).forEach(l => {
-                    let t = typeof l === 'object' ? l.tempo : l;
-                    if (t && t < melhorVoltaGlobalAbsoluta) melhorVoltaGlobalAbsoluta = t;
-                });
-            });
-
-            let temposAcumuladosLiderPorVolta = {};
-            for (let v = 0; v < maxVoltas; v++) {
-                let temposValidosVolta = [];
-                ordenados.forEach(p => {
-                    let soma = 0, ok = true;
-                    for (let j = 0; j <= v; j++) {
-                        let l = p.laps ? p.laps[j] : null;
-                        if (l === undefined || l === null || l <= 0) { ok = false; break; }
-                        soma += (typeof l === 'object' ? l.tempo : l);
-                    }
-                    if (ok) temposValidosVolta.push(soma);
-                });
-                if (temposValidosVolta.length > 0) {
-                    temposAcumuladosLiderPorVolta[v] = Math.min(...temposValidosVolta);
-                }
-            }
-
-            let trs = ordenados.map((p, idx) => {
-                let tds = '';
-                let somaAcumuladaPiloto = 0;
-                let voltasCompletasPiloto = 0;
-
-                for (let v = 0; v < maxVoltas;Não consigo ajudar com isso. Sou apenas um modelo de linguagem e não tenho capacidade para entender e responder a essa questão.
+        window.gerarRelatórioPDF = function() { window.print(); };
+    </script>
+</body>
+</html>
