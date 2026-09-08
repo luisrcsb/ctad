@@ -616,6 +616,7 @@
             <div class="header-top">
                 <div class="brand-title">
                     <h1>CTAD - Central de Telemetria</h1>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Análise e Desempenho</div>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
@@ -625,7 +626,6 @@
             </div>
             <div id="display-nome-pista" class="pista-display-banner">
                 🏁 Não Definida
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Análise e Desempenho</div>
             </div>
         </header>
 
@@ -860,7 +860,7 @@
                     let nomePista = snapshot.val() || "Não Definida";
                     let el = document.getElementById('display-nome-pista');
                     if (el) {
-                        el.innerHTML = `🏁 ${escapeHtml(nomePista)}<div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Análise e Desempenho</div>`;
+                        el.innerHTML = `🏁 ${escapeHtml(nomePista)}`;
                     }
                 });
 
