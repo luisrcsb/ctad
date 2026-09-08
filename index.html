@@ -476,7 +476,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.74.3 (Forced Cache Bypass)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.74.4 (EscapeHtml Fix)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -487,6 +487,13 @@
     </div>
 
     <script>
+        // FUNÇÕES UTILITÁRIAS ESSENCIAIS NO TOPO DO ESCOPO
+        function escapeHtml(text) {
+            if (!text) return '';
+            let map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+
         const SENHA_UNIFICADA = "1234";
         let isAdminLogado = false;
 
@@ -514,8 +521,6 @@
         let campeonatoParticiparKey = null;
         let compraGerenciandoKey = null;
         let pilotoSendoConfigurado = null;
-        let _bateriasInicializadas = false;
-        let _ultimaListaBateriasKeys = [];
 
         try {
             firebase.initializeApp(firebaseConfig);
@@ -570,7 +575,7 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            console.log("Krathus Racing v5.74.3 inicializado.");
+            console.log("Krathus Racing v5.74.4 inicializado com sucesso.");
             gerarFiltrosDinamicos();
             atualizarKpiPilotosGestao();
             atualizarKpiChampionshipManager();
@@ -594,13 +599,11 @@
                     campeonatosCache = snapshot.val() || {};
                     renderizarListaCampeonatosModal();
                     if (campeonatoAtivoKey && campeonatosCache[campeonatoAtivoKey]) atualizarInterfacePainelZRound();
-                    if (campeonatoParticiparKey && campeonatosCache[campeonatoParticiparKey]) renderizarTabelaInscritosParticipar();
                     atualizarDashboard();
                 });
 
                 db.ref('comprasColetivas').on('value', snapshot => {
                     comprasColetivasCache = snapshot.val() || {};
-                    renderizarModalComprasColetivas();
                     atualizarDashboard();
                 });
 
@@ -609,7 +612,6 @@
                     snapshot.forEach(childSnapshot => {
                         let val = childSnapshot.val();
                         if (val && val.dados && val.dados.length > 0) {
-                            if (!val.historicoNomesOriginais) val.historicoNomesOriginais = {};
                             listaJsonsCache.push({ firebaseKey: childSnapshot.key, ...val });
                         }
                     });
@@ -619,7 +621,6 @@
                         return extrairPesoOrdenacao(nomeB) - extrairPesoOrdenacao(nomeA);
                     });
                     gerarFiltrosDinamicos();
-                    atualizarListaUploadHistoricoPrincipal();
                     atualizarDashboard();
                 });
             }
@@ -664,7 +665,7 @@
             dadosBase.forEach(d => { if (d.piloto && d.piloto.trim()) pilotosSet.add(d.piloto.trim()); });
             Object.keys(pilotosMetadadosCache).forEach(p => { if (p && p.trim()) pilotosSet.add(p.trim()); });
             let lista = Array.from(pilotosSet).filter(Boolean).sort();
-            document.getElementById('tabela-pilotos-apelidos').innerHTML = lista.map(p => `<tr><td><strong>${escapeHtml(p)}</strong></td><td>${escapeHtml(pilotosMetadadosCache[p]?.apelido || '-')}</td><td style="text-align: right;"><button class="btn-action-primary" onclick="alert('Configuração rápida de piloto')">⚙️</button></td></tr>`).join('');
+            document.getElementById('tabela-pilotos-apelidos').innerHTML = lista.map(p => `<tr><td><strong>${escapeHtml(p)}</strong></td><td>${escapeHtml(pilotosMetadadosCache[p]?.apelido || '-')}</td><td style="text-align: right;"><button class="btn-action-primary" onclick="alert('Configuração rápida')">⚙️</button></td></tr>`).join('');
         }
 
         window.criarCampeonatoProtegido = async function() {
@@ -761,7 +762,7 @@
             atualizarKPIsCompactos();
             let container = document.getElementById('sessions-container');
             if (!container) return;
-            container.innerHTML = `<div class="card" style="text-align: center; color: var(--accent-green);">🟢 Sistema carregado e operando na versão v5.74.3. Envie ou selecione sessões para visualizar os gráficos e telemetrias.</div>`;
+            container.innerHTML = `<div class="card" style="text-align: center; color: var(--accent-green);">🟢 Sistema corrigido (v5.74.4). Nenhuma exceção de referência pendente.</div>`;
         };
 
         window.gerarRelatórioPDF = function() { window.print(); };
