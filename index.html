@@ -974,15 +974,15 @@
                 htmlParts.push(`
                     <div style="font-size: calc(1.1rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px;">🥇 PÓDIO DA BATERIA</div>
                     <div class="pista-podium-grid">
-                        <div class="pista-podium-card p2">
-                            <span class="pista-podium-pos" style="color: var(--accent-silver);">2º LUGAR</span>
-                            <span class="pista-podium-nome">${p2 ? escapeHtml(p2.piloto) : '--'}</span>
-                            <span class="pista-podium-tempo">${p2 ? (p2.melhorVoltaTxt || '--') : ''}</span>
-                        </div>
                         <div class="pista-podium-card p1">
                             <span class="pista-podium-pos" style="color: var(--accent-gold);">1º LUGAR 👑</span>
                             <span class="pista-podium-nome">${p1 ? escapeHtml(p1.piloto) : '--'}</span>
                             <span class="pista-podium-tempo">${p1 ? (p1.melhorVoltaTxt || '--') : ''}</span>
+                        </div>
+                        <div class="pista-podium-card p2">
+                            <span class="pista-podium-pos" style="color: var(--accent-silver);">2º LUGAR</span>
+                            <span class="pista-podium-nome">${p2 ? escapeHtml(p2.piloto) : '--'}</span>
+                            <span class="pista-podium-tempo">${p2 ? (p2.melhorVoltaTxt || '--') : ''}</span>
                         </div>
                         <div class="pista-podium-card p3">
                             <span class="pista-podium-pos" style="color: var(--accent-bronze);">3º LUGAR</span>
@@ -1015,7 +1015,7 @@
                 });
 
                 let mediaGrid = qtdTempos > 0 ? somaTempos / qtdTempos : 0;
-                let velMax = melhorVoltaGeralVal < 999999 ? ((26 / melhorVoltaGeralVal) * 3.6 * 28).toFixed(1) : "0.0";
+                let velMax = melhorVoltaGeralVal < 999999 ? ((26 / melhorVoltaGeral) * 3.6 * 28).toFixed(1) : "0.0";
                 let velMedia = mediaGrid > 0 ? ((26 / mediaGrid) * 3.6 * 28).toFixed(1) : "0.0";
 
                 htmlParts.push(`
@@ -3504,7 +3504,7 @@
             chartInstances.push(new Chart(canvasEl.getContext('2d'), {
                 type: 'line', data: { labels, datasets },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: front = false,
                     plugins: { legend: { labels: { color: '#d0d7e3' } } },
                     scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
                 }
