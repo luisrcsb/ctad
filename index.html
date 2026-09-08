@@ -59,7 +59,6 @@
         .piloto-link { color: var(--accent-blue); text-decoration: none; font-weight: 700; cursor: pointer; }
         .piloto-link:hover { color: var(--accent-gold); text-decoration: underline; }
 
-        /* Compact Elegant KPIs Styles */
         .kpi-compact-section { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
         .kpi-compact-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .kpi-compact-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -586,7 +585,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.73.0 (Compras Coletivas Modal Corrigido)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.74.0 (Pix Individual por Participante)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -1093,7 +1092,7 @@
                     comprador: (pNome === "Raphael"),
                     valorDevido: 0,
                     pago: (pNome === "Raphael"),
-                    reciboPix: ""
+                    pixPersonalizado: ""
                 };
             });
 
@@ -1150,7 +1149,7 @@
                         comprador: false,
                         valorDevido: 0,
                         pago: false,
-                        reciboPix: ""
+                        pixPersonalizado: ""
                     };
                 }
             });
@@ -1222,8 +1221,8 @@
                 let ativo = document.getElementById(`part-ativo-${pKey}`)?.checked || false;
                 let comprador = document.getElementById(`part-comprador-${pKey}`)?.checked || false;
                 let pago = document.getElementById(`part-pago-${pKey}`)?.checked || false;
-                let recibo = document.getElementById(`part-recibo-${pKey}`)?.value || "";
-                novosParticipantes[pKey] = { nome: nome.trim(), ativo, comprador, valorDevido: 0, pago, reciboPix: recibo };
+                let pixPers = document.getElementById(`part-recibo-${pKey}`)?.value || "";
+                novosParticipantes[pKey] = { nome: nome.trim(), ativo, comprador, valorDevido: 0, pago, pixPersonalizado: pixPers };
             });
             comp.participantes = novosParticipantes;
 
@@ -1265,7 +1264,7 @@
             if (!comp) return;
             if (!comp.participantes) comp.participantes = {};
             let pKey = "part_" + nome.toLowerCase().replace(/[^a-z0-9]/g, "_");
-            comp.participantes[pKey] = { nome, ativo: true, comprador: false, valorDevido: 0, pago: false, reciboPix: "" };
+            comp.participantes[pKey] = { nome, ativo: true, comprador: false, valorDevido: 0, pago: false, pixPersonalizado: "" };
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
                 if (nomeInput) nomeInput.value = "";
@@ -1366,7 +1365,7 @@
                             <div style="text-align: center;"><input type="radio" name="comprador_radio" id="part-comprador-${pk}" ${p.comprador ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-blue); cursor: pointer;"></div>
                             <div style="color: var(--accent-gold); font-weight: 700;">R$ ${(p.valorDevido || 0).toFixed(2)}</div>
                             <div style="text-align: center;"><input type="checkbox" id="part-pago-${pk}" ${p.pago ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-green); cursor: pointer;"></div>
-                            <div><input type="text" id="part-recibo-${pk}" class="config-input" value="${escapeHtml(p.reciboPix || '')}" placeholder="Cole a URL da imagem do recibo" style="width: 100%;"></div>
+                            <div><input type="text" id="part-recibo-${pk}" class="config-input" value="${escapeHtml(p.pixPersonalizado || '')}" placeholder="Pix / Copia e Cola (Opcional)" style="width: 100%;"></div>
                             <div style="text-align: right;"><button class="btn-action-danger" style="padding: 6px 10px;" onclick="removerParticipanteCompra('${compraGerenciandoKey}', '${pk}')">🗑️</button></div>
                         </div>
                     `;
@@ -1438,12 +1437,12 @@
                     </div>
 
                     <div class="config-panel">
-                        <div class="config-panel-title">4. GESTÃO DE PARTICIPANTES, RATEIO E COMPROVANTES DE RECIBO</div>
+                        <div class="config-panel-title">4. GESTÃO DE PARTICIPANTES, RATEIO E PIX PERSONALIZADO</div>
                         <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
                             <input type="text" id="input-novo-participante-compra" class="config-input" placeholder="Adicionar novo participante (Ex: Carlos)" style="max-width: 320px;">
                             <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700;" onclick="adicionarParticipanteCompra('${compraGerenciandoKey}')">+ Adicionar Participante</button>
                         </div>
-                        <p style="font-size: 0.8rem; color: var(--accent-gold); margin-top: 4px;">💡 Dica: Marque os ativos, defina quem pagou e cole o link da imagem do recibo de pagamento no campo correspondente.</p>
+                        <p style="font-size: 0.8rem; color: var(--accent-gold); margin-top: 4px;">💡 Dica: Se preencher o Pix Individual, ele terá prioridade absoluta no QR Code do piloto; caso contrário, será usada a Chave Global do Campo 5.</p>
                         
                         <div style="display: grid; grid-template-columns: 70px 2fr 100px 130px 100px 2.5fr 40px; gap: 10px; padding: 8px 12px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 8px;">
                             <div>Ativo</div>
@@ -1451,7 +1450,7 @@
                             <div style="text-align: center;">Comprador</div>
                             <div>Valor Devido</div>
                             <div style="text-align: center;">Status (Pago)</div>
-                            <div>Link / Imagem do Recibo Pix</div>
+                            <div>Pix Personalizado / Copia e Cola (Opcional)</div>
                             <div style="text-align: right;">Ação</div>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -1460,7 +1459,7 @@
                     </div>
 
                     <div class="config-panel">
-                        <div class="config-panel-title">5. CHAVE PIX DO COMPRADOR (RAPHAEL)</div>
+                        <div class="config-panel-title">5. CHAVE PIX DO COMPRADOR (RAPHAEL) - FALLBACK GLOBAL</div>
                         <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
                             <input type="text" id="det-chave-pix" class="config-input" value="${escapeHtml(comp.chavePix || '00020126580014br.gov.pix.pix0136aac94da7-9d9a-463a-b33a-b974665b3022520400005303986540546.705802BR5925LUIS RAPHAEL')}" placeholder="Chave Pix Copia e Cola">
                             <button class="btn-action-primary" style="background: #7209b7; font-weight: 700;">📄 Upload PDF do Pix</button>
@@ -1610,7 +1609,12 @@
                 let pixBoxHtml = "";
                 if (!p.pago) {
                     let valorStr = (p.valorDevido || 0).toFixed(2);
-                    let payloadPixPiloto = `${chavePixBase} (Valor: R$ ${valorStr} - ${p.nome})`;
+                    
+                    // Prioridade: Se houver pixPersonalizado preenchido para o piloto, usa ele; senão usa a chave global do campo 5
+                    let payloadPixPiloto = (p.pixPersonalizado && p.pixPersonalizado.trim() !== "") 
+                        ? p.pixPersonalizado 
+                        : `${chavePixBase} (Valor: R$ ${valorStr} - ${p.nome})`;
+
                     let qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(payloadPixPiloto)}`;
 
                     pixBoxHtml = `
