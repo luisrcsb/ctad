@@ -31,9 +31,9 @@
             --accent-gap: #ff006e;
             --accent-cc: #f72585;
             --pista-scale: 1;
-            --pista-tabela-escala: 1.2;
         }
 
+        /* Modos de Acessibilidade */
         body.modo-alto-contraste {
             --bg-body: #000000;
             --bg-card: #0a0a0a;
@@ -64,8 +64,16 @@
         }
         input[type=number] { -moz-appearance: textfield; }
 
-        .dashboard-container { width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 0 4px; }
+        .dashboard-container { width: 100%; min-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 0 4px; }
         .dashboard-gestao-grid { display: grid; grid-template-columns: repeat(2, minmax(400px, 1fr)); gap: 12px; }
+
+        body.responsivo-ativo { overflow-x: hidden; }
+        body.responsivo-ativo .dashboard-container { min-width: 100%; max-width: 100%; }
+        body.responsivo-ativo .dashboard-gestao-grid { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+
+        @media (max-width: 768px) {
+            body.responsivo-ativo .dashboard-gestao-grid { grid-template-columns: 1fr; }
+        }
 
         .header { display: flex; flex-direction: column; background: var(--bg-card); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-card); gap: 10px; }
         .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; }
@@ -101,6 +109,7 @@
         .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-weight: bold; }
         .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
+        /* MODO PISTA FULLSCREEN (TELÃO 4K) */
         #modo-pista-fullscreen {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: var(--bg-body); z-index: 30000; overflow-y: auto; padding: 24px; box-sizing: border-box;
@@ -123,10 +132,6 @@
         .pista-stat-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
         .pista-stat-label { font-size: calc(0.85rem * var(--pista-scale)); font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .pista-stat-value { font-size: calc(1.4rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); }
-
-        #modo-pista-fullscreen table { font-size: calc(0.85rem * var(--pista-tabela-escala)); width: 100%; }
-        #modo-pista-fullscreen th { font-size: calc(0.7rem * var(--pista-tabela-escala)); padding: calc(8px * var(--pista-tabela-escala)) calc(10px * var(--pista-tabela-escala)); }
-        #modo-pista-fullscreen td { padding: calc(8px * var(--pista-tabela-escala)) calc(10px * var(--pista-tabela-escala)); }
 
         .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         .config-panel-title { font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-card); padding-bottom: 6px; }
@@ -225,6 +230,7 @@
 </head>
 <body>
 
+    <!-- Filtros SVG ocultos para daltonismo -->
     <svg style="display:none">
         <filter id="protanopia-filter">
             <feColorMatrix type="matrix" values="0.567, 0.433, 0, 0, 0  0.558, 0.442, 0, 0, 0  0, 0.242, 0.758, 0, 0  0, 0, 0, 1, 0"/>
@@ -237,6 +243,7 @@
         </filter>
     </svg>
 
+    <!-- Modal de Acessibilidade -->
     <div id="accessibility-modal" class="custom-modal" style="z-index: 10800;">
         <div class="modal-content" style="max-width: 500px; border-top-color: var(--accent-green);">
             <div class="modal-header">
@@ -257,6 +264,7 @@
         </div>
     </div>
 
+    <!-- Painel de Administração Central -->
     <div id="admin-modal" class="custom-modal" style="z-index: 10700;">
         <div class="modal-content" style="max-width: 800px; border-top-color: var(--accent-red);">
             <div class="modal-header">
@@ -267,7 +275,8 @@
         </div>
     </div>
 
-    <div id="pista-config-modal" class="custom-modal" style="z-index: 10800; display: flex;">
+    <!-- Modal de Configuração do Modo Pista -->
+    <div id="pista-config-modal" class="custom-modal" style="z-index: 10800;">
         <div class="modal-content" style="max-width: 600px; border-top-color: var(--accent-gold);">
             <div class="modal-header">
                 <div class="modal-title">🏁 Configurar Modo Pista (Telão 4K)</div>
@@ -280,16 +289,6 @@
                     <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
                         <input type="range" id="input-pista-escala" min="0.8" max="2.2" step="0.1" value="1.2" class="config-input" oninput="atualizarEscalaPistaPreview(this.value)">
                         <span id="label-escala-val" style="font-weight: 700; color: var(--accent-gold); width: 50px; text-align: center;">1.2x</span>
-                    </div>
-                </div>
-                <div class="config-panel">
-                    <div class="config-panel-title">Tamanho da Fonte / Autoajuste da Tabela de Voltas</div>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
-                        <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 220px;">
-                            <input type="range" id="input-pista-tabela-escala" min="0.8" max="3.0" step="0.1" value="1.2" class="config-input" oninput="atualizarEscalaTabelaPista(this.value)">
-                            <span id="label-escala-tabela-val" style="font-weight: 700; color: var(--accent-gold); width: 45px; text-align: center;">1.2x</span>
-                        </div>
-                        <button class="btn-action-primary" style="background: var(--accent-gold); color: #000; font-weight: 700; padding: 7px 12px; font-size: 0.78rem;" onclick="autoajustarTabelaPista()">⚡ Autoajuste Largura Máxima</button>
                     </div>
                 </div>
                 <div class="config-panel">
@@ -308,6 +307,7 @@
         </div>
     </div>
 
+    <!-- MODO PISTA FULLSCREEN (TELÃO 4K) -->
     <div id="modo-pista-fullscreen">
         <div class="pista-header">
             <div>
@@ -318,9 +318,12 @@
                 <button class="btn-action-danger" style="padding: 10px 18px; font-size: 1rem;" onclick="fecharModoPistaFullscreen()">❌ Sair do Telão</button>
             </div>
         </div>
-        <div id="pista-fs-conteudo" style="display: flex; flex-direction: column; gap: 20px;"></div>
+        <div id="pista-fs-conteudo" style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Conteúdo injetado dinamicamente -->
+        </div>
     </div>
 
+    <!-- Ficha do Piloto / Resumo Detalhado -->
     <div id="piloto-modal" class="custom-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -331,6 +334,7 @@
         </div>
     </div>
 
+    <!-- Modal de Configuração Individual do Piloto -->
     <div id="piloto-config-modal" class="custom-modal" style="z-index: 10600;">
         <div class="modal-content" style="max-width: 700px; border-top-color: var(--accent-blue);">
             <div class="modal-header">
@@ -341,6 +345,7 @@
         </div>
     </div>
 
+    <!-- Central de Uploads -->
     <div id="upload-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content">
             <div class="modal-header">
@@ -374,6 +379,7 @@
         </div>
     </div>
 
+    <!-- Championship Manager -->
     <div id="campeonatos-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content">
             <div class="modal-header">
@@ -545,6 +551,7 @@
         </div>
     </div>
 
+    <!-- Gestão de Pilotos -->
     <div id="pilotos-gestao-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
@@ -568,6 +575,7 @@
         </div>
     </div>
 
+    <!-- Módulo de Compras Coletivas -->
     <div id="compras-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 1000px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
@@ -578,6 +586,7 @@
         </div>
     </div>
 
+    <!-- Modal de Resumo de Compra Coletiva -->
     <div id="compra-resumo-modal" class="custom-modal" style="z-index: 10600;">
         <div class="modal-content" style="max-width: 550px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
@@ -588,6 +597,7 @@
         </div>
     </div>
 
+    <!-- Participar do Campeonato -->
     <div id="participar-campeonato-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 500px; border-top-color: var(--accent-gold);">
             <div class="modal-header" style="background: var(--bg-card-header);">
@@ -617,6 +627,7 @@
         </div>
     </div>
 
+    <!-- Estrutura Principal do Dashboard -->
     <div class="dashboard-container">
         <header class="header">
             <div class="header-top">
@@ -671,6 +682,7 @@
                 </div>
             </section>
 
+            <!-- KPIs Compactos e Elegantes -->
             <section class="kpi-compact-section">
                 <div class="kpi-compact-card">
                     <span class="kpi-compact-label">👑 Piloto com Mais Vitórias</span>
@@ -690,6 +702,7 @@
                 </div>
             </section>
 
+            <!-- Gestão Grid -->
             <section class="dashboard-gestao-grid" style="margin-top: 12px;">
                 <div class="card" style="margin-bottom: 0;">
                     <div class="card-header">🏆 Championship Manager & Status</div>
@@ -710,7 +723,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.86.1 (CTAD - Formato Fixo Original)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.86.0 (CTAD Rebranding & Pista Dinâmica)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -800,30 +813,34 @@
         function ordenarParticipantesBateria(participantesValidos) {
             if (!participantesValidos || participantesValidos.length === 0) return [];
             const valorTempo = (l) => {
-                if (!l) return 0;
-                if (typeof l === 'object') return Number(l.tempo || 0);
+                if (l && typeof l === 'object') return Number(l.tempo);
                 return Number(l);
             };
-            const totalValido = (p) => ((p && p.laps) || [])
+            const totalValido = (p) => (p.laps || [])
                 .map(valorTempo)
                 .filter(t => Number.isFinite(t) && t > 0)
                 .reduce((acc, t) => acc + t, 0);
 
             return [...participantesValidos].sort((a, b) => {
-                const voltasA = ((a && a.laps) || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
-                const voltasB = ((b && b.laps) || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+                const voltasA = (a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+                const voltasB = (b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
                 if (voltasA !== voltasB) return voltasB - voltasA;
                 const tempoA = totalValido(a);
                 const tempoB = totalValido(b);
                 if (tempoA !== tempoB) return tempoA - tempoB;
-                const melhorA = Math.min(...(((a && a.laps) || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
-                const melhorB = Math.min(...(((b && b.laps) || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
-                return (melhorA === Infinity ? 0 : melhorA) - (melhorB === Infinity ? 0 : melhorB);
+                const melhorA = Math.min(...((a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+                const melhorB = Math.min(...((b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+                return melhorA - melhorB;
             });
         }
 
         document.addEventListener("DOMContentLoaded", () => {
             if (db) {
+                db.ref('configuracoesGlobais/responsivo').on('value', snapshot => {
+                    let ativo = snapshot.val() === true;
+                    document.body.classList.toggle('responsivo-ativo', ativo);
+                });
+
                 db.ref('configuracoesGlobais/acessibilidadeHabilitada').on('value', snapshot => {
                     let ativo = snapshot.val() === true;
                     let btnAcess = document.getElementById('btn-accessibility');
@@ -886,9 +903,6 @@
                     preencherSelectProvasBancoPrincipal();
                     atualizarDashboard();
                 });
-            } else {
-                gerarFiltrosDinamicos();
-                atualizarDashboard();
             }
         });
 
@@ -904,21 +918,6 @@
             document.documentElement.style.setProperty('--pista-scale', val);
             let lbl = document.getElementById('label-escala-val');
             if (lbl) lbl.innerText = `${val}x`;
-        };
-
-        window.atualizarEscalaTabelaPista = function(val) {
-            document.documentElement.style.setProperty('--pista-tabela-escala', val);
-            let lbl = document.getElementById('label-escala-tabela-val');
-            if (lbl) lbl.innerText = `${val}x`;
-            let slider = document.getElementById('input-pista-tabela-escala');
-            if (slider && slider.value !== val) slider.value = val;
-        };
-
-        window.autoajustarTabelaPista = function() {
-            let container = document.getElementById('modo-pista-fullscreen');
-            let larguraTela = container && container.clientWidth > 0 ? container.clientWidth - 80 : window.innerWidth - 80;
-            let novaEscala = Math.min(3.0, Math.max(1.0, (larguraTela / 1100).toFixed(1)));
-            atualizarEscalaTabelaPista(novaEscala);
         };
 
         window.abrirModoPistaFullscreen = function() {
@@ -956,8 +955,8 @@
                 let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
                 if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
                 let meta = pilotosMetadadosCache[pReal] || {};
-                return { ...d, piloto: pReal, apelido: meta.apelido || '', laps: d.laps || [] };
-            });
+                return { ...d, piloto: pReal, apelido: meta.apelido || '' };
+            }).filter(d => d.laps && d.laps.length > 0);
 
             let ordenados = ordenarParticipantesBateria(dadosSessao);
             let showPodium = document.getElementById('pista-mod-podium')?.checked ?? true;
@@ -1024,7 +1023,7 @@
                     <div class="pista-stats-grid">
                         <div class="pista-stat-card">
                             <span class="pista-stat-label">⚡ Melhor Volta Geral</span>
-                            <span class="pista-stat-value">${melhorVoltaGeralVal < 999999 ? melhorVoltaGeralVal.toFixed(3) + 's' : '--'} <span style="font-size:0.75rem; color:var(--text-muted);">(${melhorPiloto || 'N/A'})</span></span>
+                            <span class="pista-stat-value">${melhorVoltaGeralVal < 999999 ? melhorVoltaGeralVal.toFixed(3) + 's' : '--'} <span style="font-size:0.75rem; color:var(--text-muted);">(${melhorPiloto})</span></span>
                         </div>
                         <div class="pista-stat-card">
                             <span class="pista-stat-label">🚀 Velocidade Máxima Estimada</span>
@@ -1062,7 +1061,7 @@
                 let tabelaHtml = gerarTabelaGeralSessao(ordenados);
                 htmlParts.push(`
                     <div style="font-size: calc(1.1rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;">⏱️ TABELA GERAL VOLTA A VOLTA</div>
-                    <div class="card" style="padding: 16px;">
+                    <div class="card" style="padding: 16px; font-size: calc(1rem * var(--pista-scale));">
                         <div class="table-container">${tabelaHtml}</div>
                     </div>
                 `);
@@ -1071,19 +1070,15 @@
             conteudoEl.innerHTML = htmlParts.join('');
 
             if (showGraficos && ordenados.length > 0) {
-                try {
-                    renderizarGraficoRitmoPersonalizado('pista-chart-ritmo', ordenados);
-                    renderizarGraficoPosicaoPersonalizado('pista-chart-posicao', ordenados);
-                } catch (e) {
-                    console.warn("Aviso ao renderizar gráficos do telão:", e);
-                }
+                renderizarGraficoRitmoPersonalizado('pista-chart-ritmo', ordenados);
+                renderizarGraficoPosicaoPersonalizado('pista-chart-posicao', ordenados);
             }
         }
 
         function renderizarGraficoRitmoPersonalizado(canvasId, ordenados) {
             let canvasEl = document.getElementById(canvasId);
             if (!canvasEl) return;
-            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
             let datasets = ordenados.map((p, idx) => {
@@ -1104,7 +1099,7 @@
         function renderizarGraficoPosicaoPersonalizado(canvasId, ordenados) {
             let canvasEl = document.getElementById(canvasId);
             if (!canvasEl) return;
-            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
             let datasets = ordenados.map((p, idx) => {
@@ -1188,6 +1183,16 @@
             renderizarAdminModal();
         };
 
+        window.alternarResponsividadeGlobal = async function(checkbox) {
+            if (!db) return;
+            let ativo = checkbox.checked;
+            try {
+                await db.ref('configuracoesGlobais/responsivo').set(ativo);
+            } catch (err) {
+                alert("Erro ao salvar configuração: " + err.message);
+            }
+        };
+
         window.salvarNomePistaAdmin = async function() {
             if (!db) return;
             let val = document.getElementById('input-admin-nome-pista').value.trim();
@@ -1216,6 +1221,7 @@
                     </div>
                 `;
             } else {
+                let responsivoAtual = document.body.classList.contains('responsivo-ativo');
                 let acessibilidadeHabilitada = document.getElementById('btn-accessibility').style.display === 'inline-flex';
                 bodyEl.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
@@ -1234,6 +1240,10 @@
 
                     <div class="config-panel" style="margin-top: 4px;">
                         <div class="config-panel-title" style="color: var(--accent-gold);">⚙️ Configurações Gerais do Sistema</div>
+                        <label class="checkbox-item" style="font-weight: 600; font-size: 0.85rem; margin-top: 2px;">
+                            <input type="checkbox" id="check-responsivo-admin" ${responsivoAtual ? 'checked' : ''} onchange="alternarResponsividadeGlobal(this)" style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
+                            Ativar modo responsivo (Adapta o layout automaticamente para telas menores e dispositivos móveis)
+                        </label>
                         <label class="checkbox-item" style="font-weight: 600; font-size: 0.85rem; margin-top: 6px;">
                             <input type="checkbox" id="check-acessibilidade-admin" ${acessibilidadeHabilitada ? 'checked' : ''} onchange="alternarAcessibilidadeGlobal(this)" style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
                             Ativar Módulo de Acessibilidade no Header (Exibe o ícone de daltonismo e contraste)
@@ -2773,16 +2783,12 @@
             let primeiraVezBat = bateriasSelecionadasAntigas.length === 0;
             let primeiraVezPil = pilotosSelecionadosAntigos.length === 0;
 
-            if (listaJsonsCache.length === 0) {
-                batContainer.innerHTML = `<span style="font-size:0.78rem; color:var(--text-muted); padding:4px;">Nenhuma bateria no banco.</span>`;
-            } else {
-                batContainer.innerHTML = listaJsonsCache.map(arq => {
-                    let key = arq.firebaseKey;
-                    let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
-                    let marcado = (primeiraVezBat || bateriasSelecionadasAntigas.includes(key)) ? 'checked' : '';
-                    return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(formatarNomeSessao(sessaoOriginal))}</label>`;
-                }).join('');
-            }
+            batContainer.innerHTML = listaJsonsCache.map(arq => {
+                let key = arq.firebaseKey;
+                let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
+                let marcado = (primeiraVezBat || bateriasSelecionadasAntigas.includes(key)) ? 'checked' : '';
+                return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(formatarNomeSessao(sessaoOriginal))}</label>`;
+            }).join('');
 
             let listaNomesUnicos = Array.from(pilotosSet).filter(p => {
                 if (!p || !p.trim()) return false;
@@ -3153,15 +3159,7 @@
             if (!mainContainer) return;
             mainContainer.innerHTML = '';
 
-            if (dadosBase.length === 0 || bateriasSel.length === 0) {
-                mainContainer.innerHTML = `
-                    <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted); display: flex; flex-direction: column; gap: 10px; align-items: center;">
-                        <div style="font-size: 2.2rem;">🏁</div>
-                        <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-title);">Nenhum relatório de telemetria carregado ou filtrado</div>
-                        <p style="font-size: 0.85rem; max-width: 480px; line-height: 1.4;">O banco de dados está vazio ou nenhuma bateria foi selecionada nos filtros acima. Clique no botão <strong>Administração</strong> no topo e acesse a <strong>Central de Uploads</strong> para enviar relatórios PDF ou HTML do ZRound.</p>
-                    </div>`;
-                return;
-            }
+            if (dadosBase.length === 0 || bateriasSel.length === 0) return;
 
             bateriasSel.forEach(batKey => {
                 let sessaoObj = listaJsonsCache.find(i => i.firebaseKey === batKey);
@@ -3282,7 +3280,8 @@
         }
 
         function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
-            let maxVoltas = Math.max(0, ...dadosSessao.map(d => d.laps ? d.laps.length : 0));
+            let maxVoltas = 0;
+            dadosSessao.forEach(d => { if (d.laps && d.laps.length > maxVoltas) maxVoltas = d.laps.length; });
             let lapLogs = {}, posicoesAnterior = {};
 
             for (let v = 0; v < maxVoltas; v++) {
@@ -3335,8 +3334,8 @@
         function gerarTabelaGeralSessao(ordenados) {
             if (!ordenados || ordenados.length === 0) return "<div>Sem dados.</div>";
             
-            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.filter(l => l > 0).length : 0));
-            if (maxVoltas === 0) maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.filter(l => l > 0).length : 0));
+            if (maxVoltas === 0) maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
 
             let thVoltasHtml = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center; font-size: 0.7rem;">V${i + 1}</th>`).join('');
 
@@ -3457,7 +3456,7 @@
         function renderizarGraficoRitmo(bateriaKey, safeKey, ordenados) {
             let canvasEl = document.getElementById(`chart-ritmo-${safeKey}`);
             if (!canvasEl) return;
-            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
             let datasets = ordenados.map((p, idx) => {
@@ -3478,7 +3477,7 @@
         function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
             let canvasEl = document.getElementById(`chart-posicao-${safeKey}`);
             if (!canvasEl) return;
-            let maxVoltas = Math.max(0, ...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
             let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
 
             let datasets = ordenados.map((p, idx) => {
@@ -3505,15 +3504,11 @@
             chartInstances.push(new Chart(canvasEl.getContext('2d'), {
                 type: 'line', data: { labels, datasets },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: front = false,
                     plugins: { legend: { labels: { color: '#d0d7e3' } } },
                     scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
                 }
             }));
-        }
-
-        function gerarRelatórioPDF() {
-            window.print();
         }
     </script>
 </body>
