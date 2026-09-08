@@ -603,7 +603,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.81.0 (Controle de Responsividade no Admin)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.82.0 (Ultrapassagens Concatenadas por Volta)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -716,7 +716,6 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             if (db) {
-                // Sincronizar configuração de responsividade
                 db.ref('configuracoesGlobais/responsivo').on('value', snapshot => {
                     let ativo = snapshot.val() === true;
                     document.body.classList.toggle('responsivo-ativo', ativo);
@@ -2821,7 +2820,19 @@
                 }
 
                 if (modulosSel.includes('mod-log-posicao')) {
-                    let logHtml = calcularRelatorioUltrapassagens(ordenados, dadosSessao).map(l => `<div class="position-log-item">Volta ${l.volta}: <strong>${escapeHtml(l.piloto)}</strong> ${l.tipo === 'ganho' ? 'ganhou' : 'perdeu'} <span class="${l.tipo === 'ganho' ? 'tag-gain' : 'tag-loss'}">(${l.posAnterior}º ➔ ${l.posAtual}º)</span></div>`).join('') || '<div style="color:var(--text-muted); font-size:0.78rem;">Sem alterações.</div>';
+                    let lapLogs = calcularRelatorioUltrapassagens(ordenados, dadosSessao);
+                    let lapKeys = Object.keys(lapLogs);
+                    let logHtml = lapKeys.length === 0 ? '<div style="color:var(--text-muted); font-size:0.78rem;">Sem alterações.</div>' :
+                        lapKeys.map(voltaNum => {
+                            let mudancas = lapLogs[voltaNum];
+                            let descricoes = mudancas.map(m => {
+                                let corClasse = m.tipo === 'ganho' ? 'tag-gain' : 'tag-loss';
+                                let acao = m.tipo === 'ganho' ? 'ganhou' : 'perdeu';
+                                return `<strong>${escapeHtml(m.piloto)}</strong> ${acao} <span class="${corClasse}">(${m.posAnterior}º ➔ ${m.posAtual}º)</span>`;
+                            }).join(' • ');
+                            return `<div class="position-log-item">Volta ${voltaNum}: ${descricoes}</div>`;
+                        }).join('');
+
                     let cardLog = document.createElement('div');
                     cardLog.className = 'card';
                     cardLog.innerHTML = `<div class="card-header">📝 Ultrapassagens</div><div class="position-analysis-container"><div class="position-log-list">${logHtml}</div></div>`;
@@ -2870,7 +2881,7 @@
         function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
             let maxVoltas = 0;
             dadosSessao.forEach(d => { if (d.laps && d.laps.length > maxVoltas) maxVoltas = d.laps.length; });
-            let logs = [], posicoesAnterior = {};
+            let lapLogs = {}, posicoesAnterior = {};
 
             for (let v = 0; v < maxVoltas; v++) {
                 let rankingVolta = [];
@@ -2884,17 +2895,30 @@
                     if (valido) rankingVolta.push({ piloto: p.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
                 });
                 rankingVolta.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
+                
+                let mudancasNestaVolta = [];
                 rankingVolta.forEach((item, index) => {
                     let posAtual = index + 1;
                     if (posicoesAnterior[item.piloto] !== undefined) {
                         let posAnt = posicoesAnterior[item.piloto];
-                        if (posAtual < posAnt) logs.push({ volta: v + 1, piloto: item.piloto, posAnterior: posAnt, posAtual, tipo: 'ganho' });
-                        else if (posAtual > posAnt) logs.push({ volta: v + 1, piloto: item.piloto, posAnterior: posAnt, posAtual, tipo: 'perda' });
+                        if (posAtual !== posAnt) {
+                            let tipo = posAtual < posAnt ? 'ganho' : 'perda';
+                            mudancasNestaVolta.push({
+                                piloto: item.piloto,
+                                posAnterior: posAnt,
+                                posAtual: posAtual,
+                                tipo: tipo
+                            });
+                        }
                     }
                     posicoesAnterior[item.piloto] = posAtual;
                 });
+
+                if (mudancasNestaVolta.length > 0) {
+                    lapLogs[v + 1] = mudancasNestaVolta;
+                }
             }
-            return logs;
+            return lapLogs;
         }
 
         function gerarLaudoTecnicoSessao(ordenados) {
