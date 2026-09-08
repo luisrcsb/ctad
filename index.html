@@ -30,7 +30,7 @@
             --accent-blue: #3a86ff;
             --accent-gap: #ff006e;
             --accent-cc: #f72585;
-            --pista-scale: 1;
+            --pista-scale: 1.2;
         }
 
         body.modo-alto-contraste {
@@ -77,7 +77,8 @@
         .header { display: flex; flex-direction: column; background: var(--bg-card); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-card); gap: 10px; }
         .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; }
         .brand-title h1 { font-size: 1.3rem; color: var(--text-title); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
-        .pista-display-banner { text-align: center; font-size: 0.9rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: var(--bg-input); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-card); width: 100%; }
+        .pista-display-banner { text-align: center; font-size: 0.9rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: var(--bg-input); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-card); width: 100%; cursor: pointer; transition: background 0.2s; }
+        .pista-display-banner:hover { background: rgba(255, 183, 3, 0.1); }
 
         .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .btn { padding: 8px 14px; border-radius: 8px; border: none; font-weight: 600; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
@@ -108,28 +109,22 @@
         .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-weight: bold; }
         .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
+        /* MODO PISTA FULLSCREEN (TELÃO 4K) - REFEITO DO ZERO */
         #modo-pista-fullscreen {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: var(--bg-body); z-index: 30000; overflow-y: auto; padding: 24px; box-sizing: border-box;
-            flex-direction: column; gap: 20px;
+            background-color: var(--bg-body); z-index: 30000; overflow-y: auto; padding: 32px; box-sizing: border-box;
+            flex-direction: column; gap: 24px;
         }
-        .pista-header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 20px 28px; border-radius: 14px; border: 2px solid var(--accent-gold); }
-        .pista-header h2 { font-size: calc(2rem * var(--pista-scale)); color: var(--accent-gold); display: flex; align-items: center; gap: 12px; }
-        .pista-header p { font-size: calc(1rem * var(--pista-scale)); color: var(--text-muted); }
-        
-        .pista-podium-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        .pista-podium-card { background: var(--bg-card); border: 2px solid var(--border-card); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+        .pista-header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 24px 36px; border-radius: 16px; border: 2px solid var(--accent-gold); }
+        .pista-podium-card { background: var(--bg-card); border: 2px solid var(--border-card); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
         .pista-podium-card.p1 { border-color: var(--accent-gold); background: rgba(255, 183, 3, 0.08); }
         .pista-podium-card.p2 { border-color: var(--accent-silver); background: rgba(192, 192, 192, 0.08); }
         .pista-podium-card.p3 { border-color: var(--accent-bronze); background: rgba(205, 127, 50, 0.08); }
-        .pista-podium-pos { font-size: calc(1.8rem * var(--pista-scale)); font-weight: 800; }
-        .pista-podium-nome { font-size: calc(1.5rem * var(--pista-scale)); font-weight: 700; color: var(--text-title); }
-        .pista-podium-tempo { font-size: calc(1.2rem * var(--pista-scale)); color: var(--accent-green); font-weight: 700; }
 
-        .pista-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-        .pista-stat-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
-        .pista-stat-label { font-size: calc(0.85rem * var(--pista-scale)); font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-        .pista-stat-value { font-size: calc(1.4rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); }
+        .pista-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .pista-stat-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .pista-stat-label { font-size: calc(0.9rem * var(--pista-scale)); font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .pista-stat-value { font-size: calc(1.6rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); }
 
         .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         .config-panel-title { font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-card); padding-bottom: 6px; }
@@ -176,7 +171,7 @@
         .card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 14px; width: 100%; }
         .card-header { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 700; color: var(--text-title); margin-bottom: 12px; }
         .card-header::before { content: ''; width: 4px; height: 14px; background-color: var(--accent-red); border-radius: 2px; }
-        .chart-container { position: relative; height: 320px; width: 100%; max-width: 100%; }
+        .chart-container { position: relative; height: 280px; width: 100%; }
 
         .position-analysis-container { margin-top: 12px; background: var(--bg-input); border-left: 4px solid var(--accent-gold); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
         .position-log-list { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; line-height: 1.4; max-height: 180px; overflow-y: auto; }
@@ -199,10 +194,10 @@
         .comment-input-text { flex: 1; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; padding: 7px 10px; color: var(--text-main); font-size: 0.8rem; min-width: 160px; }
         .btn-comment { background: var(--accent-blue); color: #fff; border: none; padding: 7px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer; }
 
-        .table-container { width: 100%; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .table-container { width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
-        th { background-color: var(--bg-card-header); color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; padding: 8px 10px; font-weight: 700; border-bottom: 1px solid var(--border-card); white-space: nowrap; }
-        td { padding: 8px 10px; border-bottom: 1px solid var(--border-card); vertical-align: middle; white-space: nowrap; }
+        th { background-color: var(--bg-card-header); color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; padding: 8px 10px; font-weight: 700; border-bottom: 1px solid var(--border-card); }
+        td { padding: 8px 10px; border-bottom: 1px solid var(--border-card); vertical-align: middle; }
 
         .pos-badge { background: var(--accent-gold); color: #000; font-weight: bold; font-size: 0.75rem; padding: 2px 5px; border-radius: 4px; display: inline-block; }
         .session-badge { background: #1d3557; color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
@@ -270,48 +265,53 @@
         </div>
     </div>
 
+    <!-- Modal de Configuração do Modo Pista (Telão 4K) -->
     <div id="pista-config-modal" class="custom-modal" style="z-index: 10800;">
-        <div class="modal-content" style="max-width: 600px; border-top-color: var(--accent-gold);">
+        <div class="modal-content" style="max-width: 650px; border-top-color: var(--accent-gold);">
             <div class="modal-header">
-                <div class="modal-title">🏁 Configurar Modo Pista (Telão 4K)</div>
+                <div class="modal-title">🏁 Configurar Telão 4K - Última Prova</div>
                 <button class="modal-close" onclick="fecharModalConfigPista()">&times;</button>
             </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
-                <p style="font-size: 0.82rem; color: var(--text-muted);">Ajuste os parâmetros de exibição e escala para telões de grande formato na pista:</p>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <div id="pista-info-ultima-prova" style="background: var(--bg-input); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-card); font-size: 0.85rem; color: var(--accent-gold);">
+                    Carregando última prova...
+                </div>
                 <div class="config-panel">
-                    <div class="config-panel-title">Escala de Tamanho dos Elementos</div>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
-                        <input type="range" id="input-pista-escala" min="0.8" max="2.2" step="0.1" value="1.2" class="config-input" oninput="atualizarEscalaPistaPreview(this.value)">
-                        <span id="label-escala-val" style="font-weight: 700; color: var(--accent-gold); width: 50px; text-align: center;">1.2x</span>
+                    <div class="config-panel-title">Escala de Tamanho para Telão (4K / Distância)</div>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 6px;">
+                        <input type="range" id="input-pista-escala" min="1.0" max="2.5" step="0.1" value="1.4" class="config-input" oninput="atualizarEscalaPistaPreview(this.value)">
+                        <span id="label-escala-val" style="font-weight: 700; color: var(--accent-gold); width: 60px; text-align: center;">1.4x</span>
                     </div>
                 </div>
                 <div class="config-panel">
-                    <div class="config-panel-title">Módulos Visíveis no Modo Pista</div>
-                    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
-                        <label class="checkbox-item"><input type="checkbox" id="pista-mod-podium" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Pódio (1º, 2º, 3º lugar)</label>
-                        <label class="checkbox-item"><input type="checkbox" id="pista-mod-stats" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Estatísticas (Melhor volta, média, voltas)</label>
-                        <label class="checkbox-item"><input type="checkbox" id="pista-mod-tabela" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Tabela de Tempos Volta a Volta (com Gaps)</label>
-                        <label class="checkbox-item"><input type="checkbox" id="pista-mod-graficos" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Gráficos (Ritmo e Posições Lado a Lado)</label>
+                    <div class="config-panel-title">Selecione o que será exibido no Telão 4K</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+                        <label class="checkbox-item" style="font-size: 0.9rem;"><input type="checkbox" id="pista-mod-podium" checked style="width: 18px; height: 18px; accent-color: var(--accent-gold);"> 🏆 Pódio Dinâmico (1º ao 3º / Reajuste automático para 1º e 2º)</label>
+                        <label class="checkbox-item" style="font-size: 0.9rem;"><input type="checkbox" id="pista-mod-stats" checked style="width: 18px; height: 18px; accent-color: var(--accent-gold);"> 📊 Estatísticas (Melhor volta, média e voltas individuais de cada piloto)</label>
+                        <label class="checkbox-item" style="font-size: 0.9rem;"><input type="checkbox" id="pista-mod-tabela" checked style="width: 18px; height: 18px; accent-color: var(--accent-gold);"> ⏱️ Tabela Volta a Volta com Gaps (Responsiva e legível à distância)</label>
+                        <label class="checkbox-item" style="font-size: 0.9rem;"><input type="checkbox" id="pista-mod-graficos" checked style="width: 18px; height: 18px; accent-color: var(--accent-gold);"> 📈 Gráficos (Ritmo de volta a volta e Posição)</label>
                     </div>
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
-                    <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700;" onclick="abrirModoPistaFullscreen()">🚀 Abrir Modo Pista em Tela Cheia</button>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+                    <button class="btn-action-primary" style="background: var(--accent-gold); color: #000; font-weight: 700; padding: 10px 20px; font-size: 0.95rem;" onclick="abrirModoPistaFullscreen()">🚀 Iniciar Telão 4K</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- MODO PISTA FULLSCREEN (TELÃO 4K) - REFEITO DO ZERO -->
     <div id="modo-pista-fullscreen">
         <div class="pista-header">
             <div>
-                <h2 id="pista-fs-titulo">🏁 SESSÃO DE TELEMETRIA AO VIVO</h2>
-                <p id="pista-fs-subtitulo">Carregando dados da pista...</p>
+                <h2 id="pista-fs-titulo" style="font-size: calc(2.2rem * var(--pista-scale)); color: var(--accent-gold); display: flex; align-items: center; gap: 12px;">🏁 TELÃO 4K - ÚLTIMA PROVA</h2>
+                <p id="pista-fs-subtitulo" style="font-size: calc(1.1rem * var(--pista-scale)); color: var(--text-muted); margin-top: 4px;">Carregando telemetria...</p>
             </div>
-            <div style="display: flex; gap: 12px; align-items: center;">
-                <button class="btn-action-danger" style="padding: 10px 18px; font-size: 1rem;" onclick="fecharModoPistaFullscreen()">❌ Sair do Telão</button>
+            <div>
+                <button class="btn-action-danger" style="padding: 12px 24px; font-size: 1.1rem; font-weight: 700;" onclick="fecharModoPistaFullscreen()">❌ Sair do Telão</button>
             </div>
         </div>
-        <div id="pista-fs-conteudo" style="display: flex; flex-direction: column; gap: 20px; width: 100%;">
+        <div id="pista-fs-conteudo" style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- Conteúdo injetado dinamicamente -->
         </div>
     </div>
 
@@ -616,7 +616,6 @@
             <div class="header-top">
                 <div class="brand-title">
                     <h1>CTAD - Central de Telemetria</h1>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Análise e Desempenho</div>
                 </div>
                 <div class="header-actions">
                     <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
@@ -624,8 +623,9 @@
                     <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
                 </div>
             </div>
-            <div id="display-nome-pista" class="pista-display-banner">
+            <div id="display-nome-pista" class="pista-display-banner" onclick="abrirModalConfigPista()" title="Clique para abrir o Telão 4K da última prova">
                 🏁 Não Definida
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Clique aqui para abrir o Telão 4K (Modo Pista)</div>
             </div>
         </header>
 
@@ -704,7 +704,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.87.0 (CTAD Rebranding & Pista Dinâmica)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.86.0 (CTAD Rebranding & Pista Dinâmica)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -717,7 +717,6 @@
     <script>
         const SENHA_UNIFICADA = "1234";
         let isAdminLogado = false;
-        let conexaoEstabelecida = false;
 
         const firebaseConfig = {
             apiKey: "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",
@@ -746,36 +745,11 @@
         let pilotoSendoConfigurado = null;
 
         try {
-            if (typeof firebase !== 'undefined') {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.database();
-
-                db.ref(".info/connected").on("value", function(snapshot) {
-                    if (snapshot.val() === true) {
-                        conexaoEstabelecida = true;
-                        console.log("Conexão com o Firebase estabelecida com sucesso.");
-                    } else {
-                        console.warn("Conexão com o Firebase perdida. Tentando reconectar...");
-                    }
-                });
-            } else {
-                console.error("O SDK do Firebase não foi carregado corretamente.");
-            }
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
         } catch (e) {
             console.warn("Erro Firebase:", e);
         }
-
-        setTimeout(() => {
-            if (!conexaoEstabelecida) {
-                console.warn("Tempo limite de conexão esgotado. Verifique extensões de bloqueio de anúncio, firewall ou a internet.");
-                const containersCarregando = document.querySelectorAll('#upload-lista-historico, #zround-tabela-pilotos-inscritos, #kpi-campeonatos-conteudo, #kpi-compras-conteudo');
-                containersCarregando.forEach(el => {
-                    if (el && el.innerHTML.includes("Carregando")) {
-                        el.innerHTML = `<li style="color: var(--accent-red); text-align: center; padding: 6px;">❌ Falha de conexão com o banco. Verifique extensões/rede.</li>`;
-                    }
-                });
-            }
-        }, 6000);
 
         const ALIAS_EDGARD_DJ_DEFAULTS = {
             "edgard": "Edgard Camilo (DJ)",
@@ -860,7 +834,7 @@
                     let nomePista = snapshot.val() || "Não Definida";
                     let el = document.getElementById('display-nome-pista');
                     if (el) {
-                        el.innerHTML = `🏁 ${escapeHtml(nomePista)}`;
+                        el.innerHTML = `🏁 ${escapeHtml(nomePista)}<div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">Clique aqui para abrir o Telão 4K (Modo Pista)</div>`;
                     }
                 });
 
@@ -914,6 +888,15 @@
         });
 
         window.abrirModalConfigPista = function() {
+            let infoEl = document.getElementById('pista-info-ultima-prova');
+            if (listaJsonsCache && listaJsonsCache.length > 0) {
+                let ultima = listaJsonsCache[0];
+                let nome = ultima.sessao || ultima.nomeArquivoOriginal || "Última Prova";
+                let qtdPilotos = (ultima.dados || []).length;
+                infoEl.innerHTML = `📄 <strong>Última Prova Subida:</strong> ${escapeHtml(formatarNomeSessao(nome))} (${qtdPilotos} pilotos registrados)`;
+            } else {
+                infoEl.innerHTML = `⚠️ Nenhuma prova encontrada no sistema.`;
+            }
             document.getElementById('pista-config-modal').style.display = 'flex';
         };
 
@@ -944,18 +927,18 @@
             if (!conteudoEl) return;
 
             if (!listaJsonsCache || listaJsonsCache.length === 0) {
-                tituloEl.innerText = "🏁 MODO PISTA (TELÃO 4K)";
-                subEl.innerText = "Nenhuma bateria carregada no sistema.";
-                conteudoEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 1.5rem; padding: 40px;">Aguardando relatórios de telemetria...</div>`;
+                tituloEl.innerText = "🏁 TELÃO 4K - SEM DADOS";
+                subEl.innerText = "Nenhuma prova enviada para o site.";
+                conteudoEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 1.8rem; padding: 60px;">Aguardando relatórios de telemetria...</div>`;
                 return;
             }
 
             let ultimaBateria = listaJsonsCache[0];
-            let nomeSessao = ultimaBateria.sessao || ultimaBateria.nomeArquivoOriginal || "Bateria Recente";
+            let nomeSessao = ultimaBateria.sessao || ultimaBateria.nomeArquivoOriginal || "Última Prova";
             let nomeFormatado = formatarNomeSessao(nomeSessao);
 
             tituloEl.innerText = `🏁 ${nomeFormatado.toUpperCase()}`;
-            subEl.innerText = `Atualizado em tempo real • Total de Pilotos: ${(ultimaBateria.dados || []).length}`;
+            subEl.innerText = `Exibindo telemetria da última prova • Total de Pilotos: ${(ultimaBateria.dados || []).length}`;
 
             let dadosSessao = (ultimaBateria.dados || []).map(d => {
                 let pReal = d.piloto ? d.piloto.trim() : "";
@@ -966,6 +949,7 @@
             }).filter(d => d.laps && d.laps.length > 0);
 
             let ordenados = ordenarParticipantesBateria(dadosSessao);
+
             let showPodium = document.getElementById('pista-mod-podium')?.checked ?? true;
             let showStats = document.getElementById('pista-mod-stats')?.checked ?? true;
             let showTabela = document.getElementById('pista-mod-tabela')?.checked ?? true;
@@ -974,27 +958,31 @@
             let htmlParts = [];
 
             if (showPodium && ordenados.length > 0) {
-                let p1 = ordenados[0] || null;
-                let p2 = ordenados[1] || null;
-                let p3 = ordenados[2] || null;
+                let qtdPodio = Math.min(ordenados.length, 3);
+                let gridCols = qtdPodio === 1 ? '1fr' : (qtdPodio === 2 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)');
+                
+                let podiumCardsHtml = '';
+                for (let i = 0; i < qtdPodio; i++) {
+                    let p = ordenados[i];
+                    let posClass = i === 0 ? 'p1' : (i === 1 ? 'p2' : 'p3');
+                    let corMedalha = i === 0 ? 'var(--accent-gold)' : (i === 1 ? 'var(--accent-silver)' : 'var(--accent-bronze)');
+                    let labelPos = i === 0 ? '1º LUGAR 👑' : (i === 1 ? '2º LUGAR' : '3º LUGAR');
+                    
+                    podiumCardsHtml += `
+                        <div class="pista-podium-card ${posClass}" style="padding: calc(24px * var(--pista-scale));">
+                            <span class="pista-podium-pos" style="color: ${corMedalha}; font-size: calc(2rem * var(--pista-scale));">${labelPos}</span>
+                            <span class="pista-podium-nome" style="font-size: calc(1.8rem * var(--pista-scale)); font-weight: 800; color: var(--text-title);">${escapeHtml(p.piloto)}</span>
+                            <span class="pista-podium-tempo" style="font-size: calc(1.4rem * var(--pista-scale)); color: var(--accent-green); font-weight: 700;">${p.melhorVoltaTxt || '--'}</span>
+                            <span style="font-size: calc(1rem * var(--pista-scale)); color: var(--text-muted);">Voltas: <strong>${(p.laps || []).length}</strong></span>
+                        </div>
+                    `;
+                }
 
                 htmlParts.push(`
-                    <div style="font-size: calc(1.1rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px;">🥇 PÓDIO DA BATERIA</div>
-                    <div class="pista-podium-grid">
-                        <div class="pista-podium-card p1">
-                            <span class="pista-podium-pos" style="color: var(--accent-gold);">1º LUGAR 👑</span>
-                            <span class="pista-podium-nome">${p1 ? escapeHtml(p1.piloto) : '--'}</span>
-                            <span class="pista-podium-tempo">${p1 ? (p1.melhorVoltaTxt || '--') : ''}</span>
-                        </div>
-                        <div class="pista-podium-card p2">
-                            <span class="pista-podium-pos" style="color: var(--accent-silver);">2º LUGAR</span>
-                            <span class="pista-podium-nome">${p2 ? escapeHtml(p2.piloto) : '--'}</span>
-                            <span class="pista-podium-tempo">${p2 ? (p2.melhorVoltaTxt || '--') : ''}</span>
-                        </div>
-                        <div class="pista-podium-card p3">
-                            <span class="pista-podium-pos" style="color: var(--accent-bronze);">3º LUGAR</span>
-                            <span class="pista-podium-nome">${p3 ? escapeHtml(p3.piloto) : '--'}</span>
-                            <span class="pista-podium-tempo">${p3 ? (p3.melhorVoltaTxt || '--') : ''}</span>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="font-size: calc(1.2rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px;">🥇 PÓDIO DA ÚLTIMA PROVA</div>
+                        <div style="display: grid; grid-template-columns: ${gridCols}; gap: 20px;">
+                            ${podiumCardsHtml}
                         </div>
                     </div>
                 `);
@@ -1003,11 +991,9 @@
             if (showStats && ordenados.length > 0) {
                 let melhorVoltaGeralVal = 999999;
                 let melhorPiloto = "";
-                let totalVoltasGeral = 0;
                 let somaTempos = 0, qtdTempos = 0;
 
                 ordenados.forEach(p => {
-                    totalVoltasGeral += (p.laps || []).length;
                     (p.laps || []).forEach(l => {
                         let t = typeof l === 'object' ? l.tempo : l;
                         if (t && !isNaN(t) && t > 0) {
@@ -1022,27 +1008,43 @@
                 });
 
                 let mediaGrid = qtdTempos > 0 ? somaTempos / qtdTempos : 0;
-                let velMax = melhorVoltaGeralVal < 999999 ? ((26 / melhorVoltaGeral) * 3.6 * 28).toFixed(1) : "0.0";
-                let velMedia = mediaGrid > 0 ? ((26 / mediaGrid) * 3.6 * 28).toFixed(1) : "0.0";
+                let p1Voltas = ordenados[0] ? (ordenados[0].laps || []).length : 0;
+                let p2Voltas = ordenados[1] ? (ordenados[1].laps || []).length : 0;
+
+                let listaVoltasIndividuaisHtml = ordenados.map((p, idx) => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
+                        <span style="font-size: calc(1rem * var(--pista-scale)); font-weight: 700; color: var(--text-title);">${idx + 1}º ${escapeHtml(p.piloto)}</span>
+                        <span style="font-size: calc(1rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold);">${(p.laps || []).length} voltas</span>
+                    </div>
+                `).join('');
 
                 htmlParts.push(`
-                    <div style="font-size: calc(1.1rem * var(--pista-scale)); font-weight: 700; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;">⚡ ESTATÍSTICAS PRINCIPAIS</div>
-                    <div class="pista-stats-grid">
-                        <div class="pista-stat-card">
-                            <span class="pista-stat-label">⚡ Melhor Volta Geral</span>
-                            <span class="pista-stat-value">${melhorVoltaGeralVal < 999999 ? melhorVoltaGeralVal.toFixed(3) + 's' : '--'} <span style="font-size:0.75rem; color:var(--text-muted);">(${melhorPiloto})</span></span>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="font-size: calc(1.2rem * var(--pista-scale)); font-weight: 700; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px;">⚡ ESTATÍSTICAS E VOLTAS INDIVIDUAIS</div>
+                        <div class="pista-stats-grid">
+                            <div class="pista-stat-card" style="padding: 20px;">
+                                <span class="pista-stat-label" style="font-size: calc(0.9rem * var(--pista-scale));">⚡ Melhor Volta Geral</span>
+                                <span class="pista-stat-value" style="font-size: calc(1.6rem * var(--pista-scale));">${melhorVoltaGeralVal < 999999 ? melhorVoltaGeralVal.toFixed(3) + 's' : '--'}</span>
+                                <span style="font-size: calc(1rem * var(--pista-scale)); color: var(--accent-green); margin-top: 4px;">Piloto: <strong>${melhorPiloto}</strong></span>
+                            </div>
+                            <div class="pista-stat-card" style="padding: 20px;">
+                                <span class="pista-stat-label" style="font-size: calc(0.9rem * var(--pista-scale));">⏱️ Média do Grid</span>
+                                <span class="pista-stat-value" style="font-size: calc(1.6rem * var(--pista-scale));">${mediaGrid > 0 ? mediaGrid.toFixed(3) + 's' : '--'}</span>
+                                <span style="font-size: calc(1rem * var(--pista-scale)); color: var(--text-muted); margin-top: 4px;">Voltas Totais Válidas: <strong>${qtdTempos}</strong></span>
+                            </div>
+                            <div class="pista-stat-card" style="padding: 20px;">
+                                <span class="pista-stat-label" style="font-size: calc(0.9rem * var(--pista-scale));">👑 Destaque Voltas (1º e 2º)</span>
+                                <div style="display: flex; gap: 16px; margin-top: 6px;">
+                                    <span style="font-size: calc(1.1rem * var(--pista-scale)); color: var(--accent-gold);">1º Lugar: <strong>${p1Voltas} voltas</strong></span>
+                                    <span style="font-size: calc(1.1rem * var(--pista-scale)); color: var(--accent-silver);">2º Lugar: <strong>${p2Voltas} voltas</strong></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="pista-stat-card">
-                            <span class="pista-stat-label">🚀 Velocidade Máxima Estimada</span>
-                            <span class="pista-stat-value">${velMax} km/h</span>
-                        </div>
-                        <div class="pista-stat-card">
-                            <span class="pista-stat-label">📊 Voltas Válidas Totais</span>
-                            <span class="pista-stat-value">${totalVoltasGeral} voltas</span>
-                        </div>
-                        <div class="pista-stat-card">
-                            <span class="pista-stat-label">⏱️ Média do Grid</span>
-                            <span class="pista-stat-value">${mediaGrid > 0 ? mediaGrid.toFixed(3) + 's' : '--'} (${velMedia} km/h)</span>
+                        <div class="card" style="padding: 16px;">
+                            <div class="card-header" style="font-size: calc(1.1rem * var(--pista-scale)); margin-bottom: 10px;">📋 Voltas Dadas por Cada Participante (Individual)</div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px;">
+                                ${listaVoltasIndividuaisHtml}
+                            </div>
                         </div>
                     </div>
                 `);
@@ -1050,15 +1052,17 @@
 
             if (showGraficos && ordenados.length > 0) {
                 htmlParts.push(`
-                    <div style="font-size: calc(1.1rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;">📈 EVOLUÇÃO DE RITMO & POSIÇÕES</div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 16px; width: 100%;">
-                        <div class="card" style="padding: 16px; width: 100%;">
-                            <div class="card-header">📈 Evolução de Ritmo (Volta a Volta)</div>
-                            <div class="chart-container" style="height: calc(320px * var(--pista-scale)); width: 100%;"><canvas id="pista-chart-ritmo"></canvas></div>
-                        </div>
-                        <div class="card" style="padding: 16px; width: 100%;">
-                            <div class="card-header">📊 Posição Volta a Volta</div>
-                            <div class="chart-container" style="height: calc(320px * var(--pista-scale)); width: 100%;"><canvas id="pista-chart-posicao"></canvas></div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="font-size: calc(1.2rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px;">📈 GRÁFICOS DE RITMO E POSIÇÃO</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div class="card" style="padding: 20px;">
+                                <div class="card-header" style="font-size: calc(1.1rem * var(--pista-scale));">📈 Evolução de Ritmo (Volta a Volta)</div>
+                                <div class="chart-container" style="height: calc(350px * var(--pista-scale));"><canvas id="pista-chart-ritmo"></canvas></div>
+                            </div>
+                            <div class="card" style="padding: 20px;">
+                                <div class="card-header" style="font-size: calc(1.1rem * var(--pista-scale));">📊 Posição Volta a Volta</div>
+                                <div class="chart-container" style="height: calc(350px * var(--pista-scale));"><canvas id="pista-chart-posicao"></canvas></div>
+                            </div>
                         </div>
                     </div>
                 `);
@@ -1067,9 +1071,11 @@
             if (showTabela && ordenados.length > 0) {
                 let tabelaHtml = gerarTabelaGeralSessao(ordenados);
                 htmlParts.push(`
-                    <div style="font-size: calc(1.1rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;">⏱️ TABELA GERAL VOLTA A VOLTA (COM GAPS)</div>
-                    <div class="card" style="padding: 16px; font-size: calc(1rem * var(--pista-scale)); width: 100%;">
-                        <div class="table-container" style="width: 100%; max-width: 100%; overflow-x: auto;">${tabelaHtml}</div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="font-size: calc(1.2rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1px;">⏱️ TABELA DE TEMPOS VOLTA A VOLTA COM GAPS</div>
+                        <div class="card" style="padding: 20px; font-size: calc(1.1rem * var(--pista-scale));">
+                            <div class="table-container" style="max-height: 60vh; overflow: auto;">${tabelaHtml}</div>
+                        </div>
                     </div>
                 `);
             }
@@ -1093,13 +1099,13 @@
                 return {
                     label: p.piloto,
                     data: Array.from({ length: maxVoltas }, (_, i) => { let l = p.laps ? p.laps[i] : null; return l ? (typeof l === 'object' ? l.tempo : l) : null; }),
-                    borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true
+                    borderColor: cor, backgroundColor: cor, borderWidth: 3, tension: 0.1, spanGaps: true
                 };
             });
 
             chartInstances.push(new Chart(canvasEl.getContext('2d'), {
                 type: 'line', data: { labels, datasets },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3' } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 14 } } } } }
             }));
         }
 
@@ -1127,15 +1133,15 @@
                     let pos = mapaVoltaPilotos.findIndex(item => item.piloto === p.piloto);
                     posicoesVolta.push(pos !== -1 ? pos + 1 : null);
                 }
-                return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true };
+                return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 3, tension: 0.1, spanGaps: true };
             });
 
             chartInstances.push(new Chart(canvasEl.getContext('2d'), {
                 type: 'line', data: { labels, datasets },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#d0d7e3' } } },
-                    scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
+                    plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 14 } } } },
+                    scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1, font: { size: 14 } } }, x: { ticks: { font: { size: 14 } } } }
                 }
             }));
         }
