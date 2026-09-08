@@ -133,6 +133,9 @@
         .pista-stat-label { font-size: calc(0.85rem * var(--pista-scale)); font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .pista-stat-value { font-size: calc(1.4rem * var(--pista-scale)); font-weight: 700; color: var(--accent-gold); }
 
+        .pista-charts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 100%; }
+        @media (max-width: 1200px) { .pista-charts-grid { grid-template-columns: 1fr; } }
+
         .config-panel { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
         .config-panel-title { font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-card); padding-bottom: 6px; }
         
@@ -296,6 +299,7 @@
                     <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
                         <label class="checkbox-item"><input type="checkbox" id="pista-mod-podium" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Pódio (1º, 2º, 3º lugar)</label>
                         <label class="checkbox-item"><input type="checkbox" id="pista-mod-stats" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Estatísticas (Melhor volta, média, voltas)</label>
+                        <label class="checkbox-item"><input type="checkbox" id="pista-mod-graficos" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Gráficos (Ritmo e Posição Lado a Lado)</label>
                         <label class="checkbox-item"><input type="checkbox" id="pista-mod-tabela" checked style="width: 16px; height: 16px; accent-color: var(--accent-gold);"> Exibir Tabela de Tempos Volta a Volta</label>
                     </div>
                 </div>
@@ -755,6 +759,7 @@
         let comprasColetivasCache = {};
 
         let chartInstances = [];
+        let pistaChartInstances = [];
         let pilotosMetadadosCache = {};
         let mesclagensCache = {};
         let campeonatoAtivoKey = null;
@@ -960,6 +965,7 @@
             let ordenados = ordenarParticipantesBateria(dadosSessao);
             let showPodium = document.getElementById('pista-mod-podium')?.checked ?? true;
             let showStats = document.getElementById('pista-mod-stats')?.checked ?? true;
+            let showGraficos = document.getElementById('pista-mod-graficos')?.checked ?? true;
             let showTabela = document.getElementById('pista-mod-tabela')?.checked ?? true;
 
             let htmlParts = [];
@@ -1013,7 +1019,7 @@
                 });
 
                 let mediaGrid = qtdTempos > 0 ? somaTempos / qtdTempos : 0;
-                let velMax = melhorVoltaGeralVal < 999999 ? ((26 / melhorVoltaGeralVal) * 3.6 * 28).toFixed(1) : "0.0";
+                let velMax = melhorVoltaGeralVal < 999999 ? ((26 / melhorVoltaGeral) * 3.6 * 28).toFixed(1) : "0.0";
                 let velMedia = mediaGrid > 0 ? ((26 / mediaGrid) * 3.6 * 28).toFixed(1) : "0.0";
 
                 htmlParts.push(`
@@ -1039,6 +1045,22 @@
                 `);
             }
 
+            if (showGraficos && ordenados.length > 0) {
+                htmlParts.push(`
+                    <div style="font-size: calc(1.1rem * var(--pista-scale)); font-weight: 700; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;">📈 GRÁFICOS DE DESEMPENHO</div>
+                    <div class="pista-charts-grid">
+                        <div class="card" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 16px; margin-bottom: 0;">
+                            <div class="card-header" style="font-size: calc(0.9rem * var(--pista-scale));">📈 Evolução de Ritmo</div>
+                            <div class="chart-container" style="height: calc(280px * var(--pista-scale));"><canvas id="pista-chart-ritmo"></canvas></div>
+                        </div>
+                        <div class="card" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 16px; margin-bottom: 0;">
+                            <div class="card-header" style="font-size: calc(0.9rem * var(--pista-scale));">📊 Posição Volta a Volta</div>
+                            <div class="chart-container" style="height: calc(280px * var(--pista-scale));"><canvas id="pista-chart-posicao"></canvas></div>
+                        </div>
+                    </div>
+                `);
+            }
+
             if (showTabela && ordenados.length > 0) {
                 let tabelaHtml = gerarTabelaGeralSessao(ordenados);
                 htmlParts.push(`
@@ -1050,6 +1072,70 @@
             }
 
             conteudoEl.innerHTML = htmlParts.join('');
+
+            if (showGraficos && ordenados.length > 0) {
+                setTimeout(() => {
+                    renderizarGraficosTelaoPista(ordenados);
+                }, 50);
+            }
+        }
+
+        function renderizarGraficosTelaoPista(ordenados) {
+            pistaChartInstances.forEach(c => c.destroy());
+            pistaChartInstances = [];
+
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
+
+            // Gráfico de Ritmo
+            let canvasRitmo = document.getElementById('pista-chart-ritmo');
+            if (canvasRitmo) {
+                let datasetsRitmo = ordenados.map((p, idx) => {
+                    let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
+                    return {
+                        label: p.piloto,
+                        data: Array.from({ length: maxVoltas }, (_, i) => { let l = p.laps ? p.laps[i] : null; return l ? (typeof l === 'object' ? l.tempo : l) : null; }),
+                        borderColor: cor, backgroundColor: cor, borderWidth: 3, tension: 0.1, spanGaps: true
+                    };
+                });
+                pistaChartInstances.push(new Chart(canvasRitmo.getContext('2d'), {
+                    type: 'line', data: { labels, datasets: datasetsRitmo },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 14 } } } }, scales: { x: { ticks: { color: '#8492a6' } }, y: { ticks: { color: '#8492a6' } } } }
+                }));
+            }
+
+            // Gráfico de Posição
+            let canvasPos = document.getElementById('pista-chart-posicao');
+            if (canvasPos) {
+                let datasetsPos = ordenados.map((p, idx) => {
+                    let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
+                    let posicoesVolta = [];
+                    for (let v = 0; v < maxVoltas; v++) {
+                        let mapaVoltaPilotos = [];
+                        ordenados.forEach(pilotoObj => {
+                            let somaTemp = 0, valido = true;
+                            for (let j = 0; j <= v; j++) {
+                                let l = pilotoObj.laps ? pilotoObj.laps[j] : null;
+                                if (l === undefined || l === null || l <= 0) { valido = false; break; }
+                                somaTemp += (typeof l === 'object' ? l.tempo : l);
+                            }
+                            if (valido) mapaVoltaPilotos.push({ piloto: pilotoObj.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
+                        });
+                        mapaVoltaPilotos.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
+                        let pos = mapaVoltaPilotos.findIndex(item => item.piloto === p.piloto);
+                        posicoesVolta.push(pos !== -1 ? pos + 1 : null);
+                    }
+                    return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 3, tension: 0.1, spanGaps: true };
+                });
+                pistaChartInstances.push(new Chart(canvasPos.getContext('2d'), {
+                    type: 'line', data: { labels, datasets: datasetsPos },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 14 } } } },
+                        scales: { x: { ticks: { color: '#8492a6' } }, y: { reverse: true, min: 1, ticks: { stepSize: 1, color: '#8492a6' } } }
+                    }
+                }));
+            }
         }
 
         window.abrirModalAcessibilidade = function() {
@@ -1085,10 +1171,6 @@
 
         window.fecharModalAdmin = function() {
             document.getElementById('admin-modal').style.display = 'none';
-        };
-
-        window.fecharModalConfigPista = function() {
-            document.getElementById('pista-config-modal').style.display = 'none';
         };
 
         window.fazerLoginAdmin = function() {
