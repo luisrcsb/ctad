@@ -64,16 +64,8 @@
         }
         input[type=number] { -moz-appearance: textfield; }
 
-        .dashboard-container { width: 100%; min-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 0 4px; }
+        .dashboard-container { width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 0 4px; }
         .dashboard-gestao-grid { display: grid; grid-template-columns: repeat(2, minmax(400px, 1fr)); gap: 12px; }
-
-        body.responsivo-ativo { overflow-x: hidden; }
-        body.responsivo-ativo .dashboard-container { min-width: 100%; max-width: 100%; }
-        body.responsivo-ativo .dashboard-gestao-grid { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
-
-        @media (max-width: 768px) {
-            body.responsivo-ativo .dashboard-gestao-grid { grid-template-columns: 1fr; }
-        }
 
         .header { display: flex; flex-direction: column; background: var(--bg-card); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-card); gap: 10px; }
         .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; }
@@ -718,7 +710,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.86.1 (CTAD - Correção Tela Branca)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.86.1 (CTAD - Formato Fixo Original)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -832,11 +824,6 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             if (db) {
-                db.ref('configuracoesGlobais/responsivo').on('value', snapshot => {
-                    let ativo = snapshot.val() === true;
-                    document.body.classList.toggle('responsivo-ativo', ativo);
-                });
-
                 db.ref('configuracoesGlobais/acessibilidadeHabilitada').on('value', snapshot => {
                     let ativo = snapshot.val() === true;
                     let btnAcess = document.getElementById('btn-accessibility');
@@ -1201,16 +1188,6 @@
             renderizarAdminModal();
         };
 
-        window.alternarResponsividadeGlobal = async function(checkbox) {
-            if (!db) return;
-            let ativo = checkbox.checked;
-            try {
-                await db.ref('configuracoesGlobais/responsivo').set(ativo);
-            } catch (err) {
-                alert("Erro ao salvar configuração: " + err.message);
-            }
-        };
-
         window.salvarNomePistaAdmin = async function() {
             if (!db) return;
             let val = document.getElementById('input-admin-nome-pista').value.trim();
@@ -1239,7 +1216,6 @@
                     </div>
                 `;
             } else {
-                let responsivoAtual = document.body.classList.contains('responsivo-ativo');
                 let acessibilidadeHabilitada = document.getElementById('btn-accessibility').style.display === 'inline-flex';
                 bodyEl.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
@@ -1258,10 +1234,6 @@
 
                     <div class="config-panel" style="margin-top: 4px;">
                         <div class="config-panel-title" style="color: var(--accent-gold);">⚙️ Configurações Gerais do Sistema</div>
-                        <label class="checkbox-item" style="font-weight: 600; font-size: 0.85rem; margin-top: 2px;">
-                            <input type="checkbox" id="check-responsivo-admin" ${responsivoAtual ? 'checked' : ''} onchange="alternarResponsividadeGlobal(this)" style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
-                            Ativar modo responsivo (Adapta o layout automaticamente para telas menores e dispositivos móveis)
-                        </label>
                         <label class="checkbox-item" style="font-weight: 600; font-size: 0.85rem; margin-top: 6px;">
                             <input type="checkbox" id="check-acessibilidade-admin" ${acessibilidadeHabilitada ? 'checked' : ''} onchange="alternarAcessibilidadeGlobal(this)" style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
                             Ativar Módulo de Acessibilidade no Header (Exibe o ícone de daltonismo e contraste)
