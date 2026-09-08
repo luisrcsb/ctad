@@ -1004,8 +1004,8 @@
                         if (t && !isNaN(t) && t > 0) {
                             somaTempos += t;
                             qtdTempos++;
-                            if (t < melhorVoltaGeral) {
-                                melhorVoltaGeral = t;
+                            if (t < melhorVoltaGeralVal) {
+                                melhorVoltaGeralVal = t;
                                 melhorPiloto = p.piloto;
                             }
                         }
@@ -1013,7 +1013,7 @@
                 });
 
                 let mediaGrid = qtdTempos > 0 ? somaTempos / qtdTempos : 0;
-                let velMax = melhorVoltaGeral < 999999 ? ((26 / melhorVoltaGeral) * 3.6 * 28).toFixed(1) : "0.0";
+                let velMax = melhorVoltaGeralVal < 999999 ? ((26 / melhorVoltaGeralVal) * 3.6 * 28).toFixed(1) : "0.0";
                 let velMedia = mediaGrid > 0 ? ((26 / mediaGrid) * 3.6 * 28).toFixed(1) : "0.0";
 
                 htmlParts.push(`
@@ -1021,7 +1021,7 @@
                     <div class="pista-stats-grid">
                         <div class="pista-stat-card">
                             <span class="pista-stat-label">⚡ Melhor Volta Geral</span>
-                            <span class="pista-stat-value">${melhorVoltaGeral < 999999 ? melhorVoltaGeral.toFixed(3) + 's' : '--'} <span style="font-size:0.75rem; color:var(--text-muted);">(${melhorPiloto})</span></span>
+                            <span class="pista-stat-value">${melhorVoltaGeralVal < 999999 ? melhorVoltaGeralVal.toFixed(3) + 's' : '--'} <span style="font-size:0.75rem; color:var(--text-muted);">(${melhorPiloto})</span></span>
                         </div>
                         <div class="pista-stat-card">
                             <span class="pista-stat-label">🚀 Velocidade Máxima Estimada</span>
