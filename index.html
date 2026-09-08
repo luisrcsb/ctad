@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Krathus Racing - Central de Telemetria</title>
+    <title>CTAAD - Central de Telemetria, Análise e Desempenho</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
@@ -75,9 +75,10 @@
             body.responsivo-ativo .dashboard-gestao-grid { grid-template-columns: 1fr; }
         }
 
-        .header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-card); flex-wrap: wrap; gap: 12px; }
+        .header { display: flex; flex-direction: column; background: var(--bg-card); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-card); gap: 10px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; }
         .brand-title h1 { font-size: 1.3rem; color: var(--text-title); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
-        .brand-title p { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+        .pista-display-banner { text-align: center; font-size: 0.9rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: var(--bg-input); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-card); width: 100%; }
 
         .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .btn { padding: 8px 14px; border-radius: 8px; border: none; font-weight: 600; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
@@ -390,7 +391,7 @@
                     <div class="upload-box">
                         <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">🔒 Criar Novo Campeonato</span>
                         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                            <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa Krathus 2026)">
+                            <input type="text" id="input-nome-campeonato" class="config-input" placeholder="Nome do Campeonato (Ex: Copa CTAAD 2026)">
                             <button class="btn-action-primary" onclick="criarCampeonatoProtegido()">Criar Campeonato</button>
                         </div>
                     </div>
@@ -629,15 +630,19 @@
     <!-- Estrutura Principal do Dashboard -->
     <div class="dashboard-container">
         <header class="header">
-            <div class="brand-title">
-                <h1>🏁 KRATHUS RACING</h1>
-                <p>Central de Telemetria e Análise de Desempenho</p>
+            <div class="header-top">
+                <div class="brand-title">
+                    <h1>🏁 CTAAD - Central de Telemetria, Análise e Desempenho</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-pista-trigger" onclick="abrirModalConfigPista()">🏁 Modo Pista (Telão)</button>
+                    <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
+                    <button class="btn btn-admin-trigger" onclick="abrirModalAdmin()">🔐 Administração</button>
+                    <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
+                </div>
             </div>
-            <div class="header-actions">
-                <button class="btn btn-pista-trigger" onclick="abrirModalConfigPista()">🏁 Modo Pista (Telão)</button>
-                <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
-                <button class="btn btn-admin-trigger" onclick="abrirModalAdmin()">🔐 Administração</button>
-                <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
+            <div id="display-nome-pista" class="pista-display-banner">
+                🏁 Pista: Não Definida
             </div>
         </header>
 
@@ -718,13 +723,13 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.85.0 (Modo Pista 4K Integrado)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.86.0 (CTAAD Rebranding & Pista Dinâmica)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
                 <img src="https://www.zround.com/wp-content/uploads/2020/05/zround_logo_web.png" alt="ZRound" class="footer-logo-img">
             </div>
-            <div class="footer-copyright">&copy; 2026 Krathus Racing - Central de Telemetria e Gestão. Todos os direitos reservados.</div>
+            <div class="footer-copyright">&copy; 2026 CTAAD - Central de Telemetria, Análise e Desempenho. Todos os direitos reservados.</div>
         </footer>
     </div>
 
@@ -844,6 +849,12 @@
                     }
                 });
 
+                db.ref('configuracoesGlobais/nomePista').on('value', snapshot => {
+                    let nomePista = snapshot.val() || "Não Definida";
+                    let el = document.getElementById('display-nome-pista');
+                    if (el) el.innerText = `🏁 Pista: ${nomePista}`;
+                });
+
                 db.ref('pilotosMetadados').on('value', snapshot => {
                     pilotosMetadadosCache = snapshot.val() || {};
                     gerarFiltrosDinamicos();
@@ -930,7 +941,6 @@
                 return;
             }
 
-            // Pega a bateria mais recente (primeira da lista ordenada)
             let ultimaBateria = listaJsonsCache[0];
             let nomeSessao = ultimaBateria.sessao || ultimaBateria.nomeArquivoOriginal || "Bateria Recente";
             let nomeFormatado = formatarNomeSessao(nomeSessao);
@@ -1105,6 +1115,17 @@
             }
         };
 
+        window.salvarNomePistaAdmin = async function() {
+            if (!db) return;
+            let val = document.getElementById('input-admin-nome-pista').value.trim();
+            try {
+                await db.ref('configuracoesGlobais/nomePista').set(val);
+                alert("Nome da pista salvo com sucesso!");
+            } catch (err) {
+                alert("Erro ao salvar nome da pista: " + err.message);
+            }
+        };
+
         function renderizarAdminModal() {
             let bodyEl = document.getElementById('admin-modal-body');
             if (!bodyEl) return;
@@ -1128,6 +1149,15 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
                         <span style="font-weight: 700; color: var(--accent-green); font-size: 0.82rem;">🟢 Sessão Administrativa Autenticada</span>
                         <button class="btn-action-danger" style="padding: 4px 10px; font-size: 0.75rem;" onclick="logoutAdmin()">Encerrar</button>
+                    </div>
+
+                    <div class="config-panel" style="margin-top: 4px;">
+                        <div class="config-panel-title" style="color: var(--accent-gold);">🏁 Identificação da Pista</div>
+                        <p style="font-size: 0.78rem; color: var(--text-muted);">Defina o nome da pista exibido centralizado logo abaixo do título principal do sistema:</p>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                            <input type="text" id="input-admin-nome-pista" class="config-input" placeholder="Ex: Autódromo Principal / Kartódromo Tabuleiro">
+                            <button class="btn-action-primary" onclick="salvarNomePistaAdmin()">Salvar Pista</button>
+                        </div>
                     </div>
 
                     <div class="config-panel" style="margin-top: 4px;">
@@ -2880,7 +2910,7 @@
             if (ordenados.length === 0) return;
 
             let textoPilotos = ordenados.map((p, idx) => `*${idx + 1}º: ${p.piloto}* — ${p.melhorVoltaTxt || '--'}`).join('\n');
-            let txt = `🏁 *KRATHUS RACING* 🏁\n🗓️ Sessão: *${nomeSessao}*\n\n${textoPilotos}\n\n🔎 ${linkPainel}`;
+            let txt = `🏁 *CTAAD - TELEMETRIA* 🏁\n🗓️ Sessão: *${nomeSessao}*\n\n${textoPilotos}\n\n🔎 ${linkPainel}`;
             if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => alert("Copiado!"));
         };
 
