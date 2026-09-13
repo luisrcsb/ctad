@@ -728,7 +728,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.90.0 (Visibilidade Dinâmica de Treino Completa)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.90.0 (Grids Sequenciais Condicionados)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -2500,26 +2500,46 @@
                 gridBaseInicial = inscritosArr;
             }
 
+            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
             let gridsHtml = '';
+            let gridsMostrados = 0;
+
             for (let g = 0; g < numProvasPrevistas; g++) {
                 let pilotoGridAtual = [];
                 let criterioTexto = "";
+                let podeMostrar = false;
+
                 if (g === 0) {
-                    pilotoGridAtual = gridBaseInicial;
-                    criterioTexto = usaGridTreino ? "Treino" : "Padrão";
+                    if (usaGridTreino) {
+                        if (camp.gridTreinoDados && camp.gridTreinoDados.length > 0) {
+                            pilotoGridAtual = camp.gridTreinoDados.map(d => d.piloto);
+                            criterioTexto = "Treino";
+                            podeMostrar = true;
+                        }
+                    } else {
+                        if (gridBaseInicial.length > 0) {
+                            pilotoGridAtual = gridBaseInicial;
+                            criterioTexto = "Padrão";
+                            podeMostrar = true;
+                        }
+                    }
                 } else {
-                    let provaAnteriorKey = provKeys[g - 1];
-                    if (provaAnteriorKey && provasSep[provaAnteriorKey] && provasSep[provaAnteriorKey].dados) {
-                        let ordenadosAnt = ordenarParticipantesBateria(provasSep[provaAnteriorKey].dados.filter(d => d.laps && d.laps.length > 0));
+                    let provaAnterior = provasArr[g - 1];
+                    if (provaAnterior && provaAnterior.dados && provaAnterior.dados.length > 0) {
+                        let ordenadosAnt = ordenarParticipantesBateria(provaAnterior.dados.filter(d => d.laps && d.laps.length > 0));
                         let ordemAnt = ordenadosAnt.map(d => d.piloto);
                         pilotoGridAtual = inverterAtivo ? [...ordemAnt].reverse() : ordemAnt;
                         criterioTexto = inverterAtivo ? "Invertido" : "Direto";
-                    } else {
-                        pilotoGridAtual = gridBaseInicial;
-                        criterioTexto = "Aguardando";
+                        podeMostrar = true;
                     }
                 }
 
+                // Interrompe a montagem e exibição dos próximos grids se os resultados pré-requisitos ainda não chegaram
+                if (!podeMostrar) {
+                    break;
+                }
+
+                gridsMostrados++;
                 let linhasGridHtml = pilotoGridAtual.length === 0 ? `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pilotos.</td></tr>` :
                     pilotoGridAtual.map((pilotoNome, idx) => `
                         <tr>
@@ -2541,11 +2561,16 @@
                     </div>
                 `;
             }
-            containerGrids.innerHTML = gridsHtml;
+
+            if (gridsMostrados === 0) {
+                let msgAguardando = usaGridTreino ? "Aguardando envio do arquivo de treino para gerar o Grid da Prova 1..." : "Aguardando inscrições de pilotos ou resultados para gerar os grids...";
+                containerGrids.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 16px;">${msgAguardando}</div>`;
+            } else {
+                containerGrids.innerHTML = gridsHtml;
+            }
 
             let theadEl = document.getElementById('zround-thead-classificacao');
             let tbodyClass = document.getElementById('zround-tabela-classificacao-geral');
-            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
             let ranking = calcularClassificacaoBancoSeparado(camp);
 
             let thProvasHtml = provasArr.map((arq, idx) => `<th style="text-align: center;">P${idx + 1}</th>`).join('');
@@ -2565,40 +2590,6 @@
                         </tr>`;
                 }).join('');
             }
-        }
-
-        function calcularClassificacaoBancoSeparado(camp) {
-            let provasSep = camp.bateriasBancoSeparado || {};
-            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
-            let conf = camp.configuracoes || {};
-            let tabelaPontosArr = conf.pontuacaoTabela || [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
-            let pilotoDados = {};
-
-            provasArr.forEach((arq, provaIndex) => {
-                if (arq && arq.dados && Array.isArray(arq.dados)) {
-                    let ordenadosBateria = ordenarParticipantesBateria(arq.dados.filter(d => d.laps && d.laps.length > 0));
-                    ordenadosBateria.forEach((d, index) => {
-                        let posNum = index + 1;
-                        let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
-                        if (pts > 0) {
-                            let pNome = d.piloto;
-                            let sKey = pNome.replace(/[.#$\/\[\]]/g, "_");
-                            if (mesclagensCache[sKey]) pNome = mesclagensCache[sKey];
-
-                            if (!pilotoDados[pNome]) pilotoDados[pNome] = { piloto: pNome, provas: new Array(provasArr.length).fill(0), pontos: 0 };
-                            pilotoDados[pNome].provas[provaIndex] = pts;
-                        }
-                    });
-                }
-            });
-
-            let ranking = Object.values(pilotoDados).map(p => {
-                while(p.provas.length < provasArr.length) p.provas.push(0);
-                p.pontos = p.provas.reduce((acc, val) => acc + val, 0);
-                return p;
-            });
-            ranking.sort((a, b) => b.pontos - a.pontos);
-            return ranking;
         }
 
         async function arquivoParaBase64(file) {
@@ -3332,151 +3323,20 @@
                                 <input type="text" id="comment-text-${safeKey}" class="comment-input-text" placeholder="Comentário..." onkeydown="if(event.key === 'Enter') enviarComentario('${batKey}')">
                                 <button class="btn-comment" onclick="enviarComentario('${batKey}')">Enviar</button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                     cardConteudoGrid.appendChild(cardComentarios);
                 }
 
                 blocoHtml.appendChild(cardConteudoGrid);
                 mainContainer.appendChild(blocoHtml);
 
-                if (modulosSel.includes('mod-grafico')) renderizarGraficoRitmo(batKey, safeKey, ordenados);
-                if (modulosSel.includes('mod-grafico-posicao')) renderizarGraficoPosicao(batKey, safeKey, ordenados);
-            });
-        }
-
-        function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
-            let maxVoltas = 0;
-            dadosSessao.forEach(d => { if (d.laps && d.laps.length > maxVoltas) maxVoltas = d.laps.length; });
-            let lapLogs = {}, posicoesAnterior = {};
-
-            for (let v = 0; v < maxVoltas; v++) {
-                let rankingVolta = [];
-                dadosSessao.forEach(p => {
-                    let somaTemp = 0, valido = true;
-                    for (let j = 0; j <= v; j++) {
-                        let l = p.laps ? p.laps[j] : null;
-                        if (l === undefined || l === null || isNaN(l) || l <= 0) { valido = false; break; }
-                        somaTemp += (typeof l === 'object' ? l.tempo : l);
-                    }
-                    if (valido) rankingVolta.push({ piloto: p.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
-                });
-                rankingVolta.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
-                
-                let mudancasNestaVolta = [];
-                rankingVolta.forEach((item, index) => {
-                    let posAtual = index + 1;
-                    if (posicoesAnterior[item.piloto] !== undefined) {
-                        let posAnt = posicoesAnterior[item.piloto];
-                        if (posAtual !== posAnt) {
-                            let tipo = posAtual < posAnt ? 'ganho' : 'perda';
-                            mudancasNestaVolta.push({
-                                piloto: item.piloto,
-                                posAnterior: posAnt,
-                                posAtual: posAtual,
-                                tipo: tipo
-                            });
-                        }
-                    }
-                    posicoesAnterior[item.piloto] = posAtual;
-                });
-
-                if (mudancasNestaVolta.length > 0) {
-                    lapLogs[v + 1] = mudancasNestaVolta;
+                if (modulosSel.includes('mod-grafico') && document.getElementById(`chart-ritmo-${safeKey}`)) {
+                    renderizarGraficoRitmoPersonalizado(`chart-ritmo-${safeKey}`, ordenados);
                 }
-            }
-            return lapLogs;
-        }
-
-        function gerarLaudoTecnicoSessao(ordenados) {
-            return ordenados.map((p, idx) => `
-                <div class="analysis-section-block">
-                    <div class="analysis-section-title">🏎️ ${idx + 1}º - <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p.piloto)}')">${escapeHtml(p.piloto)}</a></div>
-                    <div class="analysis-section-content">Melhor volta: <strong>${p.melhorVoltaTxt}</strong> | Média: <strong>${p.mediaTxt}</strong> (${p.voltasTotais}v)</div>
-                </div>
-            `).join('');
-        }
-
-        function gerarTabelaGeralSessao(ordenados) {
-            if (!ordenados || ordenados.length === 0) return "<div>Sem dados.</div>";
-            
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.filter(l => l > 0).length : 0));
-            if (maxVoltas === 0) maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
-
-            let thVoltasHtml = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center; font-size: 0.7rem;">V${i + 1}</th>`).join('');
-
-            let driverData = ordenados.map(p => {
-                let laps = (p.laps || []).map(l => (l && typeof l === 'object') ? Number(l.tempo) : Number(l));
-                let validLaps = laps.filter(t => !isNaN(t) && t > 0);
-                let bestLap = validLaps.length > 0 ? Math.min(...validLaps) : Infinity;
-                let totalTime = validLaps.reduce((acc, t) => acc + t, 0);
-                return { piloto: p.piloto, laps: laps, validLaps: validLaps, bestLap: bestLap, totalTime: totalTime, totalVoltas: validLaps.length };
-            });
-
-            driverData.sort((a, b) => {
-                if (a.totalVoltas !== b.totalVoltas) return b.totalVoltas - a.totalVoltas;
-                return a.totalTime - b.totalTime;
-            });
-
-            let melhorTempoGeral = Math.min(...driverData.map(d => d.bestLap).filter(t => isFinite(t)));
-
-            let linhasHtml = driverData.map((d, index) => {
-                let voltasCelulas = '';
-                let acumulado = 0;
-                for (let i = 0; i < maxVoltas; i++) {
-                    let t = d.laps[i];
-                    if (t !== undefined && !isNaN(t) && t > 0) {
-                        acumulado += t;
-                        let isBest = (t === d.bestLap);
-                        let corEstilo = isBest ? 'color: var(--accent-green); font-weight: bold;' : 'color: var(--text-main);';
-                        voltasCelulas += `<td style="text-align: center; ${corEstilo}">${t.toFixed(3)}</td>`;
-                    } else {
-                        voltasCelulas += `<td style="text-align: center; color: var(--text-muted);">-</td>`;
-                    }
+                if (modulosSel.includes('mod-grafico-posicao') && document.getElementById(`chart-posicao-${safeKey}`)) {
+                    renderizarGraficoPosicaoPersonalizado(`chart-posicao-${safeKey}`, ordenados);
                 }
-
-                let gapTxt = '-';
-                if (index > 0) {
-                    let diffVoltas = driverData[0].totalVoltas - d.totalVoltas;
-                    if (diffVoltas > 0) {
-                        gapTxt = `+${diffVoltas} v`;
-                    } else {
-                        let diffTempo = d.totalTime - driverData[0].totalTime;
-                        gapTxt = `+${diffTempo.toFixed(3)}s`;
-                    }
-                }
-
-                return `
-                    <tr>
-                        <td><span class="pos-badge">${index + 1}º</span></td>
-                        <td><strong>${escapeHtml(d.piloto)}</strong></td>
-                        <td style="text-align: center; font-weight: bold; color: var(--accent-gold);">${d.totalVoltas}</td>
-                        <td style="text-align: center; font-weight: bold;">${d.totalTime > 0 ? d.totalTime.toFixed(3) + 's' : '-'}</td>
-                        <td style="text-align: center; color: var(--accent-green); font-weight: bold;">${isFinite(d.bestLap) ? d.bestLap.toFixed(3) + 's' : '-'}</td>
-                        <td style="text-align: center; color: var(--accent-gap); font-weight: 600;">${gapTxt}</td>
-                        ${voltasCelulas}
-                    </tr>
-                `;
-            }).join('');
-
-            return `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Pos</th>
-                            <th>Piloto</th>
-                            <th style="text-align: center;">Voltas</th>
-                            <th style="text-align: center;">Tempo Total</th>
-                            <th style="text-align: center;">Melhor Volta</th>
-                            <th style="text-align: center;">Gap</th>
-                            ${thVoltasHtml}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${linhasHtml}
-                    </tbody>
-                </table>
-            `;
+            });
         }
     </script>
 </body>
