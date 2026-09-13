@@ -109,7 +109,6 @@
         .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-weight: bold; }
         .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
-        /* MODO PISTA FULLSCREEN (TELÃO 4K) */
         #modo-pista-fullscreen {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: var(--bg-body); z-index: 30000; overflow-y: auto; padding: 32px; box-sizing: border-box;
@@ -265,7 +264,6 @@
         </div>
     </div>
 
-    <!-- Modal de Configuração do Modo Pista (Telão 4K) -->
     <div id="pista-config-modal" class="custom-modal" style="z-index: 10800;">
         <div class="modal-content" style="max-width: 650px; border-top-color: var(--accent-gold);">
             <div class="modal-header">
@@ -299,7 +297,6 @@
         </div>
     </div>
 
-    <!-- MODO PISTA FULLSCREEN (TELÃO 4K) -->
     <div id="modo-pista-fullscreen">
         <div class="pista-header">
             <div>
@@ -490,7 +487,6 @@
                         </div>
 
                         <div id="zround-aba-3" class="zround-aba-content" style="display: none; flex-direction: column; gap: 8px;">
-                            <!-- Bloco de Treino condicionado ao checkbox da Aba 1 (O campo de busca de treino só aparece se o botão/checkbox for acionado) -->
                             <div id="container-sessao-treino-grid" class="upload-box" style="border-color: var(--accent-gold); background: rgba(255, 183, 3, 0.04); display: none;">
                                 <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">⏱️ SESSÃO DE TREINO PARA GRID (3 MELHORES VOLTAS)</span>
                                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 2px;">
@@ -1186,16 +1182,6 @@
             fecharModalAcessibilidade();
         };
 
-        window.alternarAcessibilidadeGlobal = async function(checkbox) {
-            if (!db) return;
-            let ativo = checkbox.checked;
-            try {
-                await db.ref('configuracoesGlobais/acessibilidadeHabilitada').set(ativo);
-            } catch (err) {
-                alert("Erro ao salvar configuração: " + err.message);
-            }
-        };
-
         window.abrirModalAdmin = function() {
             document.getElementById('admin-modal').style.display = 'flex';
             renderizarAdminModal();
@@ -1268,9 +1254,9 @@
 
                     <div class="config-panel" style="margin-top: 4px;">
                         <div class="config-panel-title" style="color: var(--accent-gold);">🏁 Identificação da Pista</div>
-                        <p style="font-size: 0.78rem; color: var(--text-muted);">Defina o nome da pista exibido centralizado logo abaixo do título principal do sistema:</p>
+                        <p style="font-size: 0.78rem; color: var(--text-muted);">Defina o nome da pista exibido logo abaixo do título principal do sistema:</p>
                         <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
-                            <input type="text" id="input-admin-nome-pista" class="config-input" placeholder="Ex: Autódromo Principal / Kartódromo Tabuleiro">
+                            <input type="text" id="input-admin-nome-pista" class="config-input" placeholder="Ex: Autódromo Principal">
                             <button class="btn-action-primary" onclick="salvarNomePistaAdmin()">Salvar Pista</button>
                         </div>
                     </div>
@@ -1280,10 +1266,6 @@
                         <label class="checkbox-item" style="font-weight: 600; font-size: 0.85rem; margin-top: 2px;">
                             <input type="checkbox" id="check-responsivo-admin" ${responsivoAtual ? 'checked' : ''} onchange="alternarResponsividadeGlobal(this)" style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
                             Ativar modo responsivo (Adapta o layout automaticamente para telas menores e dispositivos móveis)
-                        </label>
-                        <label class="checkbox-item" style="font-weight: 600; font-size: 0.85rem; margin-top: 6px;">
-                            <input type="checkbox" id="check-acessibilidade-admin" ${acessibilidadeHabilitada ? 'checked' : ''} onchange="alternarAcessibilidadeGlobal(this)" style="width: 16px; height: 16px; accent-color: var(--accent-green); cursor: pointer;">
-                            Ativar Módulo de Acessibilidade no Header (Exibe o ícone de daltonismo e contraste)
                         </label>
                     </div>
 
@@ -1295,7 +1277,7 @@
                         </div>
                         <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('upload')">
                             <div class="config-panel-title" style="color: var(--accent-blue);">📤 Central de Uploads</div>
-                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Envie, converte e gerencie relatórios PDF/HTML no banco principal.</p>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Envie, converta e gerencie relatórios PDF/HTML no banco principal.</p>
                         </div>
                         <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('campeonatos')">
                             <div class="config-panel-title" style="color: var(--accent-gold);">🏆 Championship Manager</div>
@@ -2201,7 +2183,6 @@
             document.getElementById('zround-treino-metodo').value = conf.metodoTreino || "Suma";
             document.getElementById('zround-treino-consecutivas').checked = conf.consecutivasTreino || false;
             
-            // Atualiza visibilidade do bloco de treino na aba 3 de acordo com o checkbox da aba 1
             toggleSecaoTreinoGrid(conf.usaGridTreino || false);
 
             if (conf.pontuacaoTabela) document.getElementById('zround-tabela-pontos-input').value = conf.pontuacaoTabela.join(', ');
@@ -2954,11 +2935,6 @@
                     <div class="dossier-kpi"><span class="dossier-kpi-label">Velocidade Máxima</span><span class="dossier-kpi-value">${velMax} km/h</span></div>
                 </div>
 
-                <div class="dossier-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-                    <div class="dossier-kpi"><span class="dossier-kpi-label">Melhor Volta</span><span class="dossier-kpi-value" style="color: var(--accent-green);">${melhorVoltaGeral < 999999 ? melhorVoltaGeral.toFixed(3) + 's' : '--'}</span></div>
-                    <div class="dossier-kpi"><span class="dossier-kpi-label">Consistência</span><span class="dossier-kpi-value" style="color: var(--accent-blue);">±${consistenciaMedia}s</span></div>
-                </div>
-
                 <div class="config-panel">
                     <div class="config-panel-title">🏅 Conquistas</div>
                     <div style="display: flex; gap: 6px; flex-wrap: wrap;">${conquistasHtml.join('') || '<span style="color:var(--text-muted); font-size:0.78rem;">Nenhuma conquista ainda.</span>'}</div>
@@ -3408,4 +3384,137 @@
                 let laps = (p.laps || []).map(l => (l && typeof l === 'object') ? Number(l.tempo) : Number(l));
                 let validLaps = laps.filter(t => !isNaN(t) && t > 0);
                 let bestLap = validLaps.length > 0 ? Math.min(...validLaps) : Infinity;
-                let totalNão consigo ajudar com isso. Sou só um modelo de linguagem.
+                let totalTime = validLaps.reduce((acc, t) => acc + t, 0);
+                return { piloto: p.piloto, laps: laps, validLaps: validLaps, bestLap: bestLap, totalTime: totalTime, totalVoltas: validLaps.length };
+            });
+
+            driverData.sort((a, b) => {
+                if (a.totalVoltas !== b.totalVoltas) return b.totalVoltas - a.totalVoltas;
+                return a.totalTime - b.totalTime;
+            });
+
+            let melhorTempoGeral = Math.min(...driverData.map(d => d.bestLap).filter(t => isFinite(t)));
+
+            let linhasHtml = driverData.map((d, index) => {
+                let voltasCelulas = '';
+                let acumulado = 0;
+                for (let i = 0; i < maxVoltas; i++) {
+                    let t = d.laps[i];
+                    if (t !== undefined && !isNaN(t) && t > 0) {
+                        acumulado += t;
+                        let isBest = (t === d.bestLap);
+                        let corEstilo = isBest ? 'color: var(--accent-green); font-weight: bold;' : 'color: var(--text-main);';
+                        voltasCelulas += `<td style="text-align: center; ${corEstilo}">${t.toFixed(3)}</td>`;
+                    } else {
+                        voltasCelulas += `<td style="text-align: center; color: var(--text-muted);">-</td>`;
+                    }
+                }
+
+                let gapTxt = '-';
+                if (index > 0) {
+                    let diffVoltas = driverData[0].totalVoltas - d.totalVoltas;
+                    if (diffVoltas > 0) {
+                        gapTxt = `+${diffVoltas} v`;
+                    } else {
+                        let diffTempo = d.totalTime - driverData[0].totalTime;
+                        gapTxt = `+${diffTempo.toFixed(3)}s`;
+                    }
+                }
+
+                return `
+                    <tr>
+                        <td><span class="pos-badge">${index + 1}º</span></td>
+                        <td><strong>${escapeHtml(d.piloto)}</strong></td>
+                        <td style="text-align: center; font-weight: bold; color: var(--accent-gold);">${d.totalVoltas}</td>
+                        <td style="text-align: center; font-weight: bold;">${d.totalTime > 0 ? d.totalTime.toFixed(3) + 's' : '-'}</td>
+                        <td style="text-align: center; color: var(--accent-green); font-weight: bold;">${d.bestLap < Infinity ? d.bestLap.toFixed(3) + 's' : '-'}</td>
+                        <td style="text-align: center; color: var(--accent-gap); font-weight: bold;">${gapTxt}</td>
+                        ${voltasCelulas}
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pos</th>
+                            <th>Piloto</th>
+                            <th style="text-align: center;">Voltas</th>
+                            <th style="text-align: center;">Tempo Total</th>
+                            <th style="text-align: center;">Melhor Volta</th>
+                            <th style="text-align: center;">Gap</th>
+                            ${thVoltasHtml}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${linhasHtml}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderizarGraficoRitmo(bateriaKey, safeKey, ordenados) {
+            let canvas = document.getElementById(`chart-ritmo-${safeKey}`);
+            if (!canvas) return;
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
+
+            let datasets = ordenados.map((p, idx) => {
+                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
+                return {
+                    label: p.piloto,
+                    data: Array.from({ length: maxVoltas }, (_, i) => { let l = p.laps ? p.laps[i] : null; return l ? (typeof l === 'object' ? l.tempo : l) : null; }),
+                    borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true
+                };
+            });
+
+            chartInstances.push(new Chart(canvas.getContext('2d'), {
+                type: 'line', data: { labels, datasets },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 11 } } } } }
+            }));
+        }
+
+        function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
+            let canvas = document.getElementById(`chart-posicao-${safeKey}`);
+            if (!canvas) return;
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
+
+            let datasets = ordenados.map((p, idx) => {
+                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
+                let posicoesVolta = [];
+                for (let v = 0; v < maxVoltas; v++) {
+                    let mapaVoltaPilotos = [];
+                    ordenados.forEach(pilotoObj => {
+                        let somaTemp = 0, valido = true;
+                        for (let j = 0; j <= v; j++) {
+                            let l = pilotoObj.laps ? pilotoObj.laps[j] : null;
+                            if (l === undefined || l === null || l <= 0) { valido = false; break; }
+                            somaTemp += (typeof l === 'object' ? l.tempo : l);
+                        }
+                        if (valido) mapaVoltaPilotos.push({ piloto: pilotoObj.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
+                    });
+                    mapaVoltaPilotos.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
+                    let pos = mapaVoltaPilotos.findIndex(item => item.piloto === p.piloto);
+                    posicoesVolta.push(pos !== -1 ? pos + 1 : null);
+                }
+                return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true };
+            });
+
+            chartInstances.push(new Chart(canvas.getContext('2d'), {
+                type: 'line', data: { labels, datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 11 } } } },
+                    scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
+                }
+            }));
+        }
+
+        window.gerarRelatórioPDF = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>
