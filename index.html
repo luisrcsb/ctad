@@ -728,7 +728,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.91.0 (Timeline de Rastreio Integrada)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.92.0 (Rastreio Web Automático Integrado)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -1259,7 +1259,6 @@
                 `;
             } else {
                 let responsivoAtual = document.body.classList.contains('responsivo-ativo');
-                let acessibilidadeHabilitada = document.getElementById('btn-accessibility').style.display === 'inline-flex';
                 bodyEl.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
                         <span style="font-weight: 700; color: var(--accent-green); font-size: 0.82rem;">🟢 Sessão Administrativa Autenticada</span>
@@ -1637,6 +1636,52 @@
             }
         };
 
+        window.consultarRastreioAutomatico = async function(compraKey) {
+            let comp = comprasColetivasCache[compraKey];
+            let rastreioInput = document.getElementById('det-rastreio');
+            let codigo = rastreioInput ? rastreioInput.value.trim() : (comp ? comp.rastreio : "");
+
+            if (!codigo) {
+                alert("Preencha o código de rastreio antes de consultar.");
+                return;
+            }
+
+            let btnConsultar = document.getElementById('btn-consultar-rastreio');
+            if (btnConsultar) {
+                btnConsultar.innerText = "Consultando Web...";
+                btnConsultar.disabled = true;
+            }
+
+            try {
+                let url = `https://api.linketrack.com/track/json?user=teste&codigo=${encodeURIComponent(codigo)}`;
+                let response = await fetch(url);
+                if (!response.ok) throw new Error("Falha ao comunicar com o serviço de rastreio.");
+                
+                let data = await response.json();
+                if (data && data.eventos && Array.isArray(data.eventos)) {
+                    if (!comp.historicoRastreio) comp.historicoRastreio = [];
+                    comp.historicoRastreio = data.eventos.map((ev, idx) => ({
+                        id: "rastro_auto_" + idx + "_" + Date.now(),
+                        dataHora: `${ev.data} ${ev.hora}`,
+                        status: ev.status,
+                        local: ev.local || "Não informado"
+                    }));
+                    
+                    alert("Rastreio atualizado automaticamente com sucesso!");
+                    renderizarModalComprasColetivas();
+                } else {
+                    alert("Nenhum evento encontrado para este código de rastreio.");
+                }
+            } catch (err) {
+                alert("Erro na consulta automática: " + err.message + "\nVerifique se o código está correto ou tente novamente em instantes.");
+            } finally {
+                if (btnConsultar) {
+                    btnConsultar.innerText = "🔄 Buscar na Web";
+                    btnConsultar.disabled = false;
+                }
+            }
+        };
+
         window.adicionarItemRastreioLocal = function(compraKey) {
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
@@ -1965,16 +2010,19 @@
                         <div class="config-panel-title">5. Chave Pix / Rastreio & Histórico</div>
                         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
                             <input type="text" id="det-chave-pix" class="config-input" value="${escapeHtml(comp.chavePix || '')}" placeholder="Chave Pix Copia e Cola Global" style="font-size: 0.78rem;">
-                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem;" oninput="toggleSecaoRastreioVisibilidade(this.value)">
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem; flex: 1;" oninput="toggleSecaoRastreioVisibilidade(this.value)">
+                                <button class="btn-action-primary" id="btn-consultar-rastreio" style="background: #3a86ff; padding: 7px 10px; font-size: 0.72rem; font-weight: 700; white-space: nowrap;" onclick="consultarRastreioAutomatico('${compraGerenciandoKey}')">🔄 Buscar na Web</button>
+                            </div>
                         </div>
 
                         <div id="container-historico-rastreio" style="display: ${rastreioPreenchido ? 'flex' : 'none'}; flex-direction: column; gap: 8px; margin-top: 10px; border-top: 1px dashed var(--border-card); padding-top: 10px;">
-                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">📦 Timeline de Movimentações (Rastreio)</span>
+                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">📦 Timeline de Movimentações (Automática e Manual)</span>
                             
                             <div style="display: grid; grid-template-columns: 130px 1.5fr 1fr 75px; gap: 6px; align-items: center; background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card);">
                                 <input type="text" id="novo-rastro-data" class="config-input" value="${obterDataHoraAtualFormatada()}" placeholder="Data/Hora" style="font-size: 0.75rem;">
-                                <input type="text" id="novo-rastro-status" class="config-input" placeholder="Status (Ex: Saiu para entrega)" style="font-size: 0.75rem;">
-                                <input type="text" id="novo-rastro-local" class="config-input" placeholder="Local (Ex: Maceió - AL)" style="font-size: 0.75rem;">
+                                <input type="text" id="novo-rastro-status" class="config-input" placeholder="Status Manual" style="font-size: 0.75rem;">
+                                <input type="text" id="novo-rastro-local" class="config-input" placeholder="Local" style="font-size: 0.75rem;">
                                 <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 6px 8px; font-size: 0.72rem;" onclick="adicionarItemRastreioLocal('${compraGerenciandoKey}')">+ Adicionar</button>
                             </div>
 
@@ -3021,7 +3069,6 @@
             });
 
             let velMax = melhorVoltaGeral < 999999 ? ((26 / melhorVoltaGeral) * 3.6 * 28).toFixed(1) : "0.0";
-            let consistenciaMedia = totalSessoes > 0 ? (somaDesvios / totalSessoes).toFixed(3) : "0.000";
 
             let conquistasHtml = [];
             if (vitorias > 0) conquistasHtml.push(`<span class="session-podium-tag podium-gold">🏆 Vencedor (${vitorias}x)</span>`);
