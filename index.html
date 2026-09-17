@@ -728,7 +728,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.92.0 (Rastreio Web Automático Integrado)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.90.0 (Visibilidade Dinâmica de Treino Completa)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -783,16 +783,6 @@
             "Dj_Edgar": "Edgard Camilo (DJ)",
             "DJ": "Edgard Camilo (DJ)"
         };
-
-        function obterDataHoraAtualFormatada() {
-            let agora = new Date();
-            let dia = String(agora.getDate()).padStart(2, '0');
-            let mes = String(agora.getMonth() + 1).padStart(2, '0');
-            let ano = agora.getFullYear();
-            let hora = String(agora.getHours()).padStart(2, '0');
-            let min = String(agora.getMinutes()).padStart(2, '0');
-            return `${dia}/${mes}/${ano} ${hora}:${min}`;
-        }
 
         function formatarNomeSessao(sessaoStr) {
             if (!sessaoStr) return "Bateria";
@@ -1259,6 +1249,7 @@
                 `;
             } else {
                 let responsivoAtual = document.body.classList.contains('responsivo-ativo');
+                let acessibilidadeHabilitada = document.getElementById('btn-accessibility').style.display === 'inline-flex';
                 bodyEl.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
                         <span style="font-weight: 700; color: var(--accent-green); font-size: 0.82rem;">🟢 Sessão Administrativa Autenticada</span>
@@ -1545,7 +1536,7 @@
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set({
                     chave: compraKey, nome: item, precoUnitario: preco, qtdMinima: qtdMin, status: "EM ANDAMENTO / PENDENTE",
-                    entregue: false, rastreio: "", historicoRastreio: [], financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
+                    entregue: false, rastreio: "", financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
                     chavePix: "", itens: [{ imagem: "", descricao: item, link: "", valor: preco, qtd: 1, atribuidoA: "TODOS" }],
                     participantes: participantesObj
                 });
@@ -1626,94 +1617,6 @@
             } catch(err) { alert("Erro: " + err.message); }
         };
 
-        window.toggleSecaoRastreioVisibilidade = function(valorRastreio) {
-            let container = document.getElementById('container-historico-rastreio');
-            if (!container) return;
-            if (valorRastreio && valorRastreio.trim() !== "") {
-                container.style.display = 'flex';
-            } else {
-                container.style.display = 'none';
-            }
-        };
-
-        window.consultarRastreioAutomatico = async function(compraKey) {
-            let comp = comprasColetivasCache[compraKey];
-            let rastreioInput = document.getElementById('det-rastreio');
-            let codigo = rastreioInput ? rastreioInput.value.trim() : (comp ? comp.rastreio : "");
-
-            if (!codigo) {
-                alert("Preencha o código de rastreio antes de consultar.");
-                return;
-            }
-
-            let btnConsultar = document.getElementById('btn-consultar-rastreio');
-            if (btnConsultar) {
-                btnConsultar.innerText = "Consultando Web...";
-                btnConsultar.disabled = true;
-            }
-
-            try {
-                let url = `https://api.linketrack.com/track/json?user=teste&codigo=${encodeURIComponent(codigo)}`;
-                let response = await fetch(url);
-                if (!response.ok) throw new Error("Falha ao comunicar com o serviço de rastreio.");
-                
-                let data = await response.json();
-                if (data && data.eventos && Array.isArray(data.eventos)) {
-                    if (!comp.historicoRastreio) comp.historicoRastreio = [];
-                    comp.historicoRastreio = data.eventos.map((ev, idx) => ({
-                        id: "rastro_auto_" + idx + "_" + Date.now(),
-                        dataHora: `${ev.data} ${ev.hora}`,
-                        status: ev.status,
-                        local: ev.local || "Não informado"
-                    }));
-                    
-                    alert("Rastreio atualizado automaticamente com sucesso!");
-                    renderizarModalComprasColetivas();
-                } else {
-                    alert("Nenhum evento encontrado para este código de rastreio.");
-                }
-            } catch (err) {
-                alert("Erro na consulta automática: " + err.message + "\nVerifique se o código está correto ou tente novamente em instantes.");
-            } finally {
-                if (btnConsultar) {
-                    btnConsultar.innerText = "🔄 Buscar na Web";
-                    btnConsultar.disabled = false;
-                }
-            }
-        };
-
-        window.adicionarItemRastreioLocal = function(compraKey) {
-            let comp = comprasColetivasCache[compraKey];
-            if (!comp) return;
-            if (!comp.historicoRastreio) comp.historicoRastreio = [];
-
-            let dataHoraVal = document.getElementById('novo-rastro-data').value.trim() || obterDataHoraAtualFormatada();
-            let statusVal = document.getElementById('novo-rastro-status').value.trim();
-            let localVal = document.getElementById('novo-rastro-local').value.trim();
-
-            if (!statusVal) {
-                alert("Preencha a descrição do status da movimentação.");
-                return;
-            }
-
-            comp.historicoRastreio.push({
-                id: "rastro_" + Date.now(),
-                dataHora: dataHoraVal,
-                status: statusVal,
-                local: localVal || "Não informado"
-            });
-
-            renderizarModalComprasColetivas();
-        };
-
-        window.removerItemRastreioLocal = function(compraKey, itemId) {
-            let comp = comprasColetivasCache[compraKey];
-            if (!comp || !comp.historicoRastreio) return;
-
-            comp.historicoRastreio = comp.historicoRastreio.filter(item => item.id !== itemId);
-            renderizarModalComprasColetivas();
-        };
-
         window.salvarCompraGerenciada = async function(compraKey) {
             if (!db) return;
             let comp = comprasColetivasCache[compraKey];
@@ -1734,7 +1637,6 @@
 
             comp.chavePix = document.getElementById('det-chave-pix')?.value.trim() || "";
             comp.rastreio = document.getElementById('det-rastreio')?.value.trim() || "";
-            if (!comp.historicoRastreio) comp.historicoRastreio = [];
 
             let novasItens = [];
             document.querySelectorAll('.det-item-row').forEach(row => {
@@ -1914,24 +1816,6 @@
                     `;
                 }).join('');
 
-                if (!comp.historicoRastreio) comp.historicoRastreio = [];
-                let rastreioPreenchido = (comp.rastreio && comp.rastreio.trim() !== "");
-
-                let timelineItensHtml = comp.historicoRastreio.length === 0 ? 
-                    `<div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; padding: 6px;">Nenhum status de rastreio registrado.</div>` :
-                    [...comp.historicoRastreio].reverse().map((item, idx) => `
-                        <div class="timeline-entry-row" data-id="${item.id}" style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 4px; gap: 8px;">
-                            <div style="display: flex; flex-direction: column; gap: 2px; flex: 1;">
-                                <div style="display: flex; gap: 8px; align-items: center;">
-                                    <span style="font-size: 0.72rem; color: var(--accent-gold); font-weight: 700;">🕒 ${escapeHtml(item.dataHora)}</span>
-                                    <span style="font-size: 0.72rem; color: var(--accent-blue); font-weight: 600;">📍 ${escapeHtml(item.local)}</span>
-                                </div>
-                                <span style="font-size: 0.82rem; color: var(--text-main); font-weight: 500;">${escapeHtml(item.status)}</span>
-                            </div>
-                            <button class="btn-action-danger" style="padding: 3px 6px; font-size: 0.72rem;" onclick="removerItemRastreioLocal('${compraGerenciandoKey}', '${item.id}')">🗑️</button>
-                        </div>
-                    `).join('');
-
                 bodyEl.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card);">
                         <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent-gold);">Gerenciando: ${escapeHtml(comp.chave)}</span>
@@ -2007,28 +1891,10 @@
                     </div>
 
                     <div class="config-panel">
-                        <div class="config-panel-title">5. Chave Pix / Rastreio & Histórico</div>
+                        <div class="config-panel-title">5. Chave Pix / Rastreio</div>
                         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
                             <input type="text" id="det-chave-pix" class="config-input" value="${escapeHtml(comp.chavePix || '')}" placeholder="Chave Pix Copia e Cola Global" style="font-size: 0.78rem;">
-                            <div style="display: flex; gap: 6px; align-items: center;">
-                                <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem; flex: 1;" oninput="toggleSecaoRastreioVisibilidade(this.value)">
-                                <button class="btn-action-primary" id="btn-consultar-rastreio" style="background: #3a86ff; padding: 7px 10px; font-size: 0.72rem; font-weight: 700; white-space: nowrap;" onclick="consultarRastreioAutomatico('${compraGerenciandoKey}')">🔄 Buscar na Web</button>
-                            </div>
-                        </div>
-
-                        <div id="container-historico-rastreio" style="display: ${rastreioPreenchido ? 'flex' : 'none'}; flex-direction: column; gap: 8px; margin-top: 10px; border-top: 1px dashed var(--border-card); padding-top: 10px;">
-                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">📦 Timeline de Movimentações (Automática e Manual)</span>
-                            
-                            <div style="display: grid; grid-template-columns: 130px 1.5fr 1fr 75px; gap: 6px; align-items: center; background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card);">
-                                <input type="text" id="novo-rastro-data" class="config-input" value="${obterDataHoraAtualFormatada()}" placeholder="Data/Hora" style="font-size: 0.75rem;">
-                                <input type="text" id="novo-rastro-status" class="config-input" placeholder="Status Manual" style="font-size: 0.75rem;">
-                                <input type="text" id="novo-rastro-local" class="config-input" placeholder="Local" style="font-size: 0.75rem;">
-                                <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 6px 8px; font-size: 0.72rem;" onclick="adicionarItemRastreioLocal('${compraGerenciandoKey}')">+ Adicionar</button>
-                            </div>
-
-                            <div style="display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; margin-top: 4px;" id="lista-timeline-rastreio">
-                                ${timelineItensHtml}
-                            </div>
+                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem;">
                         </div>
                     </div>
 
@@ -2634,45 +2500,26 @@
                 gridBaseInicial = inscritosArr;
             }
 
-            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
             let gridsHtml = '';
-            let gridsMostrados = 0;
-
             for (let g = 0; g < numProvasPrevistas; g++) {
                 let pilotoGridAtual = [];
                 let criterioTexto = "";
-                let podeMostrar = false;
-
                 if (g === 0) {
-                    if (usaGridTreino) {
-                        if (camp.gridTreinoDados && camp.gridTreinoDados.length > 0) {
-                            pilotoGridAtual = camp.gridTreinoDados.map(d => d.piloto);
-                            criterioTexto = "Treino";
-                            podeMostrar = true;
-                        }
-                    } else {
-                        if (gridBaseInicial.length > 0) {
-                            pilotoGridAtual = gridBaseInicial;
-                            criterioTexto = "Padrão";
-                            podeMostrar = true;
-                        }
-                    }
+                    pilotoGridAtual = gridBaseInicial;
+                    criterioTexto = usaGridTreino ? "Treino" : "Padrão";
                 } else {
-                    let provaAnterior = provasArr[g - 1];
-                    if (provaAnterior && provaAnterior.dados && provaAnterior.dados.length > 0) {
-                        let ordenadosAnt = ordenarParticipantesBateria(provaAnterior.dados.filter(d => d.laps && d.laps.length > 0));
+                    let provaAnteriorKey = provKeys[g - 1];
+                    if (provaAnteriorKey && provasSep[provaAnteriorKey] && provasSep[provaAnteriorKey].dados) {
+                        let ordenadosAnt = ordenarParticipantesBateria(provasSep[provaAnteriorKey].dados.filter(d => d.laps && d.laps.length > 0));
                         let ordemAnt = ordenadosAnt.map(d => d.piloto);
                         pilotoGridAtual = inverterAtivo ? [...ordemAnt].reverse() : ordemAnt;
                         criterioTexto = inverterAtivo ? "Invertido" : "Direto";
-                        podeMostrar = true;
+                    } else {
+                        pilotoGridAtual = gridBaseInicial;
+                        criterioTexto = "Aguardando";
                     }
                 }
 
-                if (!podeMostrar) {
-                    break;
-                }
-
-                gridsMostrados++;
                 let linhasGridHtml = pilotoGridAtual.length === 0 ? `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pilotos.</td></tr>` :
                     pilotoGridAtual.map((pilotoNome, idx) => `
                         <tr>
@@ -2694,16 +2541,11 @@
                     </div>
                 `;
             }
-
-            if (gridsMostrados === 0) {
-                let msgAguardando = usaGridTreino ? "Aguardando envio do arquivo de treino para gerar o Grid da Prova 1..." : "Aguardando inscrições de pilotos ou resultados para gerar os grids...";
-                containerGrids.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 16px;">${msgAguardando}</div>`;
-            } else {
-                containerGrids.innerHTML = gridsHtml;
-            }
+            containerGrids.innerHTML = gridsHtml;
 
             let theadEl = document.getElementById('zround-thead-classificacao');
             let tbodyClass = document.getElementById('zround-tabela-classificacao-geral');
+            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
             let ranking = calcularClassificacaoBancoSeparado(camp);
 
             let thProvasHtml = provasArr.map((arq, idx) => `<th style="text-align: center;">P${idx + 1}</th>`).join('');
@@ -2723,6 +2565,40 @@
                         </tr>`;
                 }).join('');
             }
+        }
+
+        function calcularClassificacaoBancoSeparado(camp) {
+            let provasSep = camp.bateriasBancoSeparado || {};
+            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
+            let conf = camp.configuracoes || {};
+            let tabelaPontosArr = conf.pontuacaoTabela || [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
+            let pilotoDados = {};
+
+            provasArr.forEach((arq, provaIndex) => {
+                if (arq && arq.dados && Array.isArray(arq.dados)) {
+                    let ordenadosBateria = ordenarParticipantesBateria(arq.dados.filter(d => d.laps && d.laps.length > 0));
+                    ordenadosBateria.forEach((d, index) => {
+                        let posNum = index + 1;
+                        let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
+                        if (pts > 0) {
+                            let pNome = d.piloto;
+                            let sKey = pNome.replace(/[.#$\/\[\]]/g, "_");
+                            if (mesclagensCache[sKey]) pNome = mesclagensCache[sKey];
+
+                            if (!pilotoDados[pNome]) pilotoDados[pNome] = { piloto: pNome, provas: new Array(provasArr.length).fill(0), pontos: 0 };
+                            pilotoDados[pNome].provas[provaIndex] = pts;
+                        }
+                    });
+                }
+            });
+
+            let ranking = Object.values(pilotoDados).map(p => {
+                while(p.provas.length < provasArr.length) p.provas.push(0);
+                p.pontos = p.provas.reduce((acc, val) => acc + val, 0);
+                return p;
+            });
+            ranking.sort((a, b) => b.pontos - a.pontos);
+            return ranking;
         }
 
         async function arquivoParaBase64(file) {
@@ -3069,6 +2945,7 @@
             });
 
             let velMax = melhorVoltaGeral < 999999 ? ((26 / melhorVoltaGeral) * 3.6 * 28).toFixed(1) : "0.0";
+            let consistenciaMedia = totalSessoes > 0 ? (somaDesvios / totalSessoes).toFixed(3) : "0.000";
 
             let conquistasHtml = [];
             if (vitorias > 0) conquistasHtml.push(`<span class="session-podium-tag podium-gold">🏆 Vencedor (${vitorias}x)</span>`);
@@ -3455,20 +3332,151 @@
                                 <input type="text" id="comment-text-${safeKey}" class="comment-input-text" placeholder="Comentário..." onkeydown="if(event.key === 'Enter') enviarComentario('${batKey}')">
                                 <button class="btn-comment" onclick="enviarComentario('${batKey}')">Enviar</button>
                             </div>
-                        </div>`;
+                        </div>
+                    `;
                     cardConteudoGrid.appendChild(cardComentarios);
                 }
 
                 blocoHtml.appendChild(cardConteudoGrid);
                 mainContainer.appendChild(blocoHtml);
 
-                if (modulosSel.includes('mod-grafico') && document.getElementById(`chart-ritmo-${safeKey}`)) {
-                    renderizarGraficoRitmoPersonalizado(`chart-ritmo-${safeKey}`, ordenados);
-                }
-                if (modulosSel.includes('mod-grafico-posicao') && document.getElementById(`chart-posicao-${safeKey}`)) {
-                    renderizarGraficoPosicaoPersonalizado(`chart-posicao-${safeKey}`, ordenados);
-                }
+                if (modulosSel.includes('mod-grafico')) renderizarGraficoRitmo(batKey, safeKey, ordenados);
+                if (modulosSel.includes('mod-grafico-posicao')) renderizarGraficoPosicao(batKey, safeKey, ordenados);
             });
+        }
+
+        function calcularRelatorioUltrapassagens(ordenados, dadosSessao) {
+            let maxVoltas = 0;
+            dadosSessao.forEach(d => { if (d.laps && d.laps.length > maxVoltas) maxVoltas = d.laps.length; });
+            let lapLogs = {}, posicoesAnterior = {};
+
+            for (let v = 0; v < maxVoltas; v++) {
+                let rankingVolta = [];
+                dadosSessao.forEach(p => {
+                    let somaTemp = 0, valido = true;
+                    for (let j = 0; j <= v; j++) {
+                        let l = p.laps ? p.laps[j] : null;
+                        if (l === undefined || l === null || isNaN(l) || l <= 0) { valido = false; break; }
+                        somaTemp += (typeof l === 'object' ? l.tempo : l);
+                    }
+                    if (valido) rankingVolta.push({ piloto: p.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
+                });
+                rankingVolta.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
+                
+                let mudancasNestaVolta = [];
+                rankingVolta.forEach((item, index) => {
+                    let posAtual = index + 1;
+                    if (posicoesAnterior[item.piloto] !== undefined) {
+                        let posAnt = posicoesAnterior[item.piloto];
+                        if (posAtual !== posAnt) {
+                            let tipo = posAtual < posAnt ? 'ganho' : 'perda';
+                            mudancasNestaVolta.push({
+                                piloto: item.piloto,
+                                posAnterior: posAnt,
+                                posAtual: posAtual,
+                                tipo: tipo
+                            });
+                        }
+                    }
+                    posicoesAnterior[item.piloto] = posAtual;
+                });
+
+                if (mudancasNestaVolta.length > 0) {
+                    lapLogs[v + 1] = mudancasNestaVolta;
+                }
+            }
+            return lapLogs;
+        }
+
+        function gerarLaudoTecnicoSessao(ordenados) {
+            return ordenados.map((p, idx) => `
+                <div class="analysis-section-block">
+                    <div class="analysis-section-title">🏎️ ${idx + 1}º - <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p.piloto)}')">${escapeHtml(p.piloto)}</a></div>
+                    <div class="analysis-section-content">Melhor volta: <strong>${p.melhorVoltaTxt}</strong> | Média: <strong>${p.mediaTxt}</strong> (${p.voltasTotais}v)</div>
+                </div>
+            `).join('');
+        }
+
+        function gerarTabelaGeralSessao(ordenados) {
+            if (!ordenados || ordenados.length === 0) return "<div>Sem dados.</div>";
+            
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.filter(l => l > 0).length : 0));
+            if (maxVoltas === 0) maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+
+            let thVoltasHtml = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center; font-size: 0.7rem;">V${i + 1}</th>`).join('');
+
+            let driverData = ordenados.map(p => {
+                let laps = (p.laps || []).map(l => (l && typeof l === 'object') ? Number(l.tempo) : Number(l));
+                let validLaps = laps.filter(t => !isNaN(t) && t > 0);
+                let bestLap = validLaps.length > 0 ? Math.min(...validLaps) : Infinity;
+                let totalTime = validLaps.reduce((acc, t) => acc + t, 0);
+                return { piloto: p.piloto, laps: laps, validLaps: validLaps, bestLap: bestLap, totalTime: totalTime, totalVoltas: validLaps.length };
+            });
+
+            driverData.sort((a, b) => {
+                if (a.totalVoltas !== b.totalVoltas) return b.totalVoltas - a.totalVoltas;
+                return a.totalTime - b.totalTime;
+            });
+
+            let melhorTempoGeral = Math.min(...driverData.map(d => d.bestLap).filter(t => isFinite(t)));
+
+            let linhasHtml = driverData.map((d, index) => {
+                let voltasCelulas = '';
+                let acumulado = 0;
+                for (let i = 0; i < maxVoltas; i++) {
+                    let t = d.laps[i];
+                    if (t !== undefined && !isNaN(t) && t > 0) {
+                        acumulado += t;
+                        let isBest = (t === d.bestLap);
+                        let corEstilo = isBest ? 'color: var(--accent-green); font-weight: bold;' : 'color: var(--text-main);';
+                        voltasCelulas += `<td style="text-align: center; ${corEstilo}">${t.toFixed(3)}</td>`;
+                    } else {
+                        voltasCelulas += `<td style="text-align: center; color: var(--text-muted);">-</td>`;
+                    }
+                }
+
+                let gapTxt = '-';
+                if (index > 0) {
+                    let diffVoltas = driverData[0].totalVoltas - d.totalVoltas;
+                    if (diffVoltas > 0) {
+                        gapTxt = `+${diffVoltas} v`;
+                    } else {
+                        let diffTempo = d.totalTime - driverData[0].totalTime;
+                        gapTxt = `+${diffTempo.toFixed(3)}s`;
+                    }
+                }
+
+                return `
+                    <tr>
+                        <td><span class="pos-badge">${index + 1}º</span></td>
+                        <td><strong>${escapeHtml(d.piloto)}</strong></td>
+                        <td style="text-align: center; font-weight: bold; color: var(--accent-gold);">${d.totalVoltas}</td>
+                        <td style="text-align: center; font-weight: bold;">${d.totalTime > 0 ? d.totalTime.toFixed(3) + 's' : '-'}</td>
+                        <td style="text-align: center; color: var(--accent-green); font-weight: bold;">${isFinite(d.bestLap) ? d.bestLap.toFixed(3) + 's' : '-'}</td>
+                        <td style="text-align: center; color: var(--accent-gap); font-weight: 600;">${gapTxt}</td>
+                        ${voltasCelulas}
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pos</th>
+                            <th>Piloto</th>
+                            <th style="text-align: center;">Voltas</th>
+                            <th style="text-align: center;">Tempo Total</th>
+                            <th style="text-align: center;">Melhor Volta</th>
+                            <th style="text-align: center;">Gap</th>
+                            ${thVoltasHtml}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${linhasHtml}
+                    </tbody>
+                </table>
+            `;
         }
     </script>
 </body>
