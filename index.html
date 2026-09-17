@@ -728,7 +728,7 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.90.0 (Grids Sequenciais Condicionados)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span>📌 Versão Atual: <strong>v5.91.0 (Timeline de Rastreio Integrada)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -783,6 +783,16 @@
             "Dj_Edgar": "Edgard Camilo (DJ)",
             "DJ": "Edgard Camilo (DJ)"
         };
+
+        function obterDataHoraAtualFormatada() {
+            let agora = new Date();
+            let dia = String(agora.getDate()).padStart(2, '0');
+            let mes = String(agora.getMonth() + 1).padStart(2, '0');
+            let ano = agora.getFullYear();
+            let hora = String(agora.getHours()).padStart(2, '0');
+            let min = String(agora.getMinutes()).padStart(2, '0');
+            return `${dia}/${mes}/${ano} ${hora}:${min}`;
+        }
 
         function formatarNomeSessao(sessaoStr) {
             if (!sessaoStr) return "Bateria";
@@ -1536,7 +1546,7 @@
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set({
                     chave: compraKey, nome: item, precoUnitario: preco, qtdMinima: qtdMin, status: "EM ANDAMENTO / PENDENTE",
-                    entregue: false, rastreio: "", financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
+                    entregue: false, rastreio: "", historicoRastreio: [], financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
                     chavePix: "", itens: [{ imagem: "", descricao: item, link: "", valor: preco, qtd: 1, atribuidoA: "TODOS" }],
                     participantes: participantesObj
                 });
@@ -1617,6 +1627,48 @@
             } catch(err) { alert("Erro: " + err.message); }
         };
 
+        window.toggleSecaoRastreioVisibilidade = function(valorRastreio) {
+            let container = document.getElementById('container-historico-rastreio');
+            if (!container) return;
+            if (valorRastreio && valorRastreio.trim() !== "") {
+                container.style.display = 'flex';
+            } else {
+                container.style.display = 'none';
+            }
+        };
+
+        window.adicionarItemRastreioLocal = function(compraKey) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            if (!comp.historicoRastreio) comp.historicoRastreio = [];
+
+            let dataHoraVal = document.getElementById('novo-rastro-data').value.trim() || obterDataHoraAtualFormatada();
+            let statusVal = document.getElementById('novo-rastro-status').value.trim();
+            let localVal = document.getElementById('novo-rastro-local').value.trim();
+
+            if (!statusVal) {
+                alert("Preencha a descrição do status da movimentação.");
+                return;
+            }
+
+            comp.historicoRastreio.push({
+                id: "rastro_" + Date.now(),
+                dataHora: dataHoraVal,
+                status: statusVal,
+                local: localVal || "Não informado"
+            });
+
+            renderizarModalComprasColetivas();
+        };
+
+        window.removerItemRastreioLocal = function(compraKey, itemId) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp || !comp.historicoRastreio) return;
+
+            comp.historicoRastreio = comp.historicoRastreio.filter(item => item.id !== itemId);
+            renderizarModalComprasColetivas();
+        };
+
         window.salvarCompraGerenciada = async function(compraKey) {
             if (!db) return;
             let comp = comprasColetivasCache[compraKey];
@@ -1637,6 +1689,7 @@
 
             comp.chavePix = document.getElementById('det-chave-pix')?.value.trim() || "";
             comp.rastreio = document.getElementById('det-rastreio')?.value.trim() || "";
+            if (!comp.historicoRastreio) comp.historicoRastreio = [];
 
             let novasItens = [];
             document.querySelectorAll('.det-item-row').forEach(row => {
@@ -1816,6 +1869,24 @@
                     `;
                 }).join('');
 
+                if (!comp.historicoRastreio) comp.historicoRastreio = [];
+                let rastreioPreenchido = (comp.rastreio && comp.rastreio.trim() !== "");
+
+                let timelineItensHtml = comp.historicoRastreio.length === 0 ? 
+                    `<div style="font-size: 0.78rem; color: var(--text-muted); text-align: center; padding: 6px;">Nenhum status de rastreio registrado.</div>` :
+                    [...comp.historicoRastreio].reverse().map((item, idx) => `
+                        <div class="timeline-entry-row" data-id="${item.id}" style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 4px; gap: 8px;">
+                            <div style="display: flex; flex-direction: column; gap: 2px; flex: 1;">
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <span style="font-size: 0.72rem; color: var(--accent-gold); font-weight: 700;">🕒 ${escapeHtml(item.dataHora)}</span>
+                                    <span style="font-size: 0.72rem; color: var(--accent-blue); font-weight: 600;">📍 ${escapeHtml(item.local)}</span>
+                                </div>
+                                <span style="font-size: 0.82rem; color: var(--text-main); font-weight: 500;">${escapeHtml(item.status)}</span>
+                            </div>
+                            <button class="btn-action-danger" style="padding: 3px 6px; font-size: 0.72rem;" onclick="removerItemRastreioLocal('${compraGerenciandoKey}', '${item.id}')">🗑️</button>
+                        </div>
+                    `).join('');
+
                 bodyEl.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card);">
                         <span style="font-size: 0.85rem; font-weight: 700; color: var(--accent-gold);">Gerenciando: ${escapeHtml(comp.chave)}</span>
@@ -1891,10 +1962,25 @@
                     </div>
 
                     <div class="config-panel">
-                        <div class="config-panel-title">5. Chave Pix / Rastreio</div>
+                        <div class="config-panel-title">5. Chave Pix / Rastreio & Histórico</div>
                         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
                             <input type="text" id="det-chave-pix" class="config-input" value="${escapeHtml(comp.chavePix || '')}" placeholder="Chave Pix Copia e Cola Global" style="font-size: 0.78rem;">
-                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem;">
+                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem;" oninput="toggleSecaoRastreioVisibilidade(this.value)">
+                        </div>
+
+                        <div id="container-historico-rastreio" style="display: ${rastreioPreenchido ? 'flex' : 'none'}; flex-direction: column; gap: 8px; margin-top: 10px; border-top: 1px dashed var(--border-card); padding-top: 10px;">
+                            <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent-gold); text-transform: uppercase;">📦 Timeline de Movimentações (Rastreio)</span>
+                            
+                            <div style="display: grid; grid-template-columns: 130px 1.5fr 1fr 75px; gap: 6px; align-items: center; background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card);">
+                                <input type="text" id="novo-rastro-data" class="config-input" value="${obterDataHoraAtualFormatada()}" placeholder="Data/Hora" style="font-size: 0.75rem;">
+                                <input type="text" id="novo-rastro-status" class="config-input" placeholder="Status (Ex: Saiu para entrega)" style="font-size: 0.75rem;">
+                                <input type="text" id="novo-rastro-local" class="config-input" placeholder="Local (Ex: Maceió - AL)" style="font-size: 0.75rem;">
+                                <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 6px 8px; font-size: 0.72rem;" onclick="adicionarItemRastreioLocal('${compraGerenciandoKey}')">+ Adicionar</button>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 4px; max-height: 180px; overflow-y: auto; margin-top: 4px;" id="lista-timeline-rastreio">
+                                ${timelineItensHtml}
+                            </div>
                         </div>
                     </div>
 
@@ -2534,7 +2620,6 @@
                     }
                 }
 
-                // Interrompe a montagem e exibição dos próximos grids se os resultados pré-requisitos ainda não chegaram
                 if (!podeMostrar) {
                     break;
                 }
