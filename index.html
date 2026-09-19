@@ -108,7 +108,6 @@
         .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-weight: bold; }
         .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
-        /* MODO PISTA FULLSCREEN (TELÃO 4K) */
         #modo-pista-fullscreen {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: var(--bg-body); z-index: 30000; overflow-y: auto; padding: 32px; box-sizing: border-box;
@@ -213,7 +212,6 @@
         .footer-logo-img { height: 28px; width: auto; object-fit: contain; border-radius: 4px; padding: 2px 4px; background: #ffffff; }
         .footer-copyright { font-size: 0.8rem; color: var(--text-muted); text-align: center; border-top: 1px solid var(--border-card); padding-top: 8px; width: 100%; }
 
-        /* Estilos para o Histórico de Atualizações Estilo Steam */
         .version-badge-interactive {
             cursor: pointer;
             transition: all 0.2s ease;
@@ -327,7 +325,6 @@
         </filter>
     </svg>
 
-    <!-- Modal de Histórico de Atualizações (Estilo Steam) -->
     <div id="patch-notes-modal" class="custom-modal" style="z-index: 10900;">
         <div class="modal-content" style="max-width: 750px; border-top-color: var(--accent-blue);">
             <div class="modal-header">
@@ -371,7 +368,6 @@
         </div>
     </div>
 
-    <!-- Modal de Configuração do Modo Pista (Telão 4K) -->
     <div id="pista-config-modal" class="custom-modal" style="z-index: 10800;">
         <div class="modal-content" style="max-width: 650px; border-top-color: var(--accent-gold);">
             <div class="modal-header">
@@ -405,7 +401,6 @@
         </div>
     </div>
 
-    <!-- MODO PISTA FULLSCREEN (TELÃO 4K) -->
     <div id="modo-pista-fullscreen">
         <div class="pista-header">
             <div>
@@ -727,7 +722,6 @@
                     <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
                 </div>
             </div>
-            <!-- Elemento ajustado para exibir apenas o nome da pista estático, sem links ou subtítulos -->
             <div id="display-nome-pista" class="pista-display-banner">
                 🏁 Não Definida
             </div>
@@ -739,7 +733,10 @@
                     <div class="filter-group">
                         <div class="filter-group-header">
                             <label class="group-title">SESSÕES / BATERIAS</label>
-                            <button class="btn-text-action" onclick="limparSelecao('filter-bateria')">🗑️ Limpar</button>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn-text-action" onclick="selecionarTodasBaterias()">✅ Todas</button>
+                                <button class="btn-text-action" onclick="limparSelecao('filter-bateria')">🗑️ Limpar</button>
+                            </div>
                         </div>
                         <div class="checkbox-container" id="filtro-baterias-container"></div>
                     </div>
@@ -809,7 +806,7 @@
         <footer class="footer-container">
             <div class="footer-meta-info">
                 <span class="version-badge-interactive" onclick="abrirModalPatchNotes()" title="Clique para ver o histórico de atualizações">
-                    📌 Versão Atual: <strong style="color: var(--accent-gold);">v5.86.0 (CTAD Rebranding & Pista Dinâmica)</strong> 🔍 [Ver Histórico]
+                    📌 Versão Atual: <strong style="color: var(--accent-gold);">v5.86.1 (Seleção Inteligente & Botão Todas)</strong> 🔍 [Ver Histórico]
                 </span>
                 <span>•</span>
                 <span>🟢 Status: <strong>Ativo</strong></span>
@@ -851,8 +848,18 @@
         let campeonatoParticiparKey = null;
         let compraGerenciandoKey = null;
         let pilotoSendoConfigurado = null;
+        let ultimaBateriaTopoKeyCache = null;
 
         const historicoAtualizacoesDB = [
+            {
+                versao: "v5.86.1",
+                data: "19 de Setembro de 2026",
+                titulo: "Seleção Inteligente de Baterias & Botão Todas",
+                relevante: [
+                    { tipo: "novo", texto: "Adicionado botão 'Todas' para seleção rápida de todas as baterias nos filtros." },
+                    { tipo: "melhoria", texto: "Ajustada a dinâmica para selecionar automaticamente apenas a bateria mais recente no carregamento e em novos uploads." }
+                ]
+            },
             {
                 versao: "v5.86.0",
                 data: "19 de Setembro de 2026",
@@ -861,26 +868,6 @@
                     { tipo: "novo", texto: "Implementação do histórico de atualizações (Patch Notes) estilo Steam." },
                     { tipo: "novo", texto: "Modo Telão 4K reformulado do zero para exibição na pista com pódio dinâmico adaptativo." },
                     { tipo: "melhoria", texto: "Adição de escala de tamanho ajustável em tempo real para visualização a distância." }
-                ]
-            },
-            {
-                versao: "v5.75.2",
-                data: "28 de Agosto de 2026",
-                titulo: "Championship Manager & Compras Coletivas",
-                relevante: [
-                    { tipo: "novo", texto: "Lançamento do módulo de gestão de campeonatos com tabela de pontuação personalizável." },
-                    { tipo: "novo", texto: "Sistema integrado de compras coletivas com rateio automático e QR Code Pix." },
-                    { tipo: "correcao", texto: "Correção na leitura de tempos decimais em relatórios PDF exportados pelo ZRound." }
-                ]
-            },
-            {
-                versao: "v5.50.0",
-                data: "10 de Julho de 2026",
-                titulo: "Sincronização Firebase & Telemetria Avançada",
-                relevante: [
-                    { tipo: "novo", texto: "Integração em tempo real com Firebase Database para relatórios e comentários." },
-                    { tipo: "melhoria", texto: "Gráficos de evolução de ritmo e posição volta a volta otimizados com Chart.js." },
-                    { tipo: "melhoria", texto: "Adição de laudos técnicos automatizados para cada bateria." }
                 ]
             }
         ];
@@ -1014,7 +1001,6 @@
                     let nomePista = snapshot.val() || "Não Definida";
                     let el = document.getElementById('display-nome-pista');
                     if (el) {
-                        // Atualizado para exibir apenas o texto da pista sem links ou subtítulos
                         el.innerHTML = `🏁 ${escapeHtml(nomePista)}`;
                     }
                 });
@@ -2949,6 +2935,11 @@
             return consolidado;
         }
 
+        window.selecionarTodasBaterias = function() {
+            document.querySelectorAll('.filter-bateria').forEach(cb => cb.checked = true);
+            atualizarDashboard();
+        };
+
         function gerarFiltrosDinamicos() {
             const batContainer = document.getElementById('filtro-baterias-container');
             const pilContainer = document.getElementById('filtro-pilotos-container');
@@ -2972,15 +2963,27 @@
                 if (p && p.trim()) pilotosSet.add(mesclagensCache[p.replace(/[.#$\/\[\]]/g, "_")] || p.trim());
             });
 
+            let topKeyAtual = listaJsonsCache.length > 0 ? listaJsonsCache[0].firebaseKey : null;
+            let houveNovaBateria = topKeyAtual !== ultimaBateriaTopoKeyCache;
+            ultimaBateriaTopoKeyCache = topKeyAtual;
+
             let bateriasSelecionadasAntigas = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
+            let primeiraVezBat = bateriasSelecionadasAntigas.length === 0 || houveNovaBateria;
+
             let pilotosSelecionadosAntigos = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
-            let primeiraVezBat = bateriasSelecionadasAntigas.length === 0;
             let primeiraVezPil = pilotosSelecionadosAntigos.length === 0;
 
-            batContainer.innerHTML = listaJsonsCache.map(arq => {
+            batContainer.innerHTML = listaJsonsCache.map((arq, index) => {
                 let key = arq.firebaseKey;
                 let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
-                let marcado = (primeiraVezBat || bateriasSelecionadasAntigas.includes(key)) ? 'checked' : '';
+                
+                let marcado = '';
+                if (primeiraVezBat) {
+                    if (index === 0) marcado = 'checked';
+                } else {
+                    if (bateriasSelecionadasAntigas.includes(key)) marcado = 'checked';
+                }
+
                 return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(formatarNomeSessao(sessaoOriginal))}</label>`;
             }).join('');
 
@@ -3515,59 +3518,60 @@
             return `
                 <div class="analysis-section-block">
                     <span class="analysis-section-title">🏆 Destaque da Sessão</span>
-                    <span class="analysis-section-content">O piloto <strong>${escapeHtml(p1.piloto)}</strong> liderou a sessão completando <strong>${totalVoltasP1} voltas</strong>, com melhor marca de <strong>${p1.melhorVoltaTxt || '--'}</strong>.</span>
-                </div>
-                <div class="analysis-section-block" style="margin-top: 4px;">
-                    <span class="analysis-section-title">⚡ Análise de Ritmo e Consistência</span>
-                    <span class="analysis-section-content">A consistência média do grid manteve-se estável, com destaque para a estabilidade de tempo nas voltas centrais da bateria.</span>
+                    <span class="analysis-section-content">O piloto <strong>${escapeHtml(p1.piloto)}</strong> conquistou a 1ª posição com ${totalVoltasP1} voltas completadas e melhor volta em <strong style="color:var(--accent-green);">${p1.melhorVoltaTxt}</strong>.</span>
                 </div>
             `;
         }
 
         function gerarTabelaGeralSessao(ordenados) {
+            if (!ordenados || ordenados.length === 0) return "Sem dados.";
             let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
-            let thVoltas = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center;">V${i + 1}</th>`).join('');
+            let ths = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center;">V${i + 1}</th>`).join('');
 
-            let linhasHtml = ordenados.map((p, idx) => {
-                let colunasVoltas = Array.from({ length: maxVoltas }, (_, i) => {
-                    let l = p.laps ? p.laps[i] : null;
-                    if (l === null || l === undefined || l <= 0) return `<td style="text-align: center; color: var(--text-muted);">-</td>`;
-                    let tVal = typeof l === 'object' ? l.tempo : l;
-                    let tStr = tVal.toFixed(3).replace('.', ',') + 's';
-                    let corEstilo = (tVal === p.melhorVoltaVal) ? 'color: var(--accent-green); font-weight: 700;' : '';
-                    return `<td style="text-align: center; ${corEstilo}">${tStr}</td>`;
+            let rows = ordenados.map((p, idx) => {
+                let tempoLiderVolta = [];
+                for (let v = 0; v < maxVoltas; v++) {
+                    let minT = 999999;
+                    ordenados.forEach(o => {
+                        let l = o.laps ? o.laps[v] : null;
+                        let t = l ? (typeof l === 'object' ? l.tempo : l) : null;
+                        if (t && t > 0 && t < minT) minT = t;
+                    });
+                    tempoLiderVolta[v] = minT < 999999 ? minT : 0;
+                }
+
+                let tds = Array.from({ length: maxVoltas }, (_, v) => {
+                    let l = p.laps ? p.laps[v] : null;
+                    let t = l ? (typeof l === 'object' ? l.tempo : l) : null;
+                    if (!t || t <= 0) return `<td style="text-align: center; color: var(--text-muted);">-</td>`;
+                    
+                    let diff = t - tempoLiderVolta[v];
+                    let diffStr = v === 0 ? '' : (diff > 0.001 ? `+${diff.toFixed(3)}s` : 'LÍDER');
+                    let corEstilo = v === 0 ? 'color: var(--text-main);' : (diff <= 0.001 ? 'color: var(--accent-gold); font-weight: 700;' : 'color: var(--accent-gap); font-weight: 600;');
+                    
+                    return `<td style="text-align: center; ${corEstilo}">${t.toFixed(3)}<div style="font-size:0.65rem; color:var(--text-muted);">${diffStr}</div></td>`;
                 }).join('');
 
                 return `
                     <tr>
                         <td><span class="pos-badge">${idx + 1}º</span></td>
-                        <td><strong><a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p.piloto)}')">${escapeHtml(p.piloto)}</a></strong></td>
-                        <td style="color: var(--accent-gold); font-weight: 700;">${p.melhorVoltaTxt || '--'}</td>
-                        <td style="color: var(--text-muted);">${p.desvio || '±0,000s'}</td>
-                        ${colunasVoltas}
-                        <td style="text-align: right; color: var(--accent-green); font-weight: 700;">${(p.laps || []).length}v</td>
+                        <td><strong>${escapeHtml(p.piloto)}</strong></td>
+                        <td><span style="color: var(--accent-green); font-weight: 700;">${p.melhorVoltaTxt || '--'}</span></td>
+                        <td>${(p.laps || []).length}v</td>
+                        ${tds}
                     </tr>
                 `;
             }).join('');
 
             return `
                 <table>
-                    <thead>
-                        <tr>
-                            <th>Pos</th>
-                            <th>Piloto</th>
-                            <th>Melhor</th>
-                            <th>Desvio</th>
-                            ${thVoltas}
-                            <th style="text-align: right;">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>${linhasHtml}</tbody>
+                    <thead><tr><th>Pos</th><th>Piloto</th><th>Melhor</th><th>Voltas</th>${ths}</tr></thead>
+                    <tbody>${rows}</tbody>
                 </table>
             `;
         }
 
-        function renderizarGraficoRitmo(batKey, safeKey, ordenados) {
+        function renderizarGraficoRitmo(bateriaKey, safeKey, ordenados) {
             let canvasEl = document.getElementById(`chart-ritmo-${safeKey}`);
             if (!canvasEl) return;
             let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
@@ -3588,7 +3592,7 @@
             }));
         }
 
-        function renderizarGraficoPosicao(batKey, safeKey, ordenados) {
+        function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
             let canvasEl = document.getElementById(`chart-posicao-${safeKey}`);
             if (!canvasEl) return;
             let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
