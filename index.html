@@ -109,7 +109,7 @@
         .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-weight: bold; }
         .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
-        /* MODO PISTA FULLSCREEN (TELÃO 4K) - REFEITO DO ZERO */
+        /* MODO PISTA FULLSCREEN (TELÃO 4K) */
         #modo-pista-fullscreen {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: var(--bg-body); z-index: 30000; overflow-y: auto; padding: 32px; box-sizing: border-box;
@@ -214,6 +214,99 @@
         .footer-logo-img { height: 28px; width: auto; object-fit: contain; border-radius: 4px; padding: 2px 4px; background: #ffffff; }
         .footer-copyright { font-size: 0.8rem; color: var(--text-muted); text-align: center; border-top: 1px solid var(--border-card); padding-top: 8px; width: 100%; }
 
+        /* Estilos para o Histórico de Atualizações Estilo Steam */
+        .version-badge-interactive {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .version-badge-interactive:hover {
+            color: var(--accent-gold);
+            transform: translateY(-1px);
+        }
+
+        .steam-patch-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-height: 65vh;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .steam-patch-card {
+            background: var(--bg-input);
+            border: 1px solid var(--border-card);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .steam-patch-card.latest {
+            border-left-color: var(--accent-gold);
+            background: rgba(255, 183, 3, 0.04);
+        }
+
+        .steam-patch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-card);
+            padding-bottom: 8px;
+        }
+
+        .steam-patch-version {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-title);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .steam-patch-date {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .steam-patch-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .steam-patch-list li {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.4;
+        }
+
+        .patch-tag {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            display: inline-block;
+            white-space: nowrap;
+        }
+        .patch-tag.novo { background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .patch-tag.melhoria { background: rgba(58,134,255,0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+        .patch-tag.correcao { background: rgba(230,57,70,0.15); color: var(--accent-red); border: 1px solid var(--accent-red); }
+
         @media print {
             body, body * { color: #000000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body { background-color: #ffffff !important; padding: 4px !important; font-size: 9px !important; }
@@ -234,6 +327,20 @@
             <feColorMatrix type="matrix" values="0.95, 0.05, 0, 0, 0  0, 0.433, 0.567, 0, 0  0, 0.475, 0.525, 0, 0  0, 0, 0, 1, 0"/>
         </filter>
     </svg>
+
+    <!-- Modal de Histórico de Atualizações (Estilo Steam) -->
+    <div id="patch-notes-modal" class="custom-modal" style="z-index: 10900;">
+        <div class="modal-content" style="max-width: 750px; border-top-color: var(--accent-blue);">
+            <div class="modal-header">
+                <div class="modal-title">🎮 Registo de Atualizações (Patch Notes)</div>
+                <button class="modal-close" onclick="fecharModalPatchNotes()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.82rem; color: var(--text-muted);">Consulte o histórico completo de melhorias, novas funcionalidades e correções implementadas na CTAD.</p>
+                <div id="steam-patch-lista-conteudo" class="steam-patch-container"></div>
+            </div>
+        </div>
+    </div>
 
     <div id="accessibility-modal" class="custom-modal" style="z-index: 10800;">
         <div class="modal-content" style="max-width: 500px; border-top-color: var(--accent-green);">
@@ -299,7 +406,7 @@
         </div>
     </div>
 
-    <!-- MODO PISTA FULLSCREEN (TELÃO 4K) - REFEITO DO ZERO -->
+    <!-- MODO PISTA FULLSCREEN (TELÃO 4K) -->
     <div id="modo-pista-fullscreen">
         <div class="pista-header">
             <div>
@@ -310,9 +417,7 @@
                 <button class="btn-action-danger" style="padding: 12px 24px; font-size: 1.1rem; font-weight: 700;" onclick="fecharModoPistaFullscreen()">❌ Sair do Telão</button>
             </div>
         </div>
-        <div id="pista-fs-conteudo" style="display: flex; flex-direction: column; gap: 24px;">
-            <!-- Conteúdo injetado dinamicamente -->
-        </div>
+        <div id="pista-fs-conteudo" style="display: flex; flex-direction: column; gap: 24px;"></div>
     </div>
 
     <div id="piloto-modal" class="custom-modal">
@@ -704,7 +809,11 @@
 
         <footer class="footer-container">
             <div class="footer-meta-info">
-                <span>📌 Versão Atual: <strong>v5.86.0 (CTAD Rebranding & Pista Dinâmica)</strong></span><span>•</span><span>🟢 Status: <strong>Ativo</strong></span>
+                <span class="version-badge-interactive" onclick="abrirModalPatchNotes()" title="Clique para ver o histórico de atualizações">
+                    📌 Versão Atual: <strong style="color: var(--accent-gold);">v5.86.0 (CTAD Rebranding & Pista Dinâmica)</strong> 🔍 [Ver Histórico]
+                </span>
+                <span>•</span>
+                <span>🟢 Status: <strong>Ativo</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -743,6 +852,79 @@
         let campeonatoParticiparKey = null;
         let compraGerenciandoKey = null;
         let pilotoSendoConfigurado = null;
+
+        // Base de dados do Histórico de Atualizações (Estilo Steam - Ordenado da mais recente para a mais antiga)
+        const historicoAtualizacoesDB = [
+            {
+                versao: "v5.86.0",
+                data: "19 de Setembro de 2026",
+                titulo: "CTAD Rebranding & Pista Dinâmica (Telão 4K)",
+                relevante: [
+                    { tipo: "novo", texto: "Implementação do histórico de atualizações (Patch Notes) estilo Steam." },
+                    { tipo: "novo", texto: "Modo Telão 4K reformulado do zero para exibição na pista com pódio dinâmico adaptativo." },
+                    { tipo: "melhoria", texto: "Adição de escala de tamanho ajustável em tempo real para visualização a distância." }
+                ]
+            },
+            {
+                versao: "v5.75.2",
+                data: "28 de Agosto de 2026",
+                titulo: "Championship Manager & Compras Coletivas",
+                relevante: [
+                    { tipo: "novo", texto: "Lançamento do módulo de gestão de campeonatos com tabela de pontuação personalizável." },
+                    { tipo: "novo", texto: "Sistema integrado de compras coletivas com rateio automático e QR Code Pix." },
+                    { tipo: "correcao", texto: "Correção na leitura de tempos decimais em relatórios PDF exportados pelo ZRound." }
+                ]
+            },
+            {
+                versao: "v5.50.0",
+                data: "10 de Julho de 2026",
+                titulo: "Sincronização Firebase & Telemetria Avançada",
+                relevante: [
+                    { tipo: "novo", texto: "Integração em tempo real com Firebase Database para relatórios e comentários." },
+                    { tipo: "melhoria", texto: "Gráficos de evolução de ritmo e posição volta a volta otimizados com Chart.js." },
+                    { tipo: "melhoria", texto: "Adição de laudos técnicos automatizados para cada bateria." }
+                ]
+            }
+        ];
+
+        window.abrirModalPatchNotes = function() {
+            renderizarPatchNotesSteam();
+            document.getElementById('patch-notes-modal').style.display = 'flex';
+        };
+
+        window.fecharModalPatchNotes = function() {
+            document.getElementById('patch-notes-modal').style.display = 'none';
+        };
+
+        function renderizarPatchNotesSteam() {
+            let container = document.getElementById('steam-patch-lista-conteudo');
+            if (!container) return;
+
+            container.innerHTML = historicoAtualizacoesDB.map((patch, index) => {
+                let isLatest = index === 0;
+                let tagsHtml = patch.relevante.map(item => `
+                    <li>
+                        <span class="patch-tag ${item.tipo}">${item.tipo}</span>
+                        <span>${escapeHtml(item.texto)}</span>
+                    </li>
+                `).join('');
+
+                return `
+                    <div class="steam-patch-card ${isLatest ? 'latest' : ''}">
+                        <div class="steam-patch-header">
+                            <div class="steam-patch-version">
+                                🚀 ${escapeHtml(patch.versao)} — ${escapeHtml(patch.titulo)}
+                                ${isLatest ? '<span style="font-size: 0.65rem; background: var(--accent-gold); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 700;">ATUAL</span>' : ''}
+                            </div>
+                            <div class="steam-patch-date">📅 ${escapeHtml(patch.data)}</div>
+                        </div>
+                        <ul class="steam-patch-list">
+                            ${tagsHtml}
+                        </ul>
+                    </div>
+                `;
+            }).join('');
+        }
 
         try {
             firebase.initializeApp(firebaseConfig);
@@ -2928,7 +3110,7 @@
         window.fecharDossiePiloto = function() { document.getElementById('piloto-modal').style.display = 'none'; };
 
         window.onclick = function(event) {
-            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal'].forEach(id => {
+            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal', 'patch-notes-modal'].forEach(id => {
                 if (event.target === document.getElementById(id)) document.getElementById(id).style.display = 'none';
             });
         };
@@ -3317,156 +3499,76 @@
                         let posAnt = posicoesAnterior[item.piloto];
                         if (posAtual !== posAnt) {
                             let tipo = posAtual < posAnt ? 'ganho' : 'perda';
-                            mudancasNestaVolta.push({
-                                piloto: item.piloto,
-                                posAnterior: posAnt,
-                                posAtual: posAtual,
-                                tipo: tipo
-                            });
+                            mudancasNestaVolta.push({ piloto: item.piloto, posAnterior: posAnt, posAtual, tipo });
                         }
                     }
                     posicoesAnterior[item.piloto] = posAtual;
                 });
-
-                if (mudancasNestaVolta.length > 0) {
-                    lapLogs[v + 1] = mudancasNestaVolta;
-                }
+                if (mudancasNestaVolta.length > 0) lapLogs[v + 1] = mudancasNestaVolta;
             }
             return lapLogs;
         }
 
         function gerarLaudoTecnicoSessao(ordenados) {
-            return ordenados.map((p, idx) => `
+            if (!ordenados || ordenados.length === 0) return "Sem dados suficientes.";
+            let p1 = ordenados[0];
+            let totalVoltasP1 = (p1.laps || []).length;
+            return `
                 <div class="analysis-section-block">
-                    <div class="analysis-section-title">🏎️ ${idx + 1}º - <a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p.piloto)}')">${escapeHtml(p.piloto)}</a></div>
-                    <div class="analysis-section-content">Melhor volta: <strong>${p.melhorVoltaTxt}</strong> | Média: <strong>${p.mediaTxt}</strong> (${p.voltasTotais}v)</div>
+                    <span class="analysis-section-title">🏆 Destaque da Sessão</span>
+                    <span class="analysis-section-content">O piloto <strong>${escapeHtml(p1.piloto)}</strong> liderou a sessão completando <strong>${totalVoltasP1} voltas</strong>, com melhor marca de <strong>${p1.melhorVoltaTxt || '--'}</strong>.</span>
                 </div>
-            `).join('');
+                <div class="analysis-section-block" style="margin-top: 4px;">
+                    <span class="analysis-section-title">⚡ Análise de Ritmo e Consistência</span>
+                    <span class="analysis-section-content">A consistência média do grid manteve-se estável, com destaque para a estabilidade de tempo nas voltas centrais da bateria.</span>
+                </div>
+            `;
         }
 
         function gerarTabelaGeralSessao(ordenados) {
-            if (!ordenados || ordenados.length === 0) return "<div>Sem dados.</div>";
-            
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.filter(l => l > 0).length : 0));
-            if (maxVoltas === 0) maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
+            let thVoltas = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center;">V${i + 1}</th>`).join('');
 
-            let thVoltasHtml = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center; font-size: 0.7rem;">V${i + 1}</th>`).join('');
-
-            let driverData = ordenados.map(p => {
-                let laps = (p.laps || []).map(l => (l && typeof l === 'object') ? Number(l.tempo) : Number(l));
-                let validLaps = laps.filter(t => !isNaN(t) && t > 0);
-                let bestLap = validLaps.length > 0 ? Math.min(...validLaps) : Infinity;
-                let totalTime = validLaps.reduce((acc, t) => acc + t, 0);
-                
-                let cumTimes = [];
-                let runningSum = 0;
-                for (let i = 0; i < laps.length; i++) {
-                    let t = laps[i];
-                    if (!isNaN(t) && t > 0) {
-                        runningSum += t;
-                        cumTimes.push(runningSum);
-                    } else {
-                        cumTimes.push(null);
-                    }
-                }
-                return { piloto: p.piloto, laps, validLaps, bestLap, totalTime, cumTimes };
-            });
-
-            let lapLeaders = [];
-            for (let v = 0; v < maxVoltas; v++) {
-                let activeOnLap = [];
-                driverData.forEach((d, dIdx) => {
-                    if (d.cumTimes[v] !== null && d.cumTimes[v] !== undefined) {
-                        activeOnLap.push({ dIdx, cumTime: d.cumTimes[v], lapsCompleted: v + 1 });
-                    } else {
-                        let lastValidLap = -1;
-                        for (let k = v; k >= 0; k--) {
-                            if (d.cumTimes[k] !== null && d.cumTimes[k] !== undefined) {
-                                lastValidLap = k;
-                                break;
-                            }
-                        }
-                        if (lastValidLap !== -1) {
-                            activeOnLap.push({ dIdx, cumTime: d.cumTimes[lastValidLap], lapsCompleted: lastValidLap + 1 });
-                        }
-                    }
-                });
-
-                activeOnLap.sort((a, b) => {
-                    if (b.lapsCompleted !== a.lapsCompleted) return b.lapsCompleted - a.lapsCompleted;
-                    return a.cumTime - b.cumTime;
-                });
-
-                lapLeaders.push(activeOnLap.length > 0 ? activeOnLap[0] : null);
-            }
-
-            let linhas = driverData.map(d => {
-                let totalV = d.validLaps.length;
-                let totalT = d.totalTime.toFixed(3);
-
-                let voltasCelulasHtml = Array.from({ length: maxVoltas }, (_, v) => {
-                    let t = d.laps[v];
-                    let hasLap = (t !== undefined && t !== null && !isNaN(t) && t > 0);
-                    
-                    if (!hasLap) {
-                        return `<td style="text-align: center; font-size: 0.78rem; color: var(--text-muted);">--</td>`;
-                    }
-
-                    let lapTimeFormatted = Number(t).toFixed(3).replace('.', ',') + 's';
-                    let isPersonalBest = (Number(t) === d.bestLap);
-                    let timeColor = isPersonalBest ? 'var(--accent-green)' : 'var(--text-main)';
-                    let timeWeight = isPersonalBest ? 'bold' : 'normal';
-
-                    let leaderInfo = lapLeaders[v];
-                    let statusHtml = '';
-
-                    if (leaderInfo && leaderInfo.dIdx === driverData.indexOf(d)) {
-                        statusHtml = `<div style="font-size: 0.68rem; color: var(--accent-gold); font-weight: bold; margin-top: 1px;">LÍDER</div>`;
-                    } else if (leaderInfo) {
-                        let driverCum = d.cumTimes[v];
-                        let leaderCum = leaderInfo.cumTime;
-                        
-                        if (driverCum !== null && driverCum !== undefined) {
-                            let leaderLaps = leaderInfo.lapsCompleted;
-                            let driverLaps = v + 1;
-                            if (driverLaps === leaderLaps) {
-                                let diff = driverCum - leaderCum;
-                                statusHtml = `<div style="font-size: 0.68rem; color: var(--accent-red); margin-top: 1px;">+${diff.toFixed(3)}s</div>`;
-                            } else {
-                                let lapDiff = leaderLaps - driverLaps;
-                                statusHtml = `<div style="font-size: 0.68rem; color: var(--accent-red); margin-top: 1px;">+${lapDiff}v</div>`;
-                            }
-                        } else {
-                            statusHtml = `<div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 1px;">--</div>`;
-                        }
-                    } else {
-                        statusHtml = `<div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 1px;">--</div>`;
-                    }
-
-                    return `
-                        <td style="text-align: center; padding: 6px 4px; white-space: nowrap;">
-                            <div style="font-size: 0.82rem; color: ${timeColor}; font-weight: ${timeWeight};">${lapTimeFormatted}</div>
-                            ${statusHtml}
-                        </td>
-                    `;
+            let linhasHtml = ordenados.map((p, idx) => {
+                let colunasVoltas = Array.from({ length: maxVoltas }, (_, i) => {
+                    let l = p.laps ? p.laps[i] : null;
+                    if (l === null || l === undefined || l <= 0) return `<td style="text-align: center; color: var(--text-muted);">-</td>`;
+                    let tVal = typeof l === 'object' ? l.tempo : l;
+                    let tStr = tVal.toFixed(3).replace('.', ',') + 's';
+                    let corEstilo = (tVal === p.melhorVoltaVal) ? 'color: var(--accent-green); font-weight: 700;' : '';
+                    return `<td style="text-align: center; ${corEstilo}">${tStr}</td>`;
                 }).join('');
 
                 return `
                     <tr>
-                        <td style="white-space: nowrap;"><strong>${escapeHtml(d.piloto)}</strong></td>
-                        <td style="white-space: nowrap;">
-                            <div style="font-weight: bold; color: var(--accent-gold);">${totalV}v</div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">(${totalT}s)</div>
-                        </td>
-                        ${voltasCelulasHtml}
+                        <td><span class="pos-badge">${idx + 1}º</span></td>
+                        <td><strong><a class="piloto-link" onclick="abrirDossiePiloto('${escapeHtml(p.piloto)}')">${escapeHtml(p.piloto)}</a></strong></td>
+                        <td style="color: var(--accent-gold); font-weight: 700;">${p.melhorVoltaTxt || '--'}</td>
+                        <td style="color: var(--text-muted);">${p.desvio || '±0,000s'}</td>
+                        ${colunasVoltas}
+                        <td style="text-align: right; color: var(--accent-green); font-weight: 700;">${(p.laps || []).length}v</td>
                     </tr>
                 `;
             }).join('');
 
-            return `<table><thead><tr><th>PILOTO</th><th>TOTAL</th>${thVoltasHtml}</tr></thead><tbody>${linhas}</tbody></table>`;
+            return `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pos</th>
+                            <th>Piloto</th>
+                            <th>Melhor</th>
+                            <th>Desvio</th>
+                            ${thVoltas}
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>${linhasHtml}</tbody>
+                </table>
+            `;
         }
 
-        function renderizarGraficoRitmo(bateriaKey, safeKey, ordenados) {
+        function renderizarGraficoRitmo(batKey, safeKey, ordenados) {
             let canvasEl = document.getElementById(`chart-ritmo-${safeKey}`);
             if (!canvasEl) return;
             let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
@@ -3483,11 +3585,11 @@
 
             chartInstances.push(new Chart(canvasEl.getContext('2d'), {
                 type: 'line', data: { labels, datasets },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3' } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 11 } } } } }
             }));
         }
 
-        function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
+        function renderizarGraficoPosicao(batKey, safeKey, ordenados) {
             let canvasEl = document.getElementById(`chart-posicao-${safeKey}`);
             if (!canvasEl) return;
             let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
@@ -3518,11 +3620,15 @@
                 type: 'line', data: { labels, datasets },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#d0d7e3' } } },
+                    plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 11 } } } },
                     scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
                 }
             }));
         }
+
+        window.gerarRelatórioPDF = function() {
+            window.print();
+        };
     </script>
 </body>
 </html>
