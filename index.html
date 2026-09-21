@@ -806,7 +806,7 @@
         <footer class="footer-container">
             <div class="footer-meta-info">
                 <span class="version-badge-interactive" onclick="abrirModalPatchNotes()" title="Clique para ver o histórico de atualizações">
-                    📌 Versão Atual: <strong style="color: var(--accent-gold);">v5.86.1 (Seleção Inteligente & Botão Todas)</strong> 🔍 [Ver Histórico]
+                    📌 Versão Atual: <strong style="color: var(--accent-gold);">v5.86.2 (Tabela Geral Volta a Volta — Layout por Piloto)</strong> 🔍 [Ver Histórico]
                 </span>
                 <span>•</span>
                 <span>🟢 Status: <strong>Ativo</strong></span>
@@ -860,7 +860,29 @@
         let pilotoSendoConfigurado = null;
         let ultimaBateriaTopoKeyCache = null;
 
+        // ============================================================
+        // PATCH NOTES / HISTÓRICO DE ATUALIZAÇÕES
+        // ============================================================
+        // IMPORTANTE: esta é a fonte única do histórico.
+        // Sempre que uma nova versão for criada, basta acrescentar
+        // um objeto no início desta lista. A interface é renderizada
+        // automaticamente pelo renderizarPatchNotesSteam().
+        const VERSAO_ATUAL_SISTEMA = "v5.86.2";
+        const TITULO_VERSAO_ATUAL = "Tabela Geral Volta a Volta — Layout por Piloto";
+
         const historicoAtualizacoesDB = [
+            {
+                versao: "v5.86.2",
+                data: "21 de Setembro de 2026",
+                titulo: "Tabela Geral Volta a Volta — Layout por Piloto",
+                relevante: [
+                    { tipo: "novo", texto: "Tabela Geral Volta a Volta reorganizada para apresentar cada piloto em uma linha e cada volta em uma coluna." },
+                    { tipo: "novo", texto: "Identificação da melhor volta de cada piloto diretamente na tabela." },
+                    { tipo: "novo", texto: "Destaque em ouro para a melhor volta entre todos os pilotos da bateria." },
+                    { tipo: "melhoria", texto: "Gaps e líder passaram a ser exibidos dentro de cada volta, facilitando a leitura da evolução da bateria." },
+                    { tipo: "melhoria", texto: "Cabeçalho e identificação de piloto permanecem fixos durante a navegação horizontal da tabela." }
+                ]
+            },
             {
                 versao: "v5.86.1",
                 data: "19 de Setembro de 2026",
@@ -895,7 +917,11 @@
             let container = document.getElementById('steam-patch-lista-conteudo');
             if (!container) return;
 
-            container.innerHTML = historicoAtualizacoesDB.map((patch, index) => {
+            // A lista já é mantida da versão mais nova para a mais antiga.
+            // A cópia evita qualquer alteração acidental no array original.
+            const patchesOrdenados = [...historicoAtualizacoesDB];
+
+            container.innerHTML = patchesOrdenados.map((patch, index) => {
                 let isLatest = index === 0;
                 let tagsHtml = patch.relevante.map(item => `
                     <li>
@@ -3786,3 +3812,4 @@
     </script>
 </body>
 </html>
+
