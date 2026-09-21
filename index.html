@@ -328,8 +328,11 @@
     <div id="patch-notes-modal" class="custom-modal" style="z-index: 10900;">
         <div class="modal-content" style="max-width: 750px; border-top-color: var(--accent-blue);">
             <div class="modal-header">
-                <div class="modal-title">🎮 Registo de Atualizações (Patch Notes)</div>
-                <button class="modal-close" onclick="fecharModalPatchNotes()">&times;</button>
+                <div class="modal-title" style="flex: 1;">🎮 Registo de Atualizações (Patch Notes)</div>
+                <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                    <button type="button" onclick="copiarPatchNotesWhatsApp()" title="Copiar atualização para o WhatsApp" style="border:1px solid #25D366; background:rgba(37,211,102,0.12); color:#25D366; border-radius:8px; padding:7px 11px; font-weight:700; cursor:pointer; font-size:0.78rem; white-space:nowrap;">📋 Copiar</button>
+                    <button class="modal-close" onclick="fecharModalPatchNotes()">&times;</button>
+                </div>
             </div>
             <div class="modal-body">
                 <p style="font-size: 0.82rem; color: var(--text-muted);">Consulte o histórico completo de melhorias, novas funcionalidades e correções implementadas na CTAD.</p>
@@ -911,6 +914,66 @@
 
         window.fecharModalPatchNotes = function() {
             document.getElementById('patch-notes-modal').style.display = 'none';
+        };
+
+        // Copia o histórico de atualizações em formato pronto para WhatsApp.
+        // O texto termina com o endereço oficial do site para facilitar o acesso.
+        window.copiarPatchNotesWhatsApp = async function() {
+            const patches = Array.isArray(historicoAtualizacoesDB) ? historicoAtualizacoesDB : [];
+            if (patches.length === 0) {
+                alert('⚠️ Não há atualizações registradas para copiar.');
+                return;
+            }
+
+            const linhas = [
+                '🏎️ *KRATHUS RACING - CENTRAL DE TELEMETRIA*',
+                '🎮 *REGISTO DE ATUALIZAÇÕES (PATCH NOTES)*',
+                '',
+                `📌 *Versão atual: ${VERSAO_ATUAL_SISTEMA || patches[0].versao}*`,
+                ''
+            ];
+
+            patches.forEach((patch, index) => {
+                linhas.push(`${index === 0 ? '🚀' : '📦'} *${patch.versao} — ${patch.titulo}*`);
+                if (patch.data) linhas.push(`📅 ${patch.data}`);
+
+                (patch.relevante || []).forEach(item => {
+                    const icone = item.tipo === 'novo' ? '🆕' : item.tipo === 'correcao' ? '🛠️' : '🔧';
+                    linhas.push(`${icone} ${item.texto}`);
+                });
+                linhas.push('');
+            });
+
+            linhas.push('━━━━━━━━━━━━━━━━━━━━');
+            linhas.push('🔗 *ACESSE O SISTEMA:*');
+            linhas.push('https://luisrcsb.github.io/krathus-racing/');
+
+            const texto = linhas.join('\n').trim();
+
+            try {
+                await navigator.clipboard.writeText(texto);
+                alert('✅ Atualização copiada! Agora é só colar no WhatsApp.');
+            } catch (erro) {
+                // Fallback para navegadores que bloqueiam a Clipboard API.
+                const area = document.createElement('textarea');
+                area.value = texto;
+                area.style.position = 'fixed';
+                area.style.left = '-9999px';
+                area.style.top = '0';
+                document.body.appendChild(area);
+                area.focus();
+                area.select();
+
+                try {
+                    document.execCommand('copy');
+                    alert('✅ Atualização copiada! Agora é só colar no WhatsApp.');
+                } catch (e) {
+                    alert('⚠️ Não foi possível copiar automaticamente. O texto será mostrado para você copiar manualmente.');
+                    window.prompt('Copie o texto abaixo:', texto);
+                } finally {
+                    area.remove();
+                }
+            }
         };
 
         function renderizarPatchNotesSteam() {
@@ -3812,4 +3875,3 @@
     </script>
 </body>
 </html>
-
