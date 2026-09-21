@@ -1710,10 +1710,11 @@
                 };
             });
 
-            let compraKey = "compra_" + Date.now();
+            let criadoEm = Date.now();
+            let compraKey = "compra_" + criadoEm;
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set({
-                    chave: compraKey, nome: item, precoUnitario: preco, qtdMinima: qtdMin, status: "EM ANDAMENTO / PENDENTE",
+                    chave: compraKey, criadoEm: criadoEm, nome: item, precoUnitario: preco, qtdMinima: qtdMin, status: "EM ANDAMENTO / PENDENTE",
                     entregue: false, rastreio: "", financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
                     chavePix: "", itens: [{ imagem: "", descricao: item, link: "", valor: preco, qtd: 1, atribuidoA: "TODOS" }],
                     participantes: participantesObj
@@ -2088,7 +2089,19 @@
             }
 
             if (tituloEl) tituloEl.innerHTML = `🛒 Gestão de Compras Coletivas`;
-            let keys = Object.keys(comprasColetivasCache);
+
+            // As compras são exibidas da mais recente para a mais antiga.
+            // Compras novas usam criadoEm; registros antigos continuam funcionando
+            // pelo timestamp presente na chave "compra_<timestamp>".
+            let keys = Object.keys(comprasColetivasCache).sort((a, b) => {
+                const compA = comprasColetivasCache[a] || {};
+                const compB = comprasColetivasCache[b] || {};
+
+                const dataA = Number(compA.criadoEm) || Number(String(a).match(/(\d+)$/)?.[1]) || 0;
+                const dataB = Number(compB.criadoEm) || Number(String(b).match(/(\d+)$/)?.[1]) || 0;
+
+                return dataB - dataA;
+            });
 
             if (keys.length === 0) {
                 bodyEl.innerHTML = `
