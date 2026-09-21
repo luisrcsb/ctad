@@ -3600,31 +3600,180 @@
         }
 
         function gerarTabelaGeralSessao(ordenados) {
-            if (!ordenados || ordenados.length === 0) return "<table><tbody><tr><td style='text-align:center;'>Nenhum dado disponível.</td></tr></tbody></table>";
-            
-            let thead = `<thead>
+            if (!ordenados || ordenados.length === 0) {
+                return "<table><tbody><tr><td style='text-align:center;'>Nenhum dado disponível.</td></tr></tbody></table>";
+            }
+
+            // A tabela agora apresenta TODAS as voltas de cada piloto.
+            // Para cada volta mostramos:
+            //  - tempo da volta;
+            //  - gap acumulado para o líder daquela volta;
+            //  - líder da corrida após aquela volta.
+            //
+            // Destaques:
+            //  - verde: melhor volta individual do piloto;
+            //  - dourado: melhor volta absoluta de toda a bateria.
+            const obterTempo = (lap) => {
+                if (lap === undefined || lap === null) return null;
+                const valor = typeof lap === 'object' ? lap.tempo : lap;
+                const numero = Number(valor);
+                return Number.isFinite(numero) && numero > 0 ? numero : null;
+            };
+
+            const formatarTempo = (tempo) => {
+                if (tempo === null || tempo === undefined || !Number.isFinite(tempo)) return '--';
+                return `${tempo.toFixed(3).replace('.', ',')}s`;
+            };
+
+            const formatarGap = (gap) => {
+                if (gap === null || gap === undefined || !Number.isFinite(gap) || gap <= 0.0005) return 'LÍDER';
+                return `+${gap.toFixed(3).replace('.', ',')}s`;
+            };
+
+            const maxVoltas = Math.max(...ordenados.map(p => (p.laps || []).length));
+
+            // Melhor volta de cada piloto.
+            const melhoresIndividuais = new Map();
+            ordenados.forEach(p => {
+                const tempos = (p.laps || []).map(obterTempo).filter(t => t !== null);
+                melhoresIndividuais.set(p.piloto, tempos.length ? Math.min(...tempos) : null);
+            });
+
+            // Melhor volta absoluta entre todos os pilotos.
+            let melhorVoltaGeral = Infinity;
+            let pilotoMelhorVoltaGeral = '';
+            let voltaMelhorVoltaGeral = null;
+
+            ordenados.forEach(p => {
+                (p.laps || []).forEach((lap, idx) => {
+                    const tempo = obterTempo(lap);
+                    if (tempo !== null && tempo < melhorVoltaGeral) {
+                        melhorVoltaGeral = tempo;
+                        pilotoMelhorVoltaGeral = p.piloto;
+                        voltaMelhorVoltaGeral = idx + 1;
+                    }
+                });
+            });
+
+            // Pré-calcula o tempo acumulado de cada piloto para cada volta.
+            const acumulados = {};
+            ordenados.forEach(p => {
+                let soma = 0;
+                acumulados[p.piloto] = [];
+                for (let i = 0; i < maxVoltas; i++) {
+                    const tempo = obterTempo((p.laps || [])[i]);
+                    if (tempo === null) {
+                        acumulados[p.piloto][i] = null;
+                    } else {
+                        soma += tempo;
+                        acumulados[p.piloto][i] = soma;
+                    }
+                }
+            });
+
+            const obterRankingAteVolta = (indiceVolta) => {
+                return ordenados
+                    .map(p => {
+                        const lapsCompletas = (p.laps || []).slice(0, indiceVolta + 1)
+                            .map(obterTempo)
+                            .filter(t => t !== null).length;
+                        const total = acumulados[p.piloto]?.[indiceVolta];
+                        return { piloto: p.piloto, lapsCompletas, total };
+                    })
+                    .filter(item => item.total !== null && item.total !== undefined)
+                    .sort((a, b) => {
+                        if (a.lapsCompletas !== b.lapsCompletas) return b.lapsCompletas - a.lapsCompletas;
+                        return a.total - b.total;
+                    });
+            };
+
+            let cabecalhoPilotos = ordenados.map(p => `
+                <th style="min-width: 145px; text-align:center; vertical-align:middle;">
+                    <div style="font-weight:800; color:var(--text-title);">${escapeHtml(p.piloto)}</div>
+                    <div style="font-size:0.62rem; color:var(--text-muted); margin-top:3px; font-weight:500;">TEMPO / GAP</div>
+                </th>
+            `).join('');
+
+            let linhas = '';
+
+            for (let v = 0; v < maxVoltas; v++) {
+                const ranking = obterRankingAteVolta(v);
+                const lider = ranking.length > 0 ? ranking[0] : null;
+                const liderNome = lider ? lider.piloto : '--';
+
+                let celulasPilotos = ordenados.map(p => {
+                    const tempo = obterTempo((p.laps || [])[v]);
+                    if (tempo === null) {
+                        return `<td style="text-align:center; color:var(--text-muted); opacity:0.55;">—</td>`;
+                    }
+
+                    const melhorIndividual = melhoresIndividuais.get(p.piloto);
+                    const ehMelhorIndividual = melhorIndividual !== null && Math.abs(tempo - melhorIndividual) < 0.0005;
+                    const ehMelhorGeral = melhorVoltaGeral !== Infinity && Math.abs(tempo - melhorVoltaGeral) < 0.0005;
+                    const acumuladoPiloto = acumulados[p.piloto]?.[v];
+                    const gap = lider && acumuladoPiloto !== null && acumuladoPiloto !== undefined
+                        ? Math.max(0, acumuladoPiloto - lider.total)
+                        : null;
+
+                    let estiloCelula = '';
+                    let estiloTempo = 'color:var(--text-main);';
+                    let badge = '';
+
+                    if (ehMelhorGeral) {
+                        estiloCelula = 'background:rgba(255,193,7,0.20); border:1px solid rgba(255,193,7,0.70); box-shadow:inset 0 0 0 1px rgba(255,193,7,0.15);';
+                        estiloTempo = 'color:#ffd54f; font-weight:900;';
+                        badge = `<span style="display:inline-block; margin-left:4px; font-size:0.58rem; font-weight:800; color:#000; background:#ffd54f; padding:2px 4px; border-radius:3px;">🏆 MELHOR DA BATERIA</span>`;
+                    } else if (ehMelhorIndividual) {
+                        estiloCelula = 'background:rgba(46,196,182,0.10); border:1px solid rgba(46,196,182,0.38);';
+                        estiloTempo = 'color:var(--accent-green); font-weight:900;';
+                        badge = `<span style="display:inline-block; margin-left:4px; font-size:0.58rem; font-weight:800; color:var(--accent-green);">⚡ MELHOR DO PILOTO</span>`;
+                    }
+
+                    return `
+                        <td style="text-align:center; vertical-align:middle; ${estiloCelula}">
+                            <div style="${estiloTempo} font-size:0.88rem;">${formatarTempo(tempo)}${badge}</div>
+                            <div style="font-size:0.68rem; margin-top:3px; color:${gap !== null && gap <= 0.0005 ? 'var(--accent-gold)' : 'var(--text-muted)'}; font-weight:${gap !== null && gap <= 0.0005 ? '800' : '500'};">
+                                ${formatarGap(gap)}
+                            </div>
+                        </td>
+                    `;
+                }).join('');
+
+                linhas += `
+                    <tr>
+                        <td style="text-align:center; font-weight:800; white-space:nowrap;">
+                            <span class="pos-badge">${v + 1}ª</span>
+                        </td>
+                        <td style="text-align:left; white-space:nowrap;">
+                            <strong style="color:var(--accent-gold);">👑 ${escapeHtml(liderNome)}</strong>
+                        </td>
+                        ${celulasPilotos}
+                    </tr>
+                `;
+            }
+
+            const destaqueGeral = melhorVoltaGeral !== Infinity
+                ? `<span style="color:#ffd54f; font-weight:800;">🏆 Melhor volta da bateria: ${escapeHtml(pilotoMelhorVoltaGeral)} — ${formatarTempo(melhorVoltaGeral)} (volta ${voltaMelhorVoltaGeral})</span>`
+                : `<span style="color:var(--text-muted);">Sem volta válida registrada.</span>`;
+
+            const legenda = `
+                <div style="display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; margin-bottom:10px; font-size:0.72rem; color:var(--text-muted);">
+                    <span>🟢 <strong style="color:var(--accent-green);">Melhor volta do piloto</strong></span>
+                    <span>🏆 <strong style="color:#ffd54f;">Melhor volta entre todos</strong></span>
+                    <span>Gap = diferença acumulada para o líder após a volta.</span>
+                </div>
+                <div style="margin-bottom:10px; font-size:0.78rem;">${destaqueGeral}</div>
+            `;
+
+            const thead = `<thead>
                 <tr>
-                    <th>Pos</th>
-                    <th>Piloto</th>
-                    <th>Melhor Volta</th>
-                    <th>Média</th>
-                    <th>Voltas</th>
-                    <th>Consistência</th>
+                    <th style="text-align:center; position:sticky; top:0; z-index:2;">Volta</th>
+                    <th style="text-align:left; position:sticky; top:0; z-index:2;">Líder</th>
+                    ${cabecalhoPilotos}
                 </tr>
             </thead>`;
-            
-            let tbody = ordenados.map((p, idx) => {
-                return `<tr>
-                    <td><span class="pos-badge">${idx + 1}º</span></td>
-                    <td><strong>${escapeHtml(p.piloto)}</strong></td>
-                    <td class="text-green">${p.melhorVoltaTxt || '--'}</td>
-                    <td>${p.mediaTxt || '--'}</td>
-                    <td>${p.laps ? p.laps.length : 0}</td>
-                    <td>${p.desvio || '--'}</td>
-                </tr>`;
-            }).join('');
-            
-            return `<table>${thead}<tbody>${tbody}</tbody></table>`;
+
+            return `${legenda}<table>${thead}<tbody>${linhas}</tbody></table>`;
         }
 
         window.gerarRelatórioPDF = function() {
