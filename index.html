@@ -818,7 +818,6 @@
             <div class="footer-copyright">&copy; 2026 CTAD - Central de Telemetria. Todos os direitos reservados.</div>
         </footer>
     </div>
-
     <script>
         const SENHA_UNIFICADA = "1234";
         let isAdminLogado = false;
@@ -2301,6 +2300,12 @@
                 return;
             }
 
+            keys.sort((a, b) => {
+                let timeA = parseInt(a.split('_').pop(), 10) || 0;
+                let timeB = parseInt(b.split('_').pop(), 10) || 0;
+                return timeB - timeA;
+            });
+
             keys.forEach(key => {
                 let camp = campeonatosCache[key];
                 let statusCamp = camp.status || "Em andamento";
@@ -3252,6 +3257,12 @@
             let campContainer = document.getElementById('kpi-campeonatos-conteudo');
             if (campContainer) {
                 let keys = Object.keys(campeonatosCache);
+                keys.sort((a, b) => {
+                    let timeA = parseInt(a.split('_').pop(), 10) || 0;
+                    let timeB = parseInt(b.split('_').pop(), 10) || 0;
+                    return timeB - timeA;
+                });
+
                 if (keys.length === 0) {
                     campContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.78rem;">Nenhum campeonato.</div>`;
                 } else {
@@ -3471,8 +3482,8 @@
                 blocoHtml.appendChild(cardConteudoGrid);
                 mainContainer.appendChild(blocoHtml);
 
-                if (modulosSel.includes('mod-grafico')) renderizarGraficoRitmo(batKey, safeKey, ordenados);
-                if (modulosSel.includes('mod-grafico-posicao')) renderizarGraficoPosicao(batKey, safeKey, ordenados);
+                if (modulosSel.includes('mod-grafico')) renderizarGraficoRitmoPersonalizado(`chart-ritmo-${safeKey}`, ordenados);
+                if (modulosSel.includes('mod-grafico-posicao')) renderizarGraficoPosicaoPersonalizado(`chart-posicao-${safeKey}`, ordenados);
             });
         }
 
@@ -3487,151 +3498,96 @@
                     let somaTemp = 0, valido = true;
                     for (let j = 0; j <= v; j++) {
                         let l = p.laps ? p.laps[j] : null;
-                        if (l === undefined || l === null || isNaN(l) || l <= 0) { valido = false; break; }
+                        if (l === undefined || l === null || l <= 0) { valido = false; break; }
                         somaTemp += (typeof l === 'object' ? l.tempo : l);
                     }
-                    if (valido) rankingVolta.push({ piloto: p.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
+                    if (valido) rankingVolta.push({ piloto: p.piloto, tempoTotal: somaTemp });
                 });
-                rankingVolta.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
                 
-                let mudancasNestaVolta = [];
+                rankingVolta.sort((a, b) => a.tempoTotal - b.tempoTotal);
+                
+                let posicoesAtual = {};
                 rankingVolta.forEach((item, index) => {
-                    let posAtual = index + 1;
-                    if (posicoesAnterior[item.piloto] !== undefined) {
-                        let posAnt = posicoesAnterior[item.piloto];
-                        if (posAtual !== posAnt) {
-                            let tipo = posAtual < posAnt ? 'ganho' : 'perda';
-                            mudancasNestaVolta.push({ piloto: item.piloto, posAnterior: posAnt, posAtual, tipo });
-                        }
-                    }
-                    posicoesAnterior[item.piloto] = posAtual;
+                    posicoesAtual[item.piloto] = index + 1;
                 });
-                if (mudancasNestaVolta.length > 0) lapLogs[v + 1] = mudancasNestaVolta;
+
+                if (v > 0) {
+                    let mudancas = [];
+                    rankingVolta.forEach(item => {
+                        let pName = item.piloto;
+                        let posAnt = posicoesAnterior[pName];
+                        let posAtu = posicoesAtual[pName];
+                        if (posAnt && posAtu && posAnt !== posAtu) {
+                            mudancas.push({
+                                piloto: pName,
+                                posAnterior: posAnt,
+                                posAtual: posAtu,
+                                tipo: posAtu < posAnt ? 'ganho' : 'perda'
+                            });
+                        }
+                    });
+                    if (mudancas.length > 0) lapLogs[v + 1] = mudancas;
+                }
+                posicoesAnterior = posicoesAtual;
             }
             return lapLogs;
         }
 
         function gerarLaudoTecnicoSessao(ordenados) {
-            if (!ordenados || ordenados.length === 0) return "Sem dados suficientes.";
-            let p1 = ordenados[0];
-            let totalVoltasP1 = (p1.laps || []).length;
+            if (!ordenados || ordenados.length === 0) return "<div style='color: var(--text-muted);'>Dados insuficientes para laudo.</div>";
+            
+            let vencedor = ordenados[0];
+            let melhorVoltaSessao = Math.min(...ordenados.map(p => p.melhorVoltaVal || Infinity));
+            let pilotoMelhorVolta = ordenados.find(p => p.melhorVoltaVal === melhorVoltaSessao);
+
             return `
                 <div class="analysis-section-block">
-                    <span class="analysis-section-title">🏆 Destaque da Sessão</span>
-                    <span class="analysis-section-content">O piloto <strong>${escapeHtml(p1.piloto)}</strong> conquistou a 1ª posição com ${totalVoltasP1} voltas completadas e melhor volta em <strong style="color:var(--accent-green);">${p1.melhorVoltaTxt}</strong>.</span>
+                    <div class="analysis-section-title">🏆 DOMÍNIO DA SESSÃO</div>
+                    <div class="analysis-section-content"><strong>${escapeHtml(vencedor.piloto)}</strong> liderou a prova e completou um total de ${vencedor.laps ? vencedor.laps.length : 0} voltas válidas.</div>
+                </div>
+                <div class="analysis-section-block" style="margin-top: 4px;">
+                    <div class="analysis-section-title">⚡ VOLTA MAIS RÁPIDA (FASTEST LAP)</div>
+                    <div class="analysis-section-content">Pertence a <strong>${pilotoMelhorVolta ? escapeHtml(pilotoMelhorVolta.piloto) : '--'}</strong> com o tempo cravado de <span class="text-green">${pilotoMelhorVolta ? pilotoMelhorVolta.melhorVoltaTxt : '--'}</span>.</div>
+                </div>
+                <div class="analysis-section-block" style="margin-top: 4px;">
+                    <div class="analysis-section-title">🎯 ÍNDICE DE CONSISTÊNCIA</div>
+                    <div class="analysis-section-content">A média de ritmo do vencedor foi de ${vencedor.mediaTxt} por volta, apresentando um desvio de consistência de ${vencedor.desvio}.</div>
                 </div>
             `;
         }
 
         function gerarTabelaGeralSessao(ordenados) {
-            if (!ordenados || ordenados.length === 0) return "Sem dados.";
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
-            let ths = Array.from({ length: maxVoltas }, (_, i) => `<th style="text-align: center;">V${i + 1}</th>`).join('');
-
-            let rows = ordenados.map((p, idx) => {
-                let tempoLiderVolta = [];
-                for (let v = 0; v < maxVoltas; v++) {
-                    let minT = 999999;
-                    ordenados.forEach(o => {
-                        let l = o.laps ? o.laps[v] : null;
-                        let t = l ? (typeof l === 'object' ? l.tempo : l) : null;
-                        if (t && t > 0 && t < minT) minT = t;
-                    });
-                    tempoLiderVolta[v] = minT < 999999 ? minT : 0;
-                }
-
-                let tds = Array.from({ length: maxVoltas }, (_, v) => {
-                    let l = p.laps ? p.laps[v] : null;
-                    let t = l ? (typeof l === 'object' ? l.tempo : l) : null;
-                    if (!t || t <= 0) return `<td style="text-align: center; color: var(--text-muted);">-</td>`;
-                    
-                    let diff = t - tempoLiderVolta[v];
-                    let diffStr = v === 0 ? '' : (diff > 0.001 ? `+${diff.toFixed(3)}s` : 'LÍDER');
-                    let corEstilo = v === 0 ? 'color: var(--text-main);' : (diff <= 0.001 ? 'color: var(--accent-gold); font-weight: 700;' : 'color: var(--accent-gap); font-weight: 600;');
-                    
-                    return `<td style="text-align: center; ${corEstilo}">${t.toFixed(3)}<div style="font-size:0.65rem; color:var(--text-muted);">${diffStr}</div></td>`;
-                }).join('');
-
-                return `
-                    <tr>
-                        <td><span class="pos-badge">${idx + 1}º</span></td>
-                        <td><strong>${escapeHtml(p.piloto)}</strong></td>
-                        <td><span style="color: var(--accent-green); font-weight: 700;">${p.melhorVoltaTxt || '--'}</span></td>
-                        <td>${(p.laps || []).length}v</td>
-                        ${tds}
-                    </tr>
-                `;
+            if (!ordenados || ordenados.length === 0) return "<table><tbody><tr><td style='text-align:center;'>Nenhum dado disponível.</td></tr></tbody></table>";
+            
+            let thead = `<thead>
+                <tr>
+                    <th>Pos</th>
+                    <th>Piloto</th>
+                    <th>Melhor Volta</th>
+                    <th>Média</th>
+                    <th>Voltas</th>
+                    <th>Consistência</th>
+                </tr>
+            </thead>`;
+            
+            let tbody = ordenados.map((p, idx) => {
+                return `<tr>
+                    <td><span class="pos-badge">${idx + 1}º</span></td>
+                    <td><strong>${escapeHtml(p.piloto)}</strong></td>
+                    <td class="text-green">${p.melhorVoltaTxt || '--'}</td>
+                    <td>${p.mediaTxt || '--'}</td>
+                    <td>${p.laps ? p.laps.length : 0}</td>
+                    <td>${p.desvio || '--'}</td>
+                </tr>`;
             }).join('');
-
-            return `
-                <table>
-                    <thead><tr><th>Pos</th><th>Piloto</th><th>Melhor</th><th>Voltas</th>${ths}</tr></thead>
-                    <tbody>${rows}</tbody>
-                </table>
-            `;
-        }
-
-        function renderizarGraficoRitmo(bateriaKey, safeKey, ordenados) {
-            let canvasEl = document.getElementById(`chart-ritmo-${safeKey}`);
-            if (!canvasEl) return;
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
-            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
-
-            let datasets = ordenados.map((p, idx) => {
-                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
-                return {
-                    label: p.piloto,
-                    data: Array.from({ length: maxVoltas }, (_, i) => { let l = p.laps ? p.laps[i] : null; return l ? (typeof l === 'object' ? l.tempo : l) : null; }),
-                    borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true
-                };
-            });
-
-            chartInstances.push(new Chart(canvasEl.getContext('2d'), {
-                type: 'line', data: { labels, datasets },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 11 } } } } }
-            }));
-        }
-
-        function renderizarGraficoPosicao(bateriaKey, safeKey, ordenados) {
-            let canvasEl = document.getElementById(`chart-posicao-${safeKey}`);
-            if (!canvasEl) return;
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
-            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
-
-            let datasets = ordenados.map((p, idx) => {
-                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
-                let posicoesVolta = [];
-                for (let v = 0; v < maxVoltas; v++) {
-                    let mapaVoltaPilotos = [];
-                    ordenados.forEach(pilotoObj => {
-                        let somaTemp = 0, valido = true;
-                        for (let j = 0; j <= v; j++) {
-                            let l = pilotoObj.laps ? pilotoObj.laps[j] : null;
-                            if (l === undefined || l === null || l <= 0) { valido = false; break; }
-                            somaTemp += (typeof l === 'object' ? l.tempo : l);
-                        }
-                        if (valido) mapaVoltaPilotos.push({ piloto: pilotoObj.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
-                    });
-                    mapaVoltaPilotos.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
-                    let pos = mapaVoltaPilotos.findIndex(item => item.piloto === p.piloto);
-                    posicoesVolta.push(pos !== -1 ? pos + 1 : null);
-                }
-                return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 2, tension: 0.1, spanGaps: true };
-            });
-
-            chartInstances.push(new Chart(canvasEl.getContext('2d'), {
-                type: 'line', data: { labels, datasets },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 11 } } } },
-                    scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1 } } }
-                }
-            }));
+            
+            return `<table>${thead}<tbody>${tbody}</tbody></table>`;
         }
 
         window.gerarRelatórioPDF = function() {
             window.print();
         };
+
     </script>
 </body>
 </html>
