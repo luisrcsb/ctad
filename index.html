@@ -3803,7 +3803,7 @@
             }
 
             const cabecalhoVoltas = Array.from({ length: maxVoltas }, (_, i) => `
-                <th style="min-width:145px; text-align:center; position:sticky; top:0; z-index:2;">
+                <th style="min-width:105px; width:105px; padding:6px 4px; text-align:center; position:sticky; top:0; z-index:2;">
                     VOLTA ${i + 1}
                 </th>
             `).join('');
@@ -3841,16 +3841,16 @@
                     if (ehMelhorGeral) {
                         estiloCelula = 'background:rgba(255,193,7,0.22); border:1px solid rgba(255,193,7,0.75); box-shadow:inset 0 0 0 1px rgba(255,193,7,0.18);';
                         estiloTempo = 'color:#ffd54f; font-weight:900;';
-                        badge = `<div style="font-size:0.57rem; font-weight:900; color:#000; background:#ffd54f; padding:2px 4px; border-radius:3px; margin-top:3px; display:inline-block;">🏆 MELHOR DA BATERIA</div>`;
+                        badge = `<div style="font-size:0.50rem; font-weight:900; color:#000; background:#ffd54f; padding:2px 4px; border-radius:3px; margin-top:3px; display:inline-block;">🏆 MELHOR DA BATERIA</div>`;
                     } else if (ehMelhorIndividual) {
                         estiloCelula = 'background:rgba(46,196,182,0.10); border:1px solid rgba(46,196,182,0.38);';
                         estiloTempo = 'color:var(--accent-green); font-weight:900;';
-                        badge = `<div style="font-size:0.57rem; font-weight:800; color:var(--accent-green); margin-top:3px;">⚡ MELHOR DO PILOTO</div>`;
+                        badge = `<div style="font-size:0.50rem; font-weight:800; color:var(--accent-green); margin-top:3px;">⚡ MELHOR DO PILOTO</div>`;
                     }
 
                     celulas += `
-                        <td style="text-align:center; vertical-align:middle; ${estiloCelula}">
-                            <div style="${estiloTempo} font-size:0.88rem;">${formatarTempo(tempo)}</div>
+                        <td style="min-width:105px; width:105px; padding:5px 4px; text-align:center; vertical-align:middle; ${estiloCelula}">
+                            <div style="${estiloTempo} font-size:0.80rem;">${formatarTempo(tempo)}</div>
                             ${badge}
                             <div style="font-size:0.66rem; margin-top:4px; color:${ehLider ? 'var(--accent-gold)' : 'var(--text-muted)'}; font-weight:${ehLider ? '800' : '500'};">
                                 ${formatarGap(gap)}
