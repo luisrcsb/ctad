@@ -389,6 +389,14 @@
                     </div>
                 </div>
                 <div class="config-panel">
+                    <div class="config-panel-title">Espaço entre as Voltas — Tabela Geral</div>
+                    <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px;">Regule a largura/espaçamento das colunas de VOLTA na ⏱️ Tabela Geral Volta a Volta (com Gaps e Líder).</div>
+                    <div style="display:flex;gap:10px;align-items:center;margin-top:8px;">
+                        <input type="range" id="input-pista-espaco-voltas" min="70" max="160" step="5" value="105" class="config-input" oninput="atualizarEspacoVoltas(this.value)">
+                        <span id="label-espaco-voltas" style="font-weight:700;color:var(--accent-gold);width:70px;text-align:center;">105px</span>
+                    </div>
+                </div>
+                <div class="config-panel">
                     <div class="config-panel-title">Selecione o que será exibido no Telão 4K</div>
                     <div style="margin-top: 6px;">
                         <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px;">Arraste os itens para definir a ordem em que aparecerão no Telão 4K. Você também pode usar ▲/▼.</div>
@@ -1202,7 +1210,8 @@
                     tabela: !!document.getElementById('pista-mod-tabela')?.checked,
                     graficos: !!document.getElementById('pista-mod-graficos')?.checked
                 },
-                escalaGlobal: parseFloat(document.getElementById('input-pista-escala')?.value || '1.4')
+                escalaGlobal: parseFloat(document.getElementById('input-pista-escala')?.value || '1.4'),
+                espacoVoltas: parseInt(document.getElementById('input-pista-espaco-voltas')?.value || '105', 10)
             };
         }
 
@@ -1214,6 +1223,10 @@
             if (cfg.escalaGlobal != null) {
                 const escala = document.getElementById('input-pista-escala');
                 if (escala) { escala.value = cfg.escalaGlobal; atualizarEscalaPistaPreview(cfg.escalaGlobal); }
+            }
+            if (cfg.espacoVoltas != null) {
+                const espaco = document.getElementById('input-pista-espaco-voltas');
+                if (espaco) atualizarEspacoVoltas(cfg.espacoVoltas, false);
             }
             if (cfg.visibilidade) {
                 [['podium','pista-mod-podium'],['tabela','pista-mod-tabela'],['graficos','pista-mod-graficos']].forEach(([k,id]) => {
@@ -1235,6 +1248,20 @@
                 });
             }
         }
+
+        window.atualizarEspacoVoltas = function(val, salvar = true) {
+            const numero = Math.max(70, Math.min(160, parseInt(val, 10) || 105));
+            const input = document.getElementById('input-pista-espaco-voltas');
+            const label = document.getElementById('label-espaco-voltas');
+            if (input) input.value = numero;
+            if (label) label.innerText = `${numero}px`;
+            if (salvar) {
+                const cfg = obterConfiguracoesPista();
+                localStorage.setItem('krathus_pista_configuracoes', JSON.stringify(cfg));
+            }
+            // Atualiza imediatamente a tabela geral se ela estiver visível.
+            if (typeof atualizarDashboard === 'function') atualizarDashboard();
+        };
 
         window.atualizarTamanhoPistaItem = function(item, val, salvar = true) {
             const numero = Math.max(0.6, Math.min(2.0, parseFloat(val) || 1));
@@ -3802,8 +3829,16 @@
                 lideresPorVolta[v] = ranking.length ? ranking[0] : null;
             }
 
+            // A largura/espaço entre as colunas é controlada pelo Painel de Administração
+            // > Configurar Telão 4K - Última Prova e salva em localStorage.
+            let espacoVoltas = 105;
+            try {
+                const cfgPista = JSON.parse(localStorage.getItem('krathus_pista_configuracoes') || '{}');
+                espacoVoltas = Math.max(70, Math.min(160, parseInt(cfgPista.espacoVoltas || 105, 10)));
+            } catch (e) {}
+
             const cabecalhoVoltas = Array.from({ length: maxVoltas }, (_, i) => `
-                <th style="min-width:105px; width:105px; padding:6px 4px; text-align:center; position:sticky; top:0; z-index:2;">
+                <th style="min-width:${espacoVoltas}px; width:${espacoVoltas}px; padding:6px 4px; text-align:center; position:sticky; top:0; z-index:2;">
                     VOLTA ${i + 1}
                 </th>
             `).join('');
@@ -3849,7 +3884,7 @@
                     }
 
                     celulas += `
-                        <td style="min-width:105px; width:105px; padding:5px 4px; text-align:center; vertical-align:middle; ${estiloCelula}">
+                        <td style="min-width:${espacoVoltas}px; width:${espacoVoltas}px; padding:5px 4px; text-align:center; vertical-align:middle; ${estiloCelula}">
                             <div style="${estiloTempo} font-size:0.80rem;">${formatarTempo(tempo)}</div>
                             ${badge}
                             ${ehLider
