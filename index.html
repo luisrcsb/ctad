@@ -393,14 +393,28 @@
                     <div style="margin-top: 6px;">
                         <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px;">Arraste os itens para definir a ordem em que aparecerão no Telão 4K. Você também pode usar ▲/▼.</div>
                         <div id="pista-ordem-itens" style="display: flex; flex-direction: column; gap: 7px;">
-                            <div class="pista-ordem-item" draggable="true" data-pista-item="podium" style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg-input);border:1px solid var(--border-card);border-radius:8px;cursor:grab;"><span>☷</span><label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;"><input type="checkbox" id="pista-mod-podium" checked style="width:18px;height:18px;accent-color:var(--accent-gold);"> 🏆 Pódio Dinâmico (1º ao 3º / Reajuste automático para 1º e 2º)</label><button type="button" onclick="moverItemPista('podium',-1)">▲</button><button type="button" onclick="moverItemPista('podium',1)">▼</button></div>
-                            <div class="pista-ordem-item" draggable="true" data-pista-item="tabela" style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg-input);border:1px solid var(--border-card);border-radius:8px;cursor:grab;"><span>☷</span><label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;"><input type="checkbox" id="pista-mod-tabela" checked style="width:18px;height:18px;accent-color:var(--accent-gold);"> ⏱️ Tabela Volta a Volta com Gaps (Responsiva e legível à distância)</label><button type="button" onclick="moverItemPista('tabela',-1)">▲</button><button type="button" onclick="moverItemPista('tabela',1)">▼</button></div>
-                            <div class="pista-ordem-item" draggable="true" data-pista-item="graficos" style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg-input);border:1px solid var(--border-card);border-radius:8px;cursor:grab;"><span>☷</span><label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;"><input type="checkbox" id="pista-mod-graficos" checked style="width:18px;height:18px;accent-color:var(--accent-gold);"> 📈 Gráficos (Ritmo de volta a volta e Posição)</label><button type="button" onclick="moverItemPista('graficos',-1)">▲</button><button type="button" onclick="moverItemPista('graficos',1)">▼</button></div>
+                            <div class="pista-ordem-item" draggable="true" data-pista-item="podium" style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg-input);border:1px solid var(--border-card);border-radius:8px;cursor:grab;">
+                                <span>☷</span><label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;"><input type="checkbox" id="pista-mod-podium" checked style="width:18px;height:18px;accent-color:var(--accent-gold);"> 🏆 Pódio Dinâmico (1º ao 3º / Reajuste automático para 1º e 2º)</label>
+                                <div style="display:flex;align-items:center;gap:5px;min-width:145px;"> <input type="range" id="pista-tamanho-podium" min="0.6" max="2.0" step="0.1" value="1.0" style="width:85px;accent-color:var(--accent-gold);" oninput="atualizarTamanhoPistaItem('podium',this.value)"> <span id="label-tamanho-podium" style="font-size:.75rem;font-weight:700;width:38px;text-align:right;color:var(--accent-gold);">1.0x</span></div>
+                                <button type="button" onclick="moverItemPista('podium',-1)">▲</button><button type="button" onclick="moverItemPista('podium',1)">▼</button>
+                            </div>
+                            <div class="pista-ordem-item" draggable="true" data-pista-item="tabela" style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg-input);border:1px solid var(--border-card);border-radius:8px;cursor:grab;">
+                                <span>☷</span><label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;"><input type="checkbox" id="pista-mod-tabela" checked style="width:18px;height:18px;accent-color:var(--accent-gold);"> ⏱️ Tabela Volta a Volta com Gaps (Responsiva e legível à distância)</label>
+                                <div style="display:flex;align-items:center;gap:5px;min-width:145px;"> <input type="range" id="pista-tamanho-tabela" min="0.6" max="2.0" step="0.1" value="1.0" style="width:85px;accent-color:var(--accent-gold);" oninput="atualizarTamanhoPistaItem('tabela',this.value)"> <span id="label-tamanho-tabela" style="font-size:.75rem;font-weight:700;width:38px;text-align:right;color:var(--accent-gold);">1.0x</span></div>
+                                <button type="button" onclick="moverItemPista('tabela',-1)">▲</button><button type="button" onclick="moverItemPista('tabela',1)">▼</button>
+                            </div>
+                            <div class="pista-ordem-item" draggable="true" data-pista-item="graficos" style="display:flex;align-items:center;gap:8px;padding:9px 10px;background:var(--bg-input);border:1px solid var(--border-card);border-radius:8px;cursor:grab;">
+                                <span>☷</span><label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;"><input type="checkbox" id="pista-mod-graficos" checked style="width:18px;height:18px;accent-color:var(--accent-gold);"> 📈 Gráficos (Ritmo de volta a volta e Posição)</label>
+                                <div style="display:flex;align-items:center;gap:5px;min-width:145px;"> <input type="range" id="pista-tamanho-graficos" min="0.6" max="2.0" step="0.1" value="1.0" style="width:85px;accent-color:var(--accent-gold);" oninput="atualizarTamanhoPistaItem('graficos',this.value)"> <span id="label-tamanho-graficos" style="font-size:.75rem;font-weight:700;width:38px;text-align:right;color:var(--accent-gold);">1.0x</span></div>
+                                <button type="button" onclick="moverItemPista('graficos',-1)">▲</button><button type="button" onclick="moverItemPista('graficos',1)">▼</button>
+                            </div>
                         </div>
+                        <div style="font-size:.75rem;color:var(--text-muted);margin-top:8px;">1.0x = tamanho normal. Você pode regular cada bloco separadamente.</div>
                     </div>
                 </div>
                 <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
-                    <button class="btn-action-primary" style="background: var(--accent-gold); color: #000; font-weight: 700; padding: 10px 20px; font-size: 0.95rem;" onclick="abrirModoPistaFullscreen()">🚀 Iniciar Telão 4K</button>
+                    <button class="btn-action-secondary" style="padding: 10px 18px; font-size: 0.9rem;" onclick="salvarConfiguracoesPista()">💾 Salvar configurações</button>
+                    <button class="btn-action-primary" style="background: var(--accent-gold); color: #000; font-weight: 700; padding: 10px 20px; font-size: 0.95rem;" onclick="salvarConfiguracoesPista(true)">🚀 Salvar e iniciar Telão 4K</button>
                 </div>
             </div>
         </div>
@@ -1166,11 +1180,83 @@
                 infoEl.innerHTML = `⚠️ Nenhuma prova encontrada no sistema.`;
             }
             document.getElementById('pista-config-modal').style.display = 'flex';
-            setTimeout(inicializarOrdemItensPista, 0);
+            setTimeout(() => { inicializarOrdemItensPista(); carregarConfiguracoesPista(); }, 0);
         };
 
         window.fecharModalConfigPista = function() {
             document.getElementById('pista-config-modal').style.display = 'none';
+        };
+
+        function obterConfiguracoesPista() {
+            const ordem = [...document.querySelectorAll('#pista-ordem-itens .pista-ordem-item')].map(el => el.dataset.pistaItem);
+            const tamanhos = {};
+            ['podium','tabela','graficos'].forEach(item => {
+                const input = document.getElementById(`pista-tamanho-${item}`);
+                tamanhos[item] = parseFloat(input?.value || '1');
+            });
+            return {
+                ordem,
+                tamanhos,
+                visibilidade: {
+                    podium: !!document.getElementById('pista-mod-podium')?.checked,
+                    tabela: !!document.getElementById('pista-mod-tabela')?.checked,
+                    graficos: !!document.getElementById('pista-mod-graficos')?.checked
+                },
+                escalaGlobal: parseFloat(document.getElementById('input-pista-escala')?.value || '1.4')
+            };
+        }
+
+        function carregarConfiguracoesPista() {
+            let cfg = null;
+            try { cfg = JSON.parse(localStorage.getItem('krathus_pista_configuracoes') || 'null'); } catch (e) { cfg = null; }
+            if (!cfg) return;
+
+            if (cfg.escalaGlobal != null) {
+                const escala = document.getElementById('input-pista-escala');
+                if (escala) { escala.value = cfg.escalaGlobal; atualizarEscalaPistaPreview(cfg.escalaGlobal); }
+            }
+            if (cfg.visibilidade) {
+                [['podium','pista-mod-podium'],['tabela','pista-mod-tabela'],['graficos','pista-mod-graficos']].forEach(([k,id]) => {
+                    const el = document.getElementById(id);
+                    if (el && cfg.visibilidade[k] !== undefined) el.checked = !!cfg.visibilidade[k];
+                });
+            }
+            if (cfg.tamanhos) {
+                ['podium','tabela','graficos'].forEach(item => {
+                    const input = document.getElementById(`pista-tamanho-${item}`);
+                    if (input && cfg.tamanhos[item] != null) { input.value = cfg.tamanhos[item]; atualizarTamanhoPistaItem(item, cfg.tamanhos[item], false); }
+                });
+            }
+            if (Array.isArray(cfg.ordem)) {
+                const container = document.getElementById('pista-ordem-itens');
+                if (container) cfg.ordem.slice().reverse().forEach(item => {
+                    const el = container.querySelector(`[data-pista-item="${item}"]`);
+                    if (el) container.insertBefore(el, container.firstChild);
+                });
+            }
+        }
+
+        window.atualizarTamanhoPistaItem = function(item, val, salvar = true) {
+            const numero = Math.max(0.6, Math.min(2.0, parseFloat(val) || 1));
+            const input = document.getElementById(`pista-tamanho-${item}`);
+            const label = document.getElementById(`label-tamanho-${item}`);
+            if (input) input.value = numero.toFixed(1);
+            if (label) label.innerText = `${numero.toFixed(1)}x`;
+            if (salvar) {
+                const cfg = obterConfiguracoesPista();
+                localStorage.setItem('krathus_pista_configuracoes', JSON.stringify(cfg));
+            }
+        };
+
+        window.salvarConfiguracoesPista = function(iniciar = false) {
+            const cfg = obterConfiguracoesPista();
+            localStorage.setItem('krathus_pista_configuracoes', JSON.stringify(cfg));
+            atualizarOrdemItensPista();
+            if (!iniciar) {
+                alert('✅ Configurações do Telão 4K salvas!');
+                return;
+            }
+            abrirModoPistaFullscreen();
         };
 
         window.atualizarEscalaPistaPreview = function(val) {
@@ -1256,7 +1342,6 @@
             let ordenados = ordenarParticipantesBateria(dadosSessao);
 
             let showPodium = document.getElementById('pista-mod-podium')?.checked ?? true;
-            let showStats = document.getElementById('pista-mod-stats')?.checked ?? true;
             let showTabela = document.getElementById('pista-mod-tabela')?.checked ?? true;
             let showGraficos = document.getElementById('pista-mod-graficos')?.checked ?? true;
 
@@ -1265,8 +1350,11 @@
             let ordemSalva = JSON.parse(localStorage.getItem('krathus_pista_ordem') || 'null');
             let ordemItens = Array.isArray(ordemSalva) ? ordemSalva.filter(x => ordemPadrao.includes(x)) : [];
             ordemPadrao.forEach(x => { if (!ordemItens.includes(x)) ordemItens.push(x); });
+            let cfgTamanhos = {};
+            try { cfgTamanhos = JSON.parse(localStorage.getItem('krathus_pista_configuracoes') || '{}').tamanhos || {}; } catch (e) { cfgTamanhos = {}; }
 
             ordemItens.forEach(item => {
+                const escalaItem = Math.max(0.6, Math.min(2.0, parseFloat(cfgTamanhos[item] || 1)));
                 if (item === 'podium' && showPodium && ordenados.length > 0) {
                     let qtdPodio = Math.min(ordenados.length, 3);
                     let gridCols = qtdPodio === 1 ? '1fr' : (qtdPodio === 2 ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)');
@@ -1278,14 +1366,14 @@
                         let labelPos = i === 0 ? '1º LUGAR 👑' : (i === 1 ? '2º LUGAR' : '3º LUGAR');
                         podiumCardsHtml += `<div class="pista-podium-card ${posClass}" style="padding: calc(24px * var(--pista-scale));"><span class="pista-podium-pos" style="color: ${corMedalha}; font-size: calc(2rem * var(--pista-scale));">${labelPos}</span><span class="pista-podium-nome" style="font-size: calc(1.8rem * var(--pista-scale)); font-weight: 800; color: var(--text-title);">${escapeHtml(p.piloto)}</span><span class="pista-podium-tempo" style="font-size: calc(1.4rem * var(--pista-scale)); color: var(--accent-green); font-weight: 700;">${p.melhorVoltaTxt || '--'}</span><span style="font-size: calc(1rem * var(--pista-scale)); color: var(--text-muted);">Voltas: <strong>${(p.laps || []).length}</strong></span></div>`;
                     }
-                    htmlParts.push(`<div style="display:flex;flex-direction:column;gap:12px;"><div style="font-size:calc(1.2rem * var(--pista-scale));font-weight:700;color:var(--accent-gold);text-transform:uppercase;letter-spacing:1px;">🥇 PÓDIO DA ÚLTIMA PROVA</div><div style="display:grid;grid-template-columns:${gridCols};gap:20px;">${podiumCardsHtml}</div></div>`);
+                    htmlParts.push(`<div style="display:flex;flex-direction:column;gap:12px;zoom:${escalaItem};"><div style="font-size:calc(1.2rem * var(--pista-scale));font-weight:700;color:var(--accent-gold);text-transform:uppercase;letter-spacing:1px;">🥇 PÓDIO DA ÚLTIMA PROVA</div><div style="display:grid;grid-template-columns:${gridCols};gap:20px;">${podiumCardsHtml}</div></div>`);
                 }
                 if (item === 'tabela' && showTabela && ordenados.length > 0) {
                     let tabelaHtml = gerarTabelaGeralSessao(ordenados);
-                    htmlParts.push(`<div style="display:flex;flex-direction:column;gap:12px;"><div style="font-size:calc(1.2rem * var(--pista-scale));font-weight:700;color:var(--accent-gold);text-transform:uppercase;letter-spacing:1px;">⏱️ TABELA DE TEMPOS VOLTA A VOLTA COM GAPS</div><div class="card" style="padding:20px;font-size:calc(1.1rem * var(--pista-scale));"><div class="table-container" style="max-height:60vh;overflow:auto;">${tabelaHtml}</div></div></div>`);
+                    htmlParts.push(`<div style="display:flex;flex-direction:column;gap:12px;zoom:${escalaItem};"><div style="font-size:calc(1.2rem * var(--pista-scale));font-weight:700;color:var(--accent-gold);text-transform:uppercase;letter-spacing:1px;">⏱️ TABELA DE TEMPOS VOLTA A VOLTA COM GAPS</div><div class="card" style="padding:20px;font-size:calc(1.1rem * var(--pista-scale));"><div class="table-container" style="max-height:60vh;overflow:auto;">${tabelaHtml}</div></div></div>`);
                 }
                 if (item === 'graficos' && showGraficos && ordenados.length > 0) {
-                    htmlParts.push(`<div style="display:flex;flex-direction:column;gap:12px;"><div style="font-size:calc(1.2rem * var(--pista-scale));font-weight:700;color:var(--accent-gold);text-transform:uppercase;letter-spacing:1px;">📈 GRÁFICOS DE RITMO E POSIÇÃO</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;"><div class="card" style="padding:20px;"><div class="card-header" style="font-size:calc(1.1rem * var(--pista-scale));">📈 Evolução de Ritmo (Volta a Volta)</div><div class="chart-container" style="height:calc(350px * var(--pista-scale));"><canvas id="pista-chart-ritmo"></canvas></div></div><div class="card" style="padding:20px;"><div class="card-header" style="font-size:calc(1.1rem * var(--pista-scale));">📊 Posição Volta a Volta</div><div class="chart-container" style="height:calc(350px * var(--pista-scale));"><canvas id="pista-chart-posicao"></canvas></div></div></div></div>`);
+                    htmlParts.push(`<div style="display:flex;flex-direction:column;gap:12px;zoom:${escalaItem};"><div style="font-size:calc(1.2rem * var(--pista-scale));font-weight:700;color:var(--accent-gold);text-transform:uppercase;letter-spacing:1px;">📈 GRÁFICOS DE RITMO E POSIÇÃO</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;"><div class="card" style="padding:20px;"><div class="card-header" style="font-size:calc(1.1rem * var(--pista-scale));">📈 Evolução de Ritmo (Volta a Volta)</div><div class="chart-container" style="height:calc(350px * var(--pista-scale));"><canvas id="pista-chart-ritmo"></canvas></div></div><div class="card" style="padding:20px;"><div class="card-header" style="font-size:calc(1.1rem * var(--pista-scale));">📊 Posição Volta a Volta</div><div class="chart-container" style="height:calc(350px * var(--pista-scale));"><canvas id="pista-chart-posicao"></canvas></div></div></div></div>`);
                 }
             });
 
