@@ -875,6 +875,7 @@
 
         let db = null;
         let listaJsonsCache = [];
+        let listaUploadsHistoricoCache = [];
         let campeonatosCache = {};
         let comprasColetivasCache = {};
 
@@ -1155,11 +1156,15 @@
 
                 db.ref('baterias').on('value', snapshot => {
                     listaJsonsCache = [];
+                    listaUploadsHistoricoCache = [];
                     snapshot.forEach(childSnapshot => {
                         let val = childSnapshot.val();
-                        if (val && val.dados && val.dados.length > 0) {
+                        if (!val) return;
+                        const registro = { firebaseKey: childSnapshot.key, ...val };
+                        listaUploadsHistoricoCache.push(registro);
+                        if (val.dados && Array.isArray(val.dados) && val.dados.length > 0) {
                             if (!val.historicoNomesOriginais) val.historicoNomesOriginais = {};
-                            listaJsonsCache.push({ firebaseKey: childSnapshot.key, ...val });
+                            listaJsonsCache.push(registro);
                         }
                     });
                     
@@ -1344,7 +1349,7 @@
             let conteudoEl = document.getElementById('pista-fs-conteudo');
             if (!conteudoEl) return;
 
-            if (!listaJsonsCache || listaJsonsCache.length === 0) {
+            if (!listaUploadsHistoricoCache || listaUploadsHistoricoCache.length === 0) {
                 tituloEl.innerText = "🏁 TELÃO 4K - SEM DADOS";
                 subEl.innerText = "Nenhuma prova enviada para o site.";
                 conteudoEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 1.8rem; padding: 60px;">Aguardando relatórios de telemetria...</div>`;
@@ -3044,51 +3049,103 @@
         }
 
         window.processarUploadEEnviarNuvemPrincipal = async function() {
-            let inputEl = document.getElementById('input-pdf-upload');
-            if (!inputEl || !inputEl.files || inputEl.files.length === 0 || !db) return;
-
-            for (let file of inputEl.files) {
-                let nomeArq = file.name;
-                let sessaoNome = nomeArq.replace(/\.[^/.]+$/, "").trim();
-                let batKey = "bat_" + sessaoNome.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
-                try {
-                    let textoExtraido = "";
-                    const extensao = nomeArq.split('.').pop().toLowerCase();
-                    if (extensao === 'html' || extensao === 'htm') {
-                        textoExtraido = new DOMParser().parseFromString(await file.text(), 'text/html').body.innerText;
-                    } else {
-                        textoExtraido = await converterPdfParaTexto(file);
-                    }
-
-                    const dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, batKey);
-                    let pdfBase64 = await arquivoParaBase64(file);
-                    let historicoOriginal = {};
-                    dadosExtraidos.forEach(d => { historicoOriginal[d.piloto] = d.piloto; });
-
-                    await db.ref('baterias/' + batKey).set({
-                        bateriaKey: batKey, sessao: sessaoNome, id: Date.now(), dados: dadosExtraidos,
-                        pdfBase64: pdfBase64, nomeArquivoOriginal: nomeArq, historicoNomesOriginais: historicoOriginal
-                    });
-                } catch (err) { alert("Erro: " + err.message); }
+            const inputEl = document.getElementById('input-pdf-upload');
+            if (!inputEl || !inputEl.files || inputEl.files.length === 0) {
+                alert('⚠️ Selecione pelo menos um arquivo PDF ou HTML.');
+                return;
             }
-            inputEl.value = "";
-            fecharModalUpload();
+            if (!db) {
+                alert('❌ O Banco Principal ainda não foi conectado ao Firebase. Recarregue a página e tente novamente.');
+                return;
+            }
+
+            const arquivos = Array.from(inputEl.files);
+            const btn = document.querySelector('#upload-modal button[onclick*="processarUploadEEnviarNuvemPrincipal"]');
+            const textoOriginalBtn = btn ? btn.textContent : '';
+            let sucessos = 0;
+            let falhas = [];
+
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = `⏳ Enviando ${arquivos.length} arquivo(s)...`;
+            }
+
+            try {
+                for (const file of arquivos) {
+                    const nomeArq = file.name;
+                    const sessaoNome = nomeArq.replace(/\.[^/.]+$/, '').trim();
+                    const batKey = 'bat_' + sessaoNome.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+
+                    try {
+                        let textoExtraido = '';
+                        const extensao = nomeArq.split('.').pop().toLowerCase();
+
+                        if (extensao === 'html' || extensao === 'htm') {
+                            const html = await file.text();
+                            textoExtraido = new DOMParser().parseFromString(html, 'text/html').body.innerText || '';
+                        } else if (extensao === 'pdf') {
+                            textoExtraido = await converterPdfParaTexto(file);
+                        } else {
+                            throw new Error('Formato não suportado. Use PDF, HTML ou HTM.');
+                        }
+
+                        const dadosExtraidos = parsearTextoConvertido(textoExtraido, sessaoNome, batKey);
+                        const arquivoBase64 = await arquivoParaBase64(file);
+                        const historicoOriginal = {};
+                        dadosExtraidos.forEach(d => { if (d && d.piloto) historicoOriginal[d.piloto] = d.piloto; });
+
+                        // O arquivo é salvo mesmo quando a leitura automática não encontra pilotos.
+                        // Assim ele não desaparece da Central de Uploads e pode ser inspecionado/reprocessado.
+                        await db.ref('baterias/' + batKey).set({
+                            bateriaKey: batKey,
+                            sessao: sessaoNome,
+                            id: Date.now(),
+                            dados: Array.isArray(dadosExtraidos) ? dadosExtraidos : [],
+                            pdfBase64: arquivoBase64,
+                            nomeArquivoOriginal: nomeArq,
+                            historicoNomesOriginais: historicoOriginal,
+                            textoExtraido: textoExtraido,
+                            statusProcessamento: dadosExtraidos && dadosExtraidos.length ? 'processado' : 'arquivo_salvo_sem_dados'
+                        });
+
+                        sucessos++;
+                    } catch (errArquivo) {
+                        console.error('Erro ao processar upload:', nomeArq, errArquivo);
+                        falhas.push(`${nomeArq}: ${errArquivo && errArquivo.message ? errArquivo.message : errArquivo}`);
+                    }
+                }
+            } finally {
+                inputEl.value = '';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = textoOriginalBtn || 'Converter e Enviar';
+                }
+            }
+
+            atualizarListaUploadHistoricoPrincipal();
+
+            if (falhas.length === 0) {
+                alert(`✅ ${sucessos} arquivo(s) enviado(s) para o Banco Principal com sucesso.`);
+                fecharModalUpload();
+            } else {
+                alert(`⚠️ Upload concluído parcialmente.\n\nEnviados: ${sucessos}\nFalhas: ${falhas.length}\n\n${falhas.join('\n')}`);
+            }
         };
 
         function atualizarListaUploadHistoricoPrincipal() {
             const ul = document.getElementById('upload-lista-historico');
             if (!ul) return;
             ul.innerHTML = "";
-            if (!listaJsonsCache || listaJsonsCache.length === 0) {
+            if (!listaUploadsHistoricoCache || listaUploadsHistoricoCache.length === 0) {
                 ul.innerHTML = `<li style="color: var(--text-muted); text-align: center; padding: 6px;">Nenhum arquivo.</li>`;
                 return;
             }
-            listaJsonsCache.forEach((item, index) => {
+            listaUploadsHistoricoCache.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         <input type="checkbox" class="checkbox-excluir-lote-principal" value="${item.firebaseKey}" style="accent-color: var(--accent-red); width: 15px; height: 15px; cursor: pointer;">
-                        <span style="overflow: hidden; text-overflow: ellipsis;">📄 <strong>${escapeHtml(item.sessao || item.nomeArquivoOriginal)}</strong></span>
+                        <span style="overflow: hidden; text-overflow: ellipsis;">📄 <strong>${escapeHtml(item.sessao || item.nomeArquivoOriginal || 'Arquivo')}</strong>${item.statusProcessamento === 'arquivo_salvo_sem_dados' ? ' <small style="color:var(--accent-gold);">(salvo, sem dados reconhecidos)</small>' : ''}</span>
                     </div>
                     <button class="btn-text-action" onclick="inspecionarJsonUploadPrincipal(${index})">Inspecionar</button>
                 `;
@@ -3107,7 +3164,7 @@
         };
 
         window.inspecionarJsonUploadPrincipal = function(index) {
-            const item = listaJsonsCache[index];
+            const item = listaUploadsHistoricoCache[index];
             if (item) document.getElementById('upload-json-viewer').textContent = JSON.stringify(item, null, 4);
         };
 
