@@ -554,6 +554,8 @@
             <div class="footer-copyright">&copy; 2026 CTAD - Central de Telemetria. Todos os direitos reservados.</div>
         </footer>
     </div>
+    <script src="graficos.js"></script>
+    <script src="pdf-utils.js"></script>
     <script>
         // ATENÇÃO: preencha com o e-mail que você cadastrou no Firebase Authentication
         // (Console > Authentication > Users). A senha fica só no Firebase, nunca aqui no código.
@@ -1136,63 +1138,6 @@
             }
         }
 
-        function renderizarGraficoRitmoPersonalizado(canvasId, ordenados) {
-            let canvasEl = document.getElementById(canvasId);
-            if (!canvasEl) return;
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
-            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
-
-            let datasets = ordenados.map((p, idx) => {
-                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
-                return {
-                    label: p.piloto,
-                    data: Array.from({ length: maxVoltas }, (_, i) => { let l = p.laps ? p.laps[i] : null; return l ? (typeof l === 'object' ? l.tempo : l) : null; }),
-                    borderColor: cor, backgroundColor: cor, borderWidth: 3, tension: 0.1, spanGaps: true
-                };
-            });
-
-            chartInstances.push(new Chart(canvasEl.getContext('2d'), {
-                type: 'line', data: { labels, datasets },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 14 } } } } }
-            }));
-        }
-
-        function renderizarGraficoPosicaoPersonalizado(canvasId, ordenados) {
-            let canvasEl = document.getElementById(canvasId);
-            if (!canvasEl) return;
-            let maxVoltas = Math.max(...ordenados.map(p => p.laps ? p.laps.length : 0));
-            let labels = Array.from({ length: maxVoltas }, (_, i) => `Volta ${i + 1}`);
-
-            let datasets = ordenados.map((p, idx) => {
-                let cor = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"][idx % 6];
-                let posicoesVolta = [];
-                for (let v = 0; v < maxVoltas; v++) {
-                    let mapaVoltaPilotos = [];
-                    ordenados.forEach(pilotoObj => {
-                        let somaTemp = 0, valido = true;
-                        for (let j = 0; j <= v; j++) {
-                            let l = pilotoObj.laps ? pilotoObj.laps[j] : null;
-                            if (l === undefined || l === null || l <= 0) { valido = false; break; }
-                            somaTemp += (typeof l === 'object' ? l.tempo : l);
-                        }
-                        if (valido) mapaVoltaPilotos.push({ piloto: pilotoObj.piloto, tempoTotal: somaTemp, voltasCompletas: v + 1 });
-                    });
-                    mapaVoltaPilotos.sort((a, b) => a.voltasCompletas !== b.voltasCompletas ? b.voltasCompletas - a.voltasCompletas : a.tempoTotal - b.tempoTotal);
-                    let pos = mapaVoltaPilotos.findIndex(item => item.piloto === p.piloto);
-                    posicoesVolta.push(pos !== -1 ? pos + 1 : null);
-                }
-                return { label: p.piloto, data: posicoesVolta, borderColor: cor, backgroundColor: cor, borderWidth: 3, tension: 0.1, spanGaps: true };
-            });
-
-            chartInstances.push(new Chart(canvasEl.getContext('2d'), {
-                type: 'line', data: { labels, datasets },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#d0d7e3', font: { size: 14 } } } },
-                    scales: { y: { reverse: true, min: 1, ticks: { stepSize: 1, font: { size: 14 } } }, x: { ticks: { font: { size: 14 } } } }
-                }
-            }));
-        }
 
         window.abrirModalAcessibilidade = function() {
             document.getElementById('accessibility-modal').style.display = 'flex';
@@ -2671,28 +2616,6 @@
             });
         }
 
-        async function converterPdfParaTexto(arquivo) {
-            const arrayBuffer = await arquivo.arrayBuffer();
-            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-            const pdfDoc = await loadingTask.promise;
-            let textoCompleto = "";
-
-            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                const pagina = await pdfDoc.getPage(pageNum);
-                const tokenTextos = await pagina.getTextContent();
-                let linhasY = {};
-                tokenTextos.items.forEach(item => {
-                    let y = Math.round(item.transform[5] / 3) * 3;
-                    if (!linhasY[y]) linhasY[y] = [];
-                    linhasY[y].push({ x: item.transform[4], str: item.str });
-                });
-                Object.keys(linhasY).sort((a, b) => b - a).forEach(y => {
-                    let linhaItens = linhasY[y].sort((a, b) => a.x - b.x);
-                    textoCompleto += linhaItens.map(i => i.str).join(" | ") + "\n";
-                });
-            }
-            return textoCompleto;
-        }
 
         function parsearTextoConvertido(texto, sessaoNome, batKey) {
             let pilotosMap = {};
