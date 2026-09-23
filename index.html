@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
     <script>
@@ -851,7 +852,9 @@
         </footer>
     </div>
     <script>
-        const SENHA_UNIFICADA = "1234";
+        // ATENÇÃO: preencha com o e-mail que você cadastrou no Firebase Authentication
+        // (Console > Authentication > Users). A senha fica só no Firebase, nunca aqui no código.
+        const ADMIN_EMAIL = "luisrcsb@gmail.com";
         let isAdminLogado = false;
 
         // Controle central de acesso às funções administrativas de campeonatos.
@@ -1040,9 +1043,17 @@
             }).join('');
         }
 
+        let auth = null;
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
+            auth = firebase.auth();
+            // Mantém o admin logado entre recarregamentos da página, mas SEMPRE
+            // valida contra o Firebase (não é mais um "true" salvo localmente).
+            auth.onAuthStateChanged(user => {
+                isAdminLogado = !!user;
+                if (typeof atualizarUiAdminLogado === 'function') atualizarUiAdminLogado();
+            });
         } catch (e) {
             console.warn("Erro Firebase:", e);
         }
@@ -1515,21 +1526,29 @@
             document.getElementById('admin-modal').style.display = 'none';
         };
 
-        window.fazerLoginAdmin = function() {
+        window.fazerLoginAdmin = async function() {
             let senhaInput = document.getElementById('input-senha-admin').value;
-            if (senhaInput === SENHA_UNIFICADA) {
+            let btnLogin = document.getElementById('input-senha-admin');
+            if (!auth) { alert("❌ Autenticação indisponível no momento."); return; }
+            if (!senhaInput) { alert("Digite a senha."); return; }
+            try {
+                await auth.signInWithEmailAndPassword(ADMIN_EMAIL, senhaInput);
+                // isAdminLogado é atualizado pelo listener onAuthStateChanged,
+                // mas atualizamos a UI aqui também para resposta imediata.
                 isAdminLogado = true;
+                if (btnLogin) btnLogin.value = "";
                 renderizarAdminModal();
                 if (document.getElementById('campeonatos-modal')?.style.display === 'flex') {
                     renderizarListaCampeonatosModal();
                 }
-            } else {
+            } catch (err) {
                 alert("❌ Senha incorreta!");
             }
         };
 
         window.logoutAdmin = function() {
             isAdminLogado = false;
+            if (auth) auth.signOut();
             renderizarAdminModal();
 
             // Se o Championship Manager estiver aberto, remove imediatamente
@@ -2078,8 +2097,7 @@
         };
 
         window.excluirCompraColetiva = async function(compraKey) {
-            let senha = prompt("🔒 Digite a senha unificada (1234):");
-            if (senha !== SENHA_UNIFICADA) { alert("❌ Incorreta!"); return; }
+            if (!isAdminLogado) { alert("🔒 Faça login como administrador primeiro."); return; }
             if (confirm("Excluir esta compra coletiva?")) {
                 try {
                     await db.ref(`comprasColetivas/${compraKey}`).remove();
@@ -2678,8 +2696,7 @@
 
         window.excluirCampeonatoAtual = async function() {
             if (!campeonatoAtivoKey || !db) return;
-            let senha = prompt("🔒 Digite a senha (1234):");
-            if (senha !== SENHA_UNIFICADA) { alert("❌ Incorreta!"); return; }
+            if (!isAdminLogado) { alert("🔒 Faça login como administrador primeiro."); return; }
             if (confirm("Excluir este campeonato?")) {
                 try {
                     await db.ref(`campeonatos/${campeonatoAtivoKey}`).remove();
