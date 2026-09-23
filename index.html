@@ -709,12 +709,17 @@
     </div>
 
     <div id="participar-campeonato-modal" class="custom-modal" style="z-index: 10500;">
-        <div class="modal-content" style="max-width: 500px; border-top-color: var(--accent-gold);">
-            <div class="modal-header" style="background: var(--bg-card-header);">
-                <div class="modal-title" id="participar-modal-titulo">🏎️ Participar do Campeonato</div>
+        <div class="modal-content" style="max-width: 560px; border-top-color: var(--accent-gold);">
+            <div class="modal-header" style="background: var(--bg-card-header); gap: 10px;">
+                <div class="modal-title" id="participar-modal-titulo" style="flex: 1;">🏎️ Participar do Campeonato</div>
+                <button class="btn-action-primary" onclick="compartilharCampeonatoWhatsApp()" style="background:#25D366; color:#fff; border:none; padding:7px 10px; font-size:0.78rem; white-space:nowrap;">📲 Compartilhar</button>
                 <button class="modal-close" onclick="fecharModalParticipar()">&times;</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+                <div id="participar-regras-resumo" style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 3px solid var(--accent-gold); border-radius: 8px; padding: 10px 12px;">
+                    <div style="font-size: 0.72rem; font-weight: 800; color: var(--accent-gold); text-transform: uppercase; margin-bottom: 5px;">📋 Resumo das regras</div>
+                    <div style="font-size: 0.82rem; color: var(--text-main); line-height: 1.55;">Carregando configurações do campeonato...</div>
+                </div>
                 <p style="font-size: 0.8rem; color: var(--text-muted);">Selecione um piloto para inscrever neste campeonato:</p>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                     <select id="participar-select-piloto" class="config-select">
@@ -2393,6 +2398,20 @@
             if (!camp) return;
 
             document.getElementById('participar-modal-titulo').innerHTML = `🏎️ Participar: <span style="color: var(--accent-gold);">${escapeHtml(camp.nome)}</span>`;
+            const conf = camp.configuracoes || {};
+            const numeroProvas = parseInt(conf.numeroProvas, 10) || 0;
+            const usaGridTreino = !!conf.usaGridTreino;
+            const inverterSegunda = conf.inverterSegundaBateria === undefined ? true : !!conf.inverterSegundaBateria;
+            const resumoEl = document.getElementById('participar-regras-resumo');
+            if (resumoEl) {
+                resumoEl.innerHTML = `
+                    <div style="font-size: 0.72rem; font-weight: 800; color: var(--accent-gold); text-transform: uppercase; margin-bottom: 5px;">📋 Resumo das regras</div>
+                    <div style="font-size: 0.82rem; color: var(--text-main); line-height: 1.65;">
+                        <div>🏁 <strong>Número de provas:</strong> ${numeroProvas || 'Não definido'}</div>
+                        <div>🏆 <strong>Grid a partir do 1º treino:</strong> ${usaGridTreino ? '<span style="color: var(--accent-green); font-weight: 700;">SIM</span>' : '<span style="color: var(--accent-red); font-weight: 700;">NÃO</span>'}</div>
+                        <div>🔄 <strong>Inversão da 2ª bateria:</strong> ${inverterSegunda ? 'Sim' : 'Não'}</div>
+                    </div>`;
+            }
             let select = document.getElementById('participar-select-piloto');
             let dadosBase = obterTodosDadosConsolidados();
             let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
@@ -2414,6 +2433,19 @@
         window.fecharModalParticipar = function() {
             document.getElementById('participar-campeonato-modal').style.display = 'none';
             campeonatoParticiparKey = null;
+        };
+
+        window.compartilharCampeonatoWhatsApp = function() {
+            if (!campeonatoParticiparKey || !campeonatosCache[campeonatoParticiparKey]) return;
+            const camp = campeonatosCache[campeonatoParticiparKey];
+            const conf = camp.configuracoes || {};
+            const numeroProvas = parseInt(conf.numeroProvas, 10) || 0;
+            const usaGridTreino = !!conf.usaGridTreino;
+            const inverterSegunda = conf.inverterSegundaBateria === undefined ? true : !!conf.inverterSegundaBateria;
+            const nome = camp.nome || 'Campeonato';
+            const texto = `🏁 *${nome}*\n\n📋 *Resumo das regras*\n🏎️ Número de provas: ${numeroProvas || 'Não definido'}\n🏆 Grid a partir do 1º treino: ${usaGridTreino ? 'SIM' : 'NÃO'}\n🔄 Inversão da 2ª bateria: ${inverterSegunda ? 'SIM' : 'NÃO'}\n\n🏎️ *Participe do campeonato!*\nAcesse o sistema para realizar sua inscrição.`;
+            const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
         };
 
         function renderizarTabelaInscritosParticipar() {
