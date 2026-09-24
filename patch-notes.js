@@ -77,7 +77,7 @@
 
             linhas.push('━━━━━━━━━━━━━━━━━━━━');
             linhas.push('🔗 *ACESSE O SISTEMA:*');
-            linhas.push('https://luisrcsb.github.io/krathus-racing/');
+            linhas.push('https://luisrcsb.github.io/ctad/');
 
             const texto = linhas.join('\n').trim();
 
