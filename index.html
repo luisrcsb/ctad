@@ -377,6 +377,14 @@
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
                 <div class="config-panel">
+                    <div class="config-panel-title">➕ Cadastrar Novo Piloto</div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Cadastra um piloto no banco geral, mesmo antes dele participar de alguma corrida.</p>
+                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                        <input type="text" id="input-novo-piloto-geral" class="config-input" placeholder="Nome do novo piloto...">
+                        <button class="btn-action-primary" onclick="cadastrarNovoPilotoGeral()">Cadastrar</button>
+                    </div>
+                </div>
+                <div class="config-panel">
                     <div class="config-panel-title">Apelidos e Nomes de Exibição</div>
                     <p style="font-size: 0.78rem; color: var(--text-muted);">Clique em "Configurar" ao lado de cada piloto para gerenciar apelidos, aliases e cadastrar carros.</p>
                     <div class="table-container" style="margin-top: 6px;">

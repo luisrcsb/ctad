@@ -32,6 +32,26 @@
         window.fecharModalCampeonatos = function() { document.getElementById('campeonatos-modal').style.display = 'none'; };
 
 
+        window.cadastrarNovoPilotoGeral = async function() {
+            if (!db) return;
+            let inputEl = document.getElementById('input-novo-piloto-geral');
+            let nomeP = inputEl ? inputEl.value.trim() : "";
+            if (!nomeP) { alert("Digite o nome do piloto."); return; }
+
+            let metaKey = nomeP.replace(/[.#$\/\[\]]/g, "_");
+            let dadosBase = obterTodosDadosConsolidados();
+            let jaExiste = Object.keys(pilotosMetadadosCache).some(p => p.toLowerCase() === metaKey.toLowerCase())
+                || dadosBase.some(d => d.piloto && d.piloto.trim().toLowerCase() === nomeP.toLowerCase());
+            if (jaExiste) { alert(`Já existe um piloto cadastrado como "${nomeP}".`); return; }
+
+            try {
+                await db.ref(`pilotosMetadados/${metaKey}`).update({ criadoEm: Date.now() });
+                inputEl.value = "";
+                alert(`Piloto "${nomeP}" cadastrado!`);
+                renderizarGerenciadorPilotos();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
         function renderizarGerenciadorPilotos() {
             let dadosBase = obterTodosDadosConsolidados();
             let pilotosSet = new Set(PILOTOS_CORE_PADRAO);
@@ -66,6 +86,10 @@
             let carrosArr = Object.keys(carrosObj).map(k => ({ key: k, ...carrosObj[k] }));
 
             let aliasesPiloto = Object.keys(mesclagensCache).filter(alias => mesclagensCache[alias] === nomePiloto);
+
+            let dadosBaseHistorico = obterTodosDadosConsolidados();
+            let qtdSessoesPiloto = dadosBaseHistorico.filter(d => d.piloto === nomePiloto && d.laps && d.laps.length > 0).length;
+            let temHistoricoCorridas = qtdSessoesPiloto > 0;
 
             let aliasHtml = aliasesPiloto.length === 0 ? 
                 `<div style="font-size: 0.78rem; color: var(--text-muted);">Nenhum nome alternativo mapeado.</div>` :
@@ -126,8 +150,60 @@
                         ${carrosHtml}
                     </div>
                 </div>
+
+                <div class="config-panel" style="border: 1px solid var(--accent-red); background: rgba(230, 57, 70, 0.06);">
+                    <div class="config-panel-title" style="color: var(--accent-red);">⚠️ Zona de Perigo</div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        Isso apaga o cadastro deste piloto (apelido, aliases e carros).
+                        ${temHistoricoCorridas
+                            ? `Este piloto tem <strong>${qtdSessoesPiloto}</strong> sessão(ões) registrada(s) nos resultados — os resultados de corrida <strong>NÃO</strong> serão apagados, só o cadastro/apelido/aliases dele.`
+                            : `Este piloto ainda não tem nenhuma corrida registrada.`}
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
+                        <label style="font-size: 0.72rem; color: var(--text-muted);">Digite <strong>${escapeHtml(nomePiloto)}</strong> para confirmar:</label>
+                        <input type="text" id="input-confirmar-exclusao-piloto" class="config-input" placeholder="Digite o nome exato do piloto" oninput="alternarBotaoExcluirPiloto('${escapeHtml(nomePiloto)}')">
+                        <button id="btn-excluir-piloto-confirmado" class="btn-action-danger" disabled style="opacity: 0.5; cursor: not-allowed;" onclick="excluirPilotoDoGerenciador('${escapeHtml(nomePiloto)}')">🗑️ Excluir Cadastro Definitivamente</button>
+                    </div>
+                </div>
             `;
         }
+
+        window.alternarBotaoExcluirPiloto = function(nomePiloto) {
+            let inputEl = document.getElementById('input-confirmar-exclusao-piloto');
+            let btn = document.getElementById('btn-excluir-piloto-confirmado');
+            if (!inputEl || !btn) return;
+            let ok = inputEl.value.trim() === nomePiloto;
+            btn.disabled = !ok;
+            btn.style.opacity = ok ? '1' : '0.5';
+            btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+        };
+
+        window.excluirPilotoDoGerenciador = async function(nomePiloto) {
+            if (!db) return;
+            let confirmado = confirm(
+                `Tem certeza ABSOLUTA que deseja excluir o cadastro de "${nomePiloto}"?\n\n` +
+                `Isso remove apelido, aliases e carros cadastrados. Os resultados de corrida já registrados NÃO serão apagados.\n\n` +
+                `Essa ação não pode ser desfeita.`
+            );
+            if (!confirmado) return;
+
+            let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
+            try {
+                await db.ref(`pilotosMetadados/${metaKey}`).remove();
+
+                // Remove também os aliases que apontavam para esse piloto, para não
+                // deixar referências "órfãs" apontando para um cadastro que não existe mais.
+                let aliasesDoPiloto = Object.keys(mesclagensCache).filter(alias => mesclagensCache[alias] === nomePiloto);
+                for (let aliasKey of aliasesDoPiloto) {
+                    await db.ref(`mesclagensPilotos/${aliasKey}`).remove();
+                }
+
+                alert(`Cadastro de "${nomePiloto}" excluído.`);
+                fecharModalConfigurarPiloto();
+                renderizarGerenciadorPilotos();
+                atualizarDashboard();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
 
         window.salvarApelidoPilotoModal = async function(nomePiloto) {
             if (!db) return;
