@@ -1283,6 +1283,7 @@
         };
 
         window.criarCampeonatoProtegido = async function() {
+            if (!isAdminLogado) { alert("🔒 Faça login como administrador primeiro."); return; }
             let nomeCamp = document.getElementById('input-nome-campeonato').value.trim();
             if (!nomeCamp || !db) return;
             let campKey = "camp_" + nomeCamp.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
@@ -1408,6 +1409,7 @@
         }
 
         window.salvarNomeCampeonatoAtual = async function() {
+            if (!isAdminLogado) { alert("🔒 Faça login como administrador primeiro."); return; }
             if (!campeonatoAtivoKey || !db) return;
             let novoNome = document.getElementById('zround-edit-nome-camp').value.trim();
             if (!novoNome) return;
@@ -2197,7 +2199,8 @@
 
             let comprasContainer = document.getElementById('kpi-compras-conteudo');
             if (comprasContainer) {
-                let keys = Object.keys(comprasColetivasCache);
+                // Mesma ordenação da Gestão de Compras (admin): atualização mais recente no topo.
+                let keys = ordenarChavesComprasPorAtualizacao(Object.keys(comprasColetivasCache));
                 if (keys.length === 0) {
                     comprasContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.78rem;">Nenhuma compra coletiva.</div>`;
                 } else {
@@ -2231,10 +2234,12 @@
                             <div style="background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                                 <div>
                                     <strong style="color: var(--text-title); font-size: 0.85rem;">🛒 ${escapeHtml(comp.nome || comp.chave)}</strong>
-                                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; display: flex; gap: 8px; align-items: center;">
+                                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                                         <span>Pagos: <strong style="color: var(--text-main);">${pagos}/${ativos.length}</strong></span>
                                         <span>•</span>
                                         <span style="color: ${corStatus}; font-weight: 600;">${statusTexto}</span>
+                                        <span>•</span>
+                                        <span>🕘 ${formatarDataHistoricoCompra(obterTimestampAtualizacaoCompra(comp)) || 'sem atualizações'}</span>
                                     </div>
                                 </div>
                                 <button class="btn-action-primary" style="background: #3a86ff; padding: 4px 10px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${k}')">Resumo</button>

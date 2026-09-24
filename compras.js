@@ -2,6 +2,39 @@
    Depende de variáveis globais do script principal:
    'db' (Firebase), 'comprasColetivasCache', 'compraGerenciandoKey', 'escapeHtml()'. */
 
+        // Retorna o timestamp de referência pra ordenar as compras: usa a última
+        // atualização registrada (status, pagamento, rastreio...) e cai para a
+        // data de criação em compras antigas que ainda não têm esse campo.
+        function obterTimestampAtualizacaoCompra(comp) {
+            return Number(comp && comp.ultimaAtualizacao) || Number(comp && comp.criadoEm) || 0;
+        }
+
+        // Ordena uma lista de chaves de comprasColetivasCache da atualização
+        // mais recente para a mais antiga. Usada tanto na Gestão (admin)
+        // quanto na área pública do dashboard, pra manter a mesma ordem nos dois lugares.
+        function ordenarChavesComprasPorAtualizacao(chaves) {
+            return chaves.slice().sort((a, b) =>
+                obterTimestampAtualizacaoCompra(comprasColetivasCache[b]) - obterTimestampAtualizacaoCompra(comprasColetivasCache[a])
+            );
+        }
+
+        // Registra uma entrada no histórico de uma compra (mudança de status,
+        // pagamento confirmado, rastreio atualizado etc) e atualiza o timestamp
+        // de última atualização, usado pra reordenar a lista.
+        function registrarHistoricoCompra(comp, tipo, descricao) {
+            if (!comp.historico || !Array.isArray(comp.historico)) comp.historico = [];
+            comp.historico.unshift({ data: Date.now(), tipo, descricao });
+            if (comp.historico.length > 30) comp.historico = comp.historico.slice(0, 30);
+            comp.ultimaAtualizacao = Date.now();
+        }
+
+        function formatarDataHistoricoCompra(ts) {
+            if (!ts) return "";
+            try {
+                return new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch (e) { return ""; }
+        }
+
         window.abrirModalCompras = function() {
             compraGerenciandoKey = null;
             document.getElementById('compras-modal').style.display = 'flex';
@@ -110,6 +143,8 @@
             else if (quitada) comp.status = "QUITADA";
             else comp.status = "EM ANDAMENTO / PENDENTE";
 
+            registrarHistoricoCompra(comp, 'status', comp.entregue ? '📦 Marcado como entregue' : 'Desmarcado como entregue');
+
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
                 renderizarModalComprasColetivas();
@@ -120,6 +155,12 @@
             if (!db) return;
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
+
+            // Guarda o "antes" pra detectar o que realmente mudou e registrar no histórico.
+            let statusAntigo = comp.status;
+            let rastreioAntigo = comp.rastreio || "";
+            let entregueAntigo = !!comp.entregue;
+            let pagosAntigos = Object.values(comp.participantes || {}).filter(p => p && p.pago).map(p => p.nome);
 
             let nomeInput = document.getElementById('det-nome-compra');
             if (nomeInput) comp.nome = nomeInput.value.trim();
@@ -174,6 +215,21 @@
             else if (comp.entregue) comp.status = "ENTREGUE";
             else if (quitada) comp.status = "QUITADA";
             else comp.status = "EM ANDAMENTO / PENDENTE";
+
+            // Registra no histórico só o que de fato mudou nessa edição.
+            if ((comp.rastreio || "") !== rastreioAntigo && comp.rastreio) {
+                registrarHistoricoCompra(comp, 'rastreio', `🔎 Código de rastreio atualizado: ${comp.rastreio}`);
+            }
+            let pagosNovos = Object.values(novosParticipantes).filter(p => p && p.pago).map(p => p.nome);
+            let novosPagamentos = pagosNovos.filter(n => !pagosAntigos.includes(n));
+            if (novosPagamentos.length > 0) {
+                registrarHistoricoCompra(comp, 'pagamento', `💰 Pagamento confirmado: ${novosPagamentos.join(', ')}`);
+            }
+            if (!!comp.entregue !== entregueAntigo) {
+                registrarHistoricoCompra(comp, 'status', comp.entregue ? '📦 Marcado como entregue' : 'Desmarcado como entregue');
+            } else if (comp.status !== statusAntigo) {
+                registrarHistoricoCompra(comp, 'status', `Status alterado para "${comp.status}"`);
+            }
 
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
@@ -234,6 +290,7 @@
             if (!comp) return;
             comp.entregue = true;
             comp.status = "FINALIZADA / CONCLUÍDA";
+            registrarHistoricoCompra(comp, 'status', '🏁 Compra finalizada manualmente');
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
                 renderizarModalComprasColetivas();
@@ -409,18 +466,9 @@
 
             if (tituloEl) tituloEl.innerHTML = `🛒 Gestão de Compras Coletivas`;
 
-            // As compras são exibidas da mais recente para a mais antiga.
-            // Compras novas usam criadoEm; registros antigos continuam funcionando
-            // pelo timestamp presente na chave "compra_<timestamp>".
-            let keys = Object.keys(comprasColetivasCache).sort((a, b) => {
-                const compA = comprasColetivasCache[a] || {};
-                const compB = comprasColetivasCache[b] || {};
-
-                const dataA = Number(compA.criadoEm) || Number(String(a).match(/(\d+)$/)?.[1]) || 0;
-                const dataB = Number(compB.criadoEm) || Number(String(b).match(/(\d+)$/)?.[1]) || 0;
-
-                return dataB - dataA;
-            });
+            // As compras são exibidas da mais recentemente ATUALIZADA para a mais antiga
+            // (mudança de status, pagamento ou rastreio conta como atualização).
+            let keys = ordenarChavesComprasPorAtualizacao(Object.keys(comprasColetivasCache));
 
             if (keys.length === 0) {
                 bodyEl.innerHTML = `
@@ -455,6 +503,15 @@
                 let statusExibicao = finalizada ? "Finalizada" : (quitada ? "Quitada" : (entregue ? "Entregue" : "Em Andamento"));
                 let badgeColor = finalizada ? "rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green);" : (quitada ? "rgba(58,134,255,0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue);" : "rgba(255,183,3,0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold);");
 
+                let ultimaAtualizacaoTs = obterTimestampAtualizacaoCompra(comp);
+                let historico = Array.isArray(comp.historico) ? comp.historico : [];
+                let historicoItensHtml = historico.slice(0, 8).map(h => `
+                    <div style="display: flex; justify-content: space-between; gap: 8px; font-size: 0.72rem; padding: 4px 0; border-bottom: 1px dashed var(--border-card);">
+                        <span style="color: var(--text-main);">${escapeHtml(h.descricao || '')}</span>
+                        <span style="color: var(--text-muted); white-space: nowrap;">${formatarDataHistoricoCompra(h.data)}</span>
+                    </div>
+                `).join('') || `<div style="font-size: 0.72rem; color: var(--text-muted); padding: 4px 0;">Nenhuma atualização registrada ainda.</div>`;
+
                 return `
                     <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 5px solid ${finalizada ? 'var(--accent-green)' : (quitada ? 'var(--accent-blue)' : 'var(--accent-gold)')}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
@@ -467,6 +524,13 @@
                                 <button class="btn" style="background: rgba(114,9,183,0.25); color: #e0aaff; border: 1px solid #7209b7; padding: 4px 8px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${k}')">📊 Resumo</button>
                                 <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="gerenciarCompraColetiva('${k}')">⚙️ Gerenciar</button>
                             </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.7rem; color: var(--text-muted);">🕘 Última atualização: ${ultimaAtualizacaoTs ? formatarDataHistoricoCompra(ultimaAtualizacaoTs) : '—'}</span>
+                            <button class="btn" style="background: transparent; color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 2px 8px; font-size: 0.7rem;" onclick="let el = document.getElementById('historico-compra-${k}'); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';">Ver Histórico (${historico.length})</button>
+                        </div>
+                        <div id="historico-compra-${k}" style="display: none; background: var(--bg-body); border-radius: 6px; padding: 6px 10px; max-height: 160px; overflow-y: auto;">
+                            ${historicoItensHtml}
                         </div>
                     </div>
                 `;
