@@ -285,6 +285,28 @@
             } catch(err) { alert("Erro: " + err.message); }
         };
 
+        // Atalho de 1 clique pra registrar um evento comum de rastreio no histórico,
+        // sem precisar digitar nada. Não depende de nenhuma API externa.
+        window.registrarEventoRastreioCompra = async function(compraKey, evento) {
+            if (!db) return;
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+
+            let textos = {
+                postado: '📮 Objeto postado nos Correios',
+                transito: '🚚 Objeto em trânsito',
+                saiu_entrega: '📦 Saiu para entrega',
+                entregue: '✅ Objeto entregue (rastreio)'
+            };
+            let descricao = textos[evento] || 'Atualização de rastreio';
+            registrarHistoricoCompra(comp, 'rastreio', descricao);
+
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                renderizarModalComprasColetivas();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
         window.finalizarCompraColetivaStatus = async function(compraKey) {
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
@@ -449,7 +471,17 @@
                         <div class="config-panel-title">5. Chave Pix / Rastreio</div>
                         <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
                             <input type="text" id="det-chave-pix" class="config-input" value="${escapeHtml(comp.chavePix || '')}" placeholder="Chave Pix Copia e Cola Global" style="font-size: 0.78rem;">
-                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem;">
+                            <div style="display: flex; gap: 6px;">
+                                <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem; flex: 1;" oninput="document.getElementById('btn-verificar-rastreio-${compraGerenciandoKey}').style.display = this.value.trim() ? 'inline-flex' : 'none';">
+                                <button id="btn-verificar-rastreio-${compraGerenciandoKey}" class="btn" style="background: rgba(58,134,255,0.15); color: #3a86ff; border: 1px solid #3a86ff; padding: 4px 10px; font-size: 0.72rem; white-space: nowrap; ${comp.rastreio ? '' : 'display: none;'}" onclick="window.open('https://rastreamento.correios.com.br/app/index.php?objetos=' + encodeURIComponent(document.getElementById('det-rastreio').value.trim()), '_blank')">🔎 Verificar</button>
+                            </div>
+                            <p style="font-size: 0.7rem; color: var(--text-muted); margin: 2px 0 0;">Atalho pra registrar a atualização no histórico com 1 clique (salva na hora):</p>
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'postado')">📮 Postado</button>
+                                <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'transito')">🚚 Em trânsito</button>
+                                <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'saiu_entrega')">📦 Saiu p/ entrega</button>
+                                <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'entregue')">✅ Entregue</button>
+                            </div>
                         </div>
                     </div>
 
