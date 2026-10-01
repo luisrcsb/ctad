@@ -262,7 +262,7 @@
                                 <div style="margin-top: 8px; background: rgba(58, 134, 255, 0.08); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card);">
                                     <label class="checkbox-item" style="font-weight: 600;">
                                         <input type="checkbox" id="zround-usa-grid-treino" style="width: 15px; height: 15px;">
-                                        Formar grid a partir de treino (pega os 3 melhores tempos de cada piloto e descarta o pior)
+                                        Formar grid a partir de treino (pega as 3 melhores voltas consecutivas de cada piloto)
                                     </label>
                                 </div>
                                 <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px;">
@@ -1478,6 +1478,35 @@
             }
         };
 
+        // Monta a tabela com o detalhamento de cada piloto: as 3 voltas consecutivas
+        // usadas, seus tempos individuais e a média que definiu a posição no grid.
+        function renderizarTabelaGridTreino(rankingGridTreino) {
+            if (!rankingGridTreino || rankingGridTreino.length === 0) {
+                return `<div style="color: var(--text-muted);">Nenhum treino processado.</div>`;
+            }
+            let linhas = rankingGridTreino.map((r, idx) => {
+                let voltas = r.voltasUsadas || [];
+                let tempos = r.temposUsados || [];
+                let voltasTxt = voltas.length > 0
+                    ? voltas.map((v, i) => `V${v}: ${tempos[i].toFixed(3).replace('.', ',')}s`).join(' • ')
+                    : '—';
+                return `
+                    <tr>
+                        <td style="font-weight: 700;">${idx + 1}º</td>
+                        <td>${escapeHtml(r.piloto)}</td>
+                        <td style="font-size: 0.72rem; color: var(--text-muted);">${voltasTxt}</td>
+                        <td style="font-weight: 700; color: var(--accent-gold);">${r.melhorTempo.toFixed(3).replace('.', ',')}s</td>
+                    </tr>`;
+            }).join('');
+            return `
+                <div class="table-container" style="margin-top: 4px;">
+                    <table>
+                        <thead><tr><th>Pos.</th><th>Piloto</th><th>Voltas Usadas (3 consecutivas)</th><th>Média</th></tr></thead>
+                        <tbody>${linhas}</tbody>
+                    </table>
+                </div>`;
+        }
+
         window.processarTreinoParaGrid = async function() {
             if (!campeonatoAtivoKey || !db) return;
             let inputEl = document.getElementById('zround-input-file-treino-grid');
@@ -1495,22 +1524,42 @@
                 let dadosTreino = parsearTextoConvertido(textoExtraido, "Treino Grid", "treino_grid");
                 let rankingGridTreino = [];
                 dadosTreino.forEach(d => {
-                    let laps = (d.laps || []).filter(t => !isNaN(t) && t > 0).sort((a,b) => a - b);
-                    if (laps.length > 0) {
-                        let top3 = laps.slice(0, 3);
-                        let melhorTempoDefinitivo = top3[0];
-                        if (top3.length >= 3) {
-                            let tresMelhores = [...top3].sort((a,b) => a - b);
-                            tresMelhores.pop();
-                            melhorTempoDefinitivo = Math.min(...tresMelhores);
+                    // Mantém o número original da volta (1-indexado) antes de filtrar
+                    // voltas inválidas, pra exibir "V3, V4, V5" corretamente.
+                    let lapsComNumero = (d.laps || [])
+                        .map((t, idx) => ({ volta: idx + 1, tempo: t }))
+                        .filter(l => !isNaN(l.tempo) && l.tempo > 0);
+
+                    if (lapsComNumero.length === 0) return;
+
+                    let melhorJanela = null;
+                    if (lapsComNumero.length >= 3) {
+                        // Desliza uma janela de 3 voltas CONSECUTIVAS (na ordem real da
+                        // sessão) e fica com a janela de menor tempo médio.
+                        for (let i = 0; i <= lapsComNumero.length - 3; i++) {
+                            let janela = lapsComNumero.slice(i, i + 3);
+                            let media = (janela[0].tempo + janela[1].tempo + janela[2].tempo) / 3;
+                            if (!melhorJanela || media < melhorJanela.media) {
+                                melhorJanela = { janela, media };
+                            }
                         }
-                        rankingGridTreino.push({ piloto: d.piloto, melhorTempo: melhorTempoDefinitivo });
+                    } else {
+                        // Piloto com menos de 3 voltas válidas: usa a média do que ele tem.
+                        let media = lapsComNumero.reduce((s, l) => s + l.tempo, 0) / lapsComNumero.length;
+                        melhorJanela = { janela: lapsComNumero, media };
                     }
+
+                    rankingGridTreino.push({
+                        piloto: d.piloto,
+                        melhorTempo: melhorJanela.media,
+                        voltasUsadas: melhorJanela.janela.map(l => l.volta),
+                        temposUsados: melhorJanela.janela.map(l => l.tempo)
+                    });
                 });
 
                 rankingGridTreino.sort((a, b) => a.melhorTempo - b.melhorTempo);
                 await db.ref(`campeonatos/${campeonatoAtivoKey}/gridTreinoDados`).set(rankingGridTreino);
-                document.getElementById('status-treino-grid-info').innerText = `✅ Treino processado! (${rankingGridTreino.length} pilotos).`;
+                document.getElementById('status-treino-grid-info').innerHTML = `<div style="color: var(--accent-green); margin-bottom: 4px;">✅ Treino processado! (${rankingGridTreino.length} pilotos).</div>` + renderizarTabelaGridTreino(rankingGridTreino);
                 inputEl.value = "";
                 atualizarInterfacePainelZRound();
             } catch (err) { alert("Erro: " + err.message); }
@@ -1611,6 +1660,15 @@
                             <button class="btn-text-action" style="color: var(--accent-red);" onclick="excluirProvaBancoSeparado('${pk}')">Excluir</button>
                         </li>`;
                 }).join('');
+            }
+
+            let statusTreinoEl = document.getElementById('status-treino-grid-info');
+            if (statusTreinoEl) {
+                if (camp.gridTreinoDados && camp.gridTreinoDados.length > 0) {
+                    statusTreinoEl.innerHTML = `<div style="color: var(--accent-green); margin-bottom: 4px;">✅ Treino processado! (${camp.gridTreinoDados.length} pilotos).</div>` + renderizarTabelaGridTreino(camp.gridTreinoDados);
+                } else {
+                    statusTreinoEl.innerHTML = `Nenhum treino processado.`;
+                }
             }
 
             let containerGrids = document.getElementById('container-todos-grids-gerados');
