@@ -251,8 +251,8 @@
                                         <input type="number" id="zround-num-provas" class="config-input" style="width:100%; margin-top:2px;">
                                     </div>
                                     <div>
-                                        <label style="font-size: 0.7rem; color: var(--text-muted);">Pilotos Máximos por Prova</label>
-                                        <input type="number" id="zround-pilotos-prova" class="config-input" style="width:100%; margin-top:2px;">
+                                        <label style="font-size: 0.7rem; color: var(--text-muted);">Número Máximo de Pilotos por Chave</label>
+                                        <input type="number" id="zround-pilotos-chave" class="config-input" style="width:100%; margin-top:2px;">
                                     </div>
                                 </div>
                                 <div style="margin-top: 6px;">
@@ -1311,7 +1311,7 @@
             try {
                 await db.ref('campeonatos/' + campKey).set({
                     chave: campKey, nome: nomeCamp, status: "Em andamento",
-                    configuracoes: { numeroProvas: 4, pilotosPorProva: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+                    configuracoes: { numeroProvas: 4, pilotosPorChave: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
                     pilotosInscritos: {}, bateriasBancoSeparado: {}, gridTreinoDados: null
                 });
                 document.getElementById('input-nome-campeonato').value = "";
@@ -1376,9 +1376,10 @@
             document.getElementById('container-zround-campeonato').style.display = 'flex';
             document.getElementById('zround-edit-nome-camp').value = camp.nome || "";
 
-            let conf = camp.configuracoes || { numeroProvas: 4, pilotosPorProva: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] };
+            let conf = camp.configuracoes || { numeroProvas: 4, pilotosPorChave: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] };
             document.getElementById('zround-num-provas').value = conf.numeroProvas;
-            document.getElementById('zround-pilotos-prova').value = conf.pilotosPorProva;
+            // "pilotosPorProva" é o nome antigo do campo — mantido como fallback pra campeonatos criados antes dessa atualização.
+            document.getElementById('zround-pilotos-chave').value = conf.pilotosPorChave ?? conf.pilotosPorProva ?? 10;
             document.getElementById('zround-inverter-segunda').checked = conf.inverterSegundaBateria;
             document.getElementById('zround-usa-grid-treino').checked = conf.usaGridTreino || false;
             if (conf.pontuacaoTabela) document.getElementById('zround-tabela-pontos-input').value = conf.pontuacaoTabela.join(', ');
@@ -1472,14 +1473,14 @@
         window.salvarAba1ConfigGeral = async function() {
             if (!campeonatoAtivoKey || !db) return;
             let numProvas = parseInt(document.getElementById('zround-num-provas').value, 10) || 4;
-            let pilotosProva = parseInt(document.getElementById('zround-pilotos-prova').value, 10) || 10;
+            let pilotosChave = parseInt(document.getElementById('zround-pilotos-chave').value, 10) || 10;
             let inverter = document.getElementById('zround-inverter-segunda').checked;
             let usaGridTreino = document.getElementById('zround-usa-grid-treino').checked;
             let pontosArr = document.getElementById('zround-tabela-pontos-input').value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
 
             try {
                 await db.ref(`campeonatos/${campeonatoAtivoKey}/configuracoes`).set({
-                    numeroProvas: numProvas, pilotosPorProva: pilotosProva, inverterSegundaBateria: inverter,
+                    numeroProvas: numProvas, pilotosPorChave: pilotosChave, inverterSegundaBateria: inverter,
                     usaGridTreino: usaGridTreino, pontuacaoTabela: pontosArr.length > 0 ? pontosArr : [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
                 });
                 alert("Salvo com sucesso!");
@@ -1650,6 +1651,34 @@
             }
         };
 
+        // Calcula quantos pilotos cada chave recebe, a partir do total de inscritos
+        // e do número máximo de pilotos por chave.
+        // - Se total <= max: chave única (retorna [total]).
+        // - Senão: divide em "ceil(total/max)" chaves, com uma base igual pra todas
+        //   e o resto da divisão inteira somado à primeira chave, respeitando o
+        //   teto máximo por chave. Se o resto não couber inteiro na primeira chave,
+        //   o excedente é empurrado pra(s) chave(s) seguinte(s) (nunca ultrapassa o máximo).
+        function calcularDistribuicaoChaves(totalPilotos, maxPorChave) {
+            maxPorChave = Math.max(1, parseInt(maxPorChave, 10) || 10);
+            if (totalPilotos <= 0) return [];
+            if (totalPilotos <= maxPorChave) return [totalPilotos];
+
+            let numChaves = Math.ceil(totalPilotos / maxPorChave);
+            let base = Math.floor(totalPilotos / numChaves);
+            let resto = totalPilotos - (base * numChaves);
+
+            let distribuicao = new Array(numChaves).fill(base);
+            let i = 0;
+            while (resto > 0 && i < numChaves) {
+                let espaco = maxPorChave - distribuicao[i];
+                let adicionar = Math.min(resto, espaco);
+                distribuicao[i] += adicionar;
+                resto -= adicionar;
+                i++;
+            }
+            return distribuicao;
+        }
+
         function atualizarInterfacePainelZRound() {
             if (!campeonatoAtivoKey || !campeonatosCache[campeonatoAtivoKey]) return;
             let camp = campeonatosCache[campeonatoAtivoKey];
@@ -1696,6 +1725,8 @@
             let numProvasPrevistas = camp.configuracoes?.numeroProvas || 4;
             let inverterAtivo = camp.configuracoes?.inverterSegundaBateria ?? true;
             let usaGridTreino = camp.configuracoes?.usaGridTreino ?? false;
+            // "pilotosPorProva" é o nome antigo do campo — mantido como fallback.
+            let maxPilotosPorChave = camp.configuracoes?.pilotosPorChave ?? camp.configuracoes?.pilotosPorProva ?? 10;
 
             let gridBaseInicial = [];
             if (usaGridTreino && camp.gridTreinoDados && camp.gridTreinoDados.length > 0) {
@@ -1729,24 +1760,58 @@
                     }
                 }
 
-                let linhasGridHtml = pilotoGridAtual.length === 0 ? `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pilotos.</td></tr>` :
-                    pilotoGridAtual.map((pilotoNome, idx) => `
-                        <tr>
-                            <td><span class="pos-badge">${idx + 1}º</span></td>
-                            <td><strong>${escapeHtml(pilotoNome)}</strong></td>
-                            <td><span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(criterioTexto)}</span></td>
-                        </tr>
-                    `).join('');
-
-                gridsHtml += `
-                    <div class="card" style="padding: 8px; background: var(--bg-input);">
-                        <div class="card-header" style="margin-bottom: 6px; font-size: 0.82rem;">🏁 Grid - Prova ${g + 1}</div>
+                // Divide a grade dessa prova em chaves, de acordo com o limite
+                // máximo de pilotos por chave configurado.
+                let distribuicaoChaves = calcularDistribuicaoChaves(pilotoGridAtual.length, maxPilotosPorChave);
+                let chavesHtml = '';
+                if (distribuicaoChaves.length <= 1) {
+                    // Campeonato único: sem subdivisão, comportamento de sempre.
+                    let linhasGridHtml = pilotoGridAtual.length === 0 ? `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">Sem pilotos.</td></tr>` :
+                        pilotoGridAtual.map((pilotoNome, idx) => `
+                            <tr>
+                                <td><span class="pos-badge">${idx + 1}º</span></td>
+                                <td><strong>${escapeHtml(pilotoNome)}</strong></td>
+                                <td><span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(criterioTexto)}</span></td>
+                            </tr>
+                        `).join('');
+                    chavesHtml = `
                         <div class="table-container">
                             <table>
                                 <thead><tr><th>Pos</th><th>Piloto</th><th>Critério</th></tr></thead>
                                 <tbody>${linhasGridHtml}</tbody>
                             </table>
-                        </div>
+                        </div>`;
+                } else {
+                    // Mais de uma chave: a 1ª chave recebe o excedente da divisão,
+                    // conforme a regra configurada (até o teto máximo por chave).
+                    let cursor = 0;
+                    let letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                    chavesHtml = distribuicaoChaves.map((tamanhoChave, idxChave) => {
+                        let pilotosDaChave = pilotoGridAtual.slice(cursor, cursor + tamanhoChave);
+                        cursor += tamanhoChave;
+                        let linhas = pilotosDaChave.map((pilotoNome, idx) => `
+                            <tr>
+                                <td><span class="pos-badge">${idx + 1}º</span></td>
+                                <td><strong>${escapeHtml(pilotoNome)}</strong></td>
+                                <td><span style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(criterioTexto)}</span></td>
+                            </tr>`).join('');
+                        return `
+                            <div style="margin-top: ${idxChave > 0 ? '10px' : '0'};">
+                                <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-gold); margin-bottom: 4px;">🔑 Chave ${letras[idxChave] || (idxChave + 1)} (${pilotosDaChave.length} pilotos)</div>
+                                <div class="table-container">
+                                    <table>
+                                        <thead><tr><th>Pos</th><th>Piloto</th><th>Critério</th></tr></thead>
+                                        <tbody>${linhas}</tbody>
+                                    </table>
+                                </div>
+                            </div>`;
+                    }).join('');
+                }
+
+                gridsHtml += `
+                    <div class="card" style="padding: 8px; background: var(--bg-input);">
+                        <div class="card-header" style="margin-bottom: 6px; font-size: 0.82rem;">🏁 Grid - Prova ${g + 1}${distribuicaoChaves.length > 1 ? ` <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">(dividida em ${distribuicaoChaves.length} chaves)</span>` : ''}</div>
+                        ${chavesHtml}
                     </div>
                 `;
             }
