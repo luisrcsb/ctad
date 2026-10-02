@@ -400,6 +400,24 @@
         </div>
     </div>
 
+    <div id="tags-config-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <div class="modal-title">🏷️ Tags dos Pilotos</div>
+                <button class="modal-close" onclick="fecharModalTagsPilotos()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
+                    As tags com fundo destacado são calculadas automaticamente a partir dos resultados de corrida.
+                    As demais podem ser atribuídas manualmente marcando a caixa correspondente.
+                </p>
+                <div id="tags-config-corpo" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="color: var(--text-muted);">Carregando...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="compras-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 1000px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
@@ -567,6 +585,7 @@
     <script src="compras.js"></script>
     <script src="comentarios.js"></script>
     <script src="pilotos.js"></script>
+    <script src="tags.js"></script>
     <script src="patch-notes.js"></script>
     <script src="acessibilidade.js"></script>
     <script>
@@ -1146,6 +1165,10 @@
                             <div class="config-panel-title" style="color: var(--accent-green);">🛒 Compras Coletivas</div>
                             <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Gerencie cotas, itens, fretes e recibos de pagamento Pix.</p>
                         </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('tags')">
+                            <div class="config-panel-title" style="color: var(--accent-gold);">🏷️ Tags dos Pilotos</div>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Veja as tags automáticas e atribua tags manuais a cada piloto.</p>
+                        </div>
                     </div>
                 `;
             }
@@ -1158,6 +1181,7 @@
             if (tipo === 'campeonatos') abrirModalCampeonatos();
             if (tipo === 'pilotos') abrirModalPilotos();
             if (tipo === 'compras') abrirModalCompras();
+            if (tipo === 'tags') abrirModalTagsPilotos();
         };
 
         window.abrirModalUpload = function() { document.getElementById('upload-modal').style.display = 'flex'; };
@@ -2221,7 +2245,7 @@
 
 
         window.onclick = function(event) {
-            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal', 'patch-notes-modal'].forEach(id => {
+            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'tags-config-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal', 'patch-notes-modal'].forEach(id => {
                 if (event.target === document.getElementById(id)) document.getElementById(id).style.display = 'none';
             });
         };

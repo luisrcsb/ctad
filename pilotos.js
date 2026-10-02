@@ -293,6 +293,9 @@
             let vitorias = 0, podios = 0, totalVoltasDadas = 0, melhorVoltaGeral = 999999, somaDesvios = 0;
             let historicoSessaoHtml = [];
 
+            let tagsAutomaticasGlobais = calcularTagsAutomaticasPilotos();
+            let tagsDoPiloto = obterTodasTagsPiloto(nomePiloto, tagsAutomaticasGlobais);
+
             listaJsonsCache.forEach(arq => {
                 let todosBat = (arq.dados || []).map(d => {
                     let pReal = d.piloto ? d.piloto.trim() : "";
@@ -343,6 +346,8 @@
                     <div class="dossier-kpi"><span class="dossier-kpi-label">Voltas</span><span class="dossier-kpi-value">${totalVoltasDadas}</span></div>
                     <div class="dossier-kpi"><span class="dossier-kpi-label">Velocidade Máxima</span><span class="dossier-kpi-value">${velMax} km/h</span></div>
                 </div>
+
+                ${tagsDoPiloto.length > 0 ? renderizarTagsPilotoHtml(tagsDoPiloto) : ''}
 
                 <div class="dossier-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
                     <div class="dossier-kpi"><span class="dossier-kpi-label">Melhor Volta</span><span class="dossier-kpi-value" style="color: var(--accent-green);">${melhorVoltaGeral < 999999 ? melhorVoltaGeral.toFixed(3) + 's' : '--'}</span></div>
