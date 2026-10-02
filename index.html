@@ -1676,6 +1676,15 @@
                 resto -= adicionar;
                 i++;
             }
+
+            // Regra: nenhum piloto corre sozinho. Se a última chave ficar com
+            // apenas 1 piloto, ela é absorvida pela chave anterior — mesmo que
+            // isso ultrapasse o limite máximo configurado por chave.
+            while (distribuicao.length > 1 && distribuicao[distribuicao.length - 1] === 1) {
+                let ultimo = distribuicao.pop();
+                distribuicao[distribuicao.length - 1] += ultimo;
+            }
+
             return distribuicao;
         }
 
