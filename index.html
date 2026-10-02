@@ -1223,7 +1223,7 @@
             campeonatoParticiparKey = null;
         };
 
-        window.compartilharCampeonatoWhatsApp = function() {
+        window.compartilharCampeonatoWhatsApp = async function() {
             if (!campeonatoParticiparKey || !campeonatosCache[campeonatoParticiparKey]) return;
             const camp = campeonatosCache[campeonatoParticiparKey];
             const conf = camp.configuracoes || {};
@@ -1232,6 +1232,27 @@
             const inverterSegunda = conf.inverterSegundaBateria === undefined ? true : !!conf.inverterSegundaBateria;
             const nome = camp.nome || 'Campeonato';
             const texto = `🏁 *${nome}*\n\n📋 *Resumo das regras*\n🏎️ Número de provas: ${numeroProvas || 'Não definido'}\n🏆 Grid a partir do 1º treino: ${usaGridTreino ? 'SIM' : 'NÃO'}\n🔄 Inversão da 2ª bateria: ${inverterSegunda ? 'SIM' : 'NÃO'}\n\n🏎️ *Participe do campeonato!*\nAcesse o sistema para realizar sua inscrição.`;
+
+            // O link direto wa.me?text= costuma corromper emojis (vira "�" ou some
+            // o caractere). O compartilhamento nativo do celular e a cópia pro
+            // clipboard preservam o texto exatamente como está, sem esse problema.
+            if (navigator.share) {
+                try {
+                    await navigator.share({ text: texto });
+                    return;
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return; // usuário cancelou
+                }
+            }
+
+            if (navigator.clipboard) {
+                try {
+                    await navigator.clipboard.writeText(texto);
+                    alert("Texto copiado! Cole (Ctrl+V) na conversa do WhatsApp.");
+                    return;
+                } catch (err) { /* segue pro último recurso abaixo */ }
+            }
+
             const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
             window.open(url, '_blank', 'noopener,noreferrer');
         };
