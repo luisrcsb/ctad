@@ -1,10 +1,50 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v5.86.2";
-        const TITULO_VERSAO_ATUAL = "Tabela Geral Volta a Volta — Layout por Piloto";
+        const VERSAO_ATUAL_SISTEMA = "v5.90.0";
+        const TITULO_VERSAO_ATUAL = "Sistema de Tags dos Pilotos";
 
         const historicoAtualizacoesDB = [
+            {
+                versao: "v5.90.0",
+                data: "03 de Outubro de 2026",
+                titulo: "Sistema de Tags dos Pilotos",
+                relevante: [
+                    { tipo: "novo", texto: "Sistema de tags automáticas e manuais para pilotos (🏆 Mais Vitórias, ⚡ Mais Rápido, 🎯 Mais Consistente e outras 13 categorias)." },
+                    { tipo: "novo", texto: "Painel de administração \"Tags dos Pilotos\" para atribuir manualmente as tags que o sistema não calcula sozinho." },
+                    { tipo: "melhoria", texto: "Ícones de tags exibidos ao lado do nome do piloto na lista de filtros, com balão explicativo ao passar o mouse." }
+                ]
+            },
+            {
+                versao: "v5.89.0",
+                data: "02 de Outubro de 2026",
+                titulo: "Sistema de Chaves no Championship Manager",
+                relevante: [
+                    { tipo: "novo", texto: "Divisão automática dos pilotos inscritos em chaves quando o total ultrapassa o limite máximo configurado por chave." },
+                    { tipo: "melhoria", texto: "Regra de segurança: nenhum piloto corre sozinho — se sobrar 1 piloto isolado, ele é absorvido pela chave anterior." }
+                ]
+            },
+            {
+                versao: "v5.88.0",
+                data: "01 de Outubro de 2026",
+                titulo: "Grid de Treino e Compartilhamento",
+                relevante: [
+                    { tipo: "melhoria", texto: "Grid a partir de treino agora usa as 3 melhores voltas CONSECUTIVAS de cada piloto, com tabela mostrando as voltas usadas e a média." },
+                    { tipo: "correcao", texto: "Corrigido o compartilhamento de campeonato pelo WhatsApp, que exibia símbolos corrompidos em vez de emojis e acentos." }
+                ]
+            },
+            {
+                versao: "v5.87.0",
+                data: "23 de Setembro de 2026",
+                titulo: "Autenticação Segura e Reorganização do Sistema",
+                relevante: [
+                    { tipo: "novo", texto: "Login de administrador migrado para Firebase Authentication, substituindo a senha fixa anterior." },
+                    { tipo: "correcao", texto: "Regras do banco de dados ajustadas para permitir inscrição pública em campeonatos sem exigir login de admin." },
+                    { tipo: "melhoria", texto: "Código-fonte reorganizado em múltiplos arquivos (módulos JS + CSS separado) para facilitar manutenção futura." },
+                    { tipo: "novo", texto: "Cadastro e exclusão de pilotos centralizados na Gestão de Pilotos, com proteção contra exclusão acidental." },
+                    { tipo: "novo", texto: "Histórico de atualizações e atalhos de rastreio manual adicionados às Compras Coletivas." }
+                ]
+            },
             {
                 versao: "v5.86.2",
                 data: "21 de Setembro de 2026",
@@ -38,6 +78,13 @@
             }
         ];
 
+        // Preenche o badge "Versão Atual" no rodapé a partir das constantes acima,
+        // pra nunca mais ficar desatualizado quando a versão mudar.
+        (function atualizarBadgeVersaoAtual() {
+            let el = document.getElementById('badge-versao-atual');
+            if (el) el.textContent = `${VERSAO_ATUAL_SISTEMA} (${TITULO_VERSAO_ATUAL})`;
+        })();
+
         window.abrirModalPatchNotes = function() {
             renderizarPatchNotesSteam();
             document.getElementById('patch-notes-modal').style.display = 'flex';
@@ -47,8 +94,69 @@
             document.getElementById('patch-notes-modal').style.display = 'none';
         };
 
-        // Copia o histórico de atualizações em formato pronto para WhatsApp.
-        // O texto termina com o endereço oficial do site para facilitar o acesso.
+        // Copia um texto para o clipboard, com fallback para navegadores que
+        // bloqueiam a Clipboard API. Usado tanto para copiar uma atualização
+        // única quanto (se precisar no futuro) o histórico inteiro.
+        async function copiarTextoParaClipboard(texto) {
+            try {
+                await navigator.clipboard.writeText(texto);
+                alert('✅ Atualização copiada! Agora é só colar no WhatsApp.');
+                return;
+            } catch (erro) {
+                const area = document.createElement('textarea');
+                area.value = texto;
+                area.style.position = 'fixed';
+                area.style.left = '-9999px';
+                area.style.top = '0';
+                document.body.appendChild(area);
+                area.focus();
+                area.select();
+
+                try {
+                    document.execCommand('copy');
+                    alert('✅ Atualização copiada! Agora é só colar no WhatsApp.');
+                } catch (e) {
+                    alert('⚠️ Não foi possível copiar automaticamente. O texto será mostrado para você copiar manualmente.');
+                    window.prompt('Copie o texto abaixo:', texto);
+                } finally {
+                    area.remove();
+                }
+            }
+        }
+
+        function formatarTextoUmaAtualizacao(patch) {
+            const linhas = [
+                '🏎️ *KRATHUS RACING - CENTRAL DE TELEMETRIA*',
+                `🚀 *${patch.versao} — ${patch.titulo}*`
+            ];
+            if (patch.data) linhas.push(`📅 ${patch.data}`);
+            linhas.push('');
+
+            (patch.relevante || []).forEach(item => {
+                const icone = item.tipo === 'novo' ? '🆕' : item.tipo === 'correcao' ? '🛠️' : '🔧';
+                linhas.push(`${icone} ${item.texto}`);
+            });
+
+            linhas.push('');
+            linhas.push('━━━━━━━━━━━━━━━━━━━━');
+            linhas.push('🔗 *ACESSE O SISTEMA:*');
+            linhas.push('https://luisrcsb.github.io/ctad/');
+
+            return linhas.join('\n').trim();
+        }
+
+        // Copia só UMA atualização específica (botão de cada card do histórico).
+        window.copiarUmaAtualizacaoWhatsApp = async function(versao) {
+            const patches = Array.isArray(historicoAtualizacoesDB) ? historicoAtualizacoesDB : [];
+            const patch = patches.find(p => p.versao === versao);
+            if (!patch) {
+                alert('⚠️ Atualização não encontrada.');
+                return;
+            }
+            await copiarTextoParaClipboard(formatarTextoUmaAtualizacao(patch));
+        };
+
+        // Copia o histórico de atualizações inteiro em formato pronto para WhatsApp.
         window.copiarPatchNotesWhatsApp = async function() {
             const patches = Array.isArray(historicoAtualizacoesDB) ? historicoAtualizacoesDB : [];
             if (patches.length === 0) {
@@ -79,32 +187,7 @@
             linhas.push('🔗 *ACESSE O SISTEMA:*');
             linhas.push('https://luisrcsb.github.io/ctad/');
 
-            const texto = linhas.join('\n').trim();
-
-            try {
-                await navigator.clipboard.writeText(texto);
-                alert('✅ Atualização copiada! Agora é só colar no WhatsApp.');
-            } catch (erro) {
-                // Fallback para navegadores que bloqueiam a Clipboard API.
-                const area = document.createElement('textarea');
-                area.value = texto;
-                area.style.position = 'fixed';
-                area.style.left = '-9999px';
-                area.style.top = '0';
-                document.body.appendChild(area);
-                area.focus();
-                area.select();
-
-                try {
-                    document.execCommand('copy');
-                    alert('✅ Atualização copiada! Agora é só colar no WhatsApp.');
-                } catch (e) {
-                    alert('⚠️ Não foi possível copiar automaticamente. O texto será mostrado para você copiar manualmente.');
-                    window.prompt('Copie o texto abaixo:', texto);
-                } finally {
-                    area.remove();
-                }
-            }
+            await copiarTextoParaClipboard(linhas.join('\n').trim());
         };
 
         function renderizarPatchNotesSteam() {
@@ -131,7 +214,10 @@
                                 🚀 ${escapeHtml(patch.versao)} — ${escapeHtml(patch.titulo)}
                                 ${isLatest ? '<span style="font-size: 0.65rem; background: var(--accent-gold); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 700;">ATUAL</span>' : ''}
                             </div>
-                            <div class="steam-patch-date">📅 ${escapeHtml(patch.data)}</div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="steam-patch-date">📅 ${escapeHtml(patch.data)}</div>
+                                <button type="button" onclick="copiarUmaAtualizacaoWhatsApp('${escapeHtml(patch.versao)}')" title="Copiar esta atualização para o WhatsApp" style="border:1px solid #25D366; background:rgba(37,211,102,0.12); color:#25D366; border-radius:6px; padding:3px 8px; font-weight:700; cursor:pointer; font-size:0.68rem; white-space:nowrap;">📋 Copiar</button>
+                            </div>
                         </div>
                         <ul class="steam-patch-list">
                             ${tagsHtml}
