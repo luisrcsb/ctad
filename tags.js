@@ -191,6 +191,17 @@
             return resultado;
         }
 
+        // Monta um grupo compacto de ícones (sem texto) com um balão no hover
+        // mostrando o nome completo de cada tag. Usado em listas (ex: filtro de
+        // pilotos) onde não há espaço para o texto completo de cada tag.
+        function renderizarIconesTagsTooltipHtml(chaves) {
+            if (!chaves || chaves.length === 0) return '';
+            let icones = chaves.map(c => TAGS_PILOTOS[c] ? TAGS_PILOTOS[c].icone : '').filter(Boolean).join(' ');
+            if (!icones) return '';
+            let textoCompleto = chaves.map(c => TAGS_PILOTOS[c] ? `${TAGS_PILOTOS[c].icone} ${TAGS_PILOTOS[c].texto}` : '').filter(Boolean).join(' • ');
+            return `<span class="piloto-tag-icones">${icones}<span class="tooltip-balao-texto">${escapeHtml(textoCompleto)}</span></span>`;
+        }
+
         // Junta as tags automáticas (calculadas ao vivo) com as manuais (salvas
         // no cadastro do piloto) pra exibir no dossiê ou em qualquer outra tela.
         function obterTodasTagsPiloto(pilotoNome, tagsAutomaticasGlobais) {

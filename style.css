@@ -338,3 +338,36 @@
   font-size: 13px;
   border-radius: 4px;
 }
+
+/* Ícones de tags ao lado do nome do piloto na lista de filtros, com balão (tooltip) no hover */
+.piloto-tag-icones {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.8rem;
+  cursor: default;
+  flex-shrink: 0;
+}
+.piloto-tag-icones .tooltip-balao-texto {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 125%;
+  right: 0;
+  background: var(--bg-card-header);
+  color: var(--text-main);
+  border: 1px solid var(--border-card);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  z-index: 200;
+  transition: opacity 0.15s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+.piloto-tag-icones:hover .tooltip-balao-texto {
+  visibility: visible;
+  opacity: 1;
+}

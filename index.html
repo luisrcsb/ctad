@@ -2222,16 +2222,20 @@
                 return true;
             });
 
+            let tagsAutomaticasGlobaisFiltro = calcularTagsAutomaticasPilotos();
             pilContainer.innerHTML = listaNomesUnicos.sort().map(piloto => {
                 let meta = pilotosMetadadosCache[piloto] || {};
                 let labelExib = meta.apelido ? `${piloto} (${meta.apelido})` : piloto;
                 let marcado = primeiraVezPil || pilotosSelecionadosAntigos.includes(piloto) ? 'checked' : '';
+                let tagsDoPilotoFiltro = obterTodasTagsPiloto(piloto, tagsAutomaticasGlobaisFiltro);
+                let iconesTagsHtml = renderizarIconesTagsTooltipHtml(tagsDoPilotoFiltro);
                 return `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0; border-bottom: 1px solid rgba(34, 45, 66, 0.4); gap: 6px;">
                         <label class="checkbox-item" style="flex: 1; margin: 0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                             <input type="checkbox" value="${escapeHtml(piloto)}" class="filter-piloto" ${marcado} onchange="atualizarDashboard()"> 
                             ${escapeHtml(labelExib)}
                         </label>
+                        ${iconesTagsHtml}
                         <button class="btn-text-action" data-piloto="${escapeHtml(piloto)}" onclick="abrirDossiePiloto(this.dataset.piloto)">Resumo</button>
                     </div>
                 `;
