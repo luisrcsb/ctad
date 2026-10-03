@@ -339,6 +339,56 @@
   border-radius: 4px;
 }
 
+/* Linha do tempo de atualizações da compra coletiva (estilo rastreador de encomendas) */
+.historico-timeline {
+  position: relative;
+  padding-left: 34px;
+  margin: 4px 0;
+}
+.historico-timeline::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--border-card);
+}
+.historico-timeline-item {
+  position: relative;
+  padding-bottom: 14px;
+}
+.historico-timeline-item:last-child {
+  padding-bottom: 0;
+}
+.historico-timeline-icone {
+  position: absolute;
+  left: -34px;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  z-index: 1;
+  box-shadow: 0 0 0 3px var(--bg-body);
+}
+.historico-timeline-icone.tipo-status { background: var(--accent-blue); }
+.historico-timeline-icone.tipo-pagamento { background: var(--accent-green); }
+.historico-timeline-icone.tipo-rastreio { background: var(--accent-gold); }
+.historico-timeline-data {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.historico-timeline-texto {
+  font-size: 0.78rem;
+  color: var(--text-main);
+  margin-top: 1px;
+}
+
 /* Ícones de tags ao lado do nome do piloto na lista de filtros (tooltip nativo via title) */
 .piloto-tag-icones {
   display: inline-flex;

@@ -537,12 +537,22 @@
 
                 let ultimaAtualizacaoTs = obterTimestampAtualizacaoCompra(comp);
                 let historico = Array.isArray(comp.historico) ? comp.historico : [];
-                let historicoItensHtml = historico.slice(0, 8).map(h => `
-                    <div style="display: flex; justify-content: space-between; gap: 8px; font-size: 0.72rem; padding: 4px 0; border-bottom: 1px dashed var(--border-card);">
-                        <span style="color: var(--text-main);">${escapeHtml(h.descricao || '')}</span>
-                        <span style="color: var(--text-muted); white-space: nowrap;">${formatarDataHistoricoCompra(h.data)}</span>
-                    </div>
-                `).join('') || `<div style="font-size: 0.72rem; color: var(--text-muted); padding: 4px 0;">Nenhuma atualização registrada ainda.</div>`;
+                // Estilo "rastreador de encomendas": linha do tempo vertical com um
+                // círculo colorido por evento (cor conforme o tipo: status/pagamento/rastreio).
+                let historicoItensHtml = historico.length > 0
+                    ? `<div class="historico-timeline">` + historico.slice(0, 8).map(h => {
+                        let palavras = (h.descricao || '').trim().split(' ');
+                        let icone = palavras[0] || '🔔';
+                        let textoSemIcone = palavras.slice(1).join(' ') || h.descricao || '';
+                        let classeTipo = `tipo-${h.tipo || 'status'}`;
+                        return `
+                            <div class="historico-timeline-item">
+                                <div class="historico-timeline-icone ${classeTipo}">${icone}</div>
+                                <div class="historico-timeline-data">${formatarDataHistoricoCompra(h.data)}</div>
+                                <div class="historico-timeline-texto">${escapeHtml(textoSemIcone)}</div>
+                            </div>`;
+                    }).join('') + `</div>`
+                    : `<div style="font-size: 0.72rem; color: var(--text-muted); padding: 4px 0;">Nenhuma atualização registrada ainda.</div>`;
 
                 return `
                     <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 5px solid ${finalizada ? 'var(--accent-green)' : (quitada ? 'var(--accent-blue)' : 'var(--accent-gold)')}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
@@ -561,7 +571,7 @@
                             <span style="font-size: 0.7rem; color: var(--text-muted);">🕘 Última atualização: ${ultimaAtualizacaoTs ? formatarDataHistoricoCompra(ultimaAtualizacaoTs) : '—'}</span>
                             <button class="btn" style="background: transparent; color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 2px 8px; font-size: 0.7rem;" onclick="let el = document.getElementById('historico-compra-${k}'); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';">Ver Histórico (${historico.length})</button>
                         </div>
-                        <div id="historico-compra-${k}" style="display: none; background: var(--bg-body); border-radius: 6px; padding: 6px 10px; max-height: 160px; overflow-y: auto;">
+                        <div id="historico-compra-${k}" style="display: none; background: var(--bg-body); border-radius: 6px; padding: 10px 14px; max-height: 260px; overflow-y: auto;">
                             ${historicoItensHtml}
                         </div>
                     </div>
