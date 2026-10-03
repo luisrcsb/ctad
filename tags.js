@@ -73,6 +73,7 @@
 
             let melhorVoltaGeralAbs = Infinity;
             let pilotoMelhorVoltaGeralAbs = null;
+            let empateVoltaGeralAbs = false;
 
             Object.values(porBateria).forEach(dadosSessao => {
                 let ordenados = ordenarParticipantesBateria(dadosSessao);
@@ -93,7 +94,13 @@
                 });
                 if (pilotoMelhorDaSessao) {
                     reg(pilotoMelhorDaSessao).voltasRapidas++;
-                    if (melhorDaSessao < melhorVoltaGeralAbs) { melhorVoltaGeralAbs = melhorDaSessao; pilotoMelhorVoltaGeralAbs = pilotoMelhorDaSessao; }
+                    if (melhorDaSessao < melhorVoltaGeralAbs) {
+                        melhorVoltaGeralAbs = melhorDaSessao;
+                        pilotoMelhorVoltaGeralAbs = pilotoMelhorDaSessao;
+                        empateVoltaGeralAbs = false;
+                    } else if (melhorDaSessao === melhorVoltaGeralAbs && pilotoMelhorDaSessao !== pilotoMelhorVoltaGeralAbs) {
+                        empateVoltaGeralAbs = true;
+                    }
                 }
 
                 // Voltas lideradas: mesma lógica de tempo acumulado usada na
@@ -144,6 +151,8 @@
                 tagsPorPiloto[piloto].add(chave);
             }
 
+            // Regra: a tag só "fixa" em quem tem o maior número com vantagem clara.
+            // Em caso de empate no topo, ninguém recebe a tag.
             function vencedoresPorCampo(campo) {
                 let melhorValor = 0, vencedores = [];
                 Object.keys(contagem).forEach(p => {
@@ -151,6 +160,7 @@
                     if (v > melhorValor) { melhorValor = v; vencedores = [p]; }
                     else if (v === melhorValor && v > 0) vencedores.push(p);
                 });
+                if (vencedores.length !== 1) return [];
                 return vencedores;
             }
 
@@ -160,19 +170,21 @@
             vencedoresPorCampo('voltasLideradas').forEach(p => adicionarTag(p, 'lideradas'));
             vencedoresPorCampo('ultrapassagens').forEach(p => adicionarTag(p, 'ultrapassagens'));
 
-            if (pilotoMelhorVoltaGeralAbs) adicionarTag(pilotoMelhorVoltaGeralAbs, 'maisRapido');
+            if (pilotoMelhorVoltaGeralAbs && !empateVoltaGeralAbs) adicionarTag(pilotoMelhorVoltaGeralAbs, 'maisRapido');
 
             // Mais consistente exige um volume mínimo de voltas somadas, pra não
-            // premiar quem correu uma única bateria curta por sorte.
-            let melhorConsistencia = Infinity, pilotoConsistente = null;
+            // premiar quem correu uma única bateria curta por sorte. Em empate
+            // exato na média, ninguém recebe a tag (precisa de vantagem clara).
+            let melhorConsistencia = Infinity, pilotoConsistente = null, empateConsistencia = false;
             Object.keys(contagem).forEach(p => {
                 let c = contagem[p];
                 if (c.totalVoltasConsistencia >= 10) {
                     let media = c.somaDesvioPonderada / c.totalVoltasConsistencia;
-                    if (media < melhorConsistencia) { melhorConsistencia = media; pilotoConsistente = p; }
+                    if (media < melhorConsistencia) { melhorConsistencia = media; pilotoConsistente = p; empateConsistencia = false; }
+                    else if (media === melhorConsistencia) { empateConsistencia = true; }
                 }
             });
-            if (pilotoConsistente) adicionarTag(pilotoConsistente, 'consistente');
+            if (pilotoConsistente && !empateConsistencia) adicionarTag(pilotoConsistente, 'consistente');
 
             let resultado = {};
             Object.keys(tagsPorPiloto).forEach(p => { resultado[p] = Array.from(tagsPorPiloto[p]); });
