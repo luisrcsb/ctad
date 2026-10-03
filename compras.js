@@ -28,6 +28,35 @@
             comp.ultimaAtualizacao = Date.now();
         }
 
+        // Monta a linha do tempo visual (estilo rastreador de encomendas) a partir
+        // do array de histórico de uma compra. Reaproveitada tanto nos cards da
+        // Gestão de Compras quanto no modal de Resumo.
+        function renderizarHistoricoTimelineHtml(historico, limite) {
+            if (!historico || historico.length === 0) {
+                return `<div style="font-size: 0.72rem; color: var(--text-muted); padding: 4px 0;">Nenhuma atualização registrada ainda.</div>`;
+            }
+            let itens = historico.slice(0, limite || historico.length).map(h => {
+                let palavras = (h.descricao || '').trim().split(' ');
+                let icone = palavras[0] || '🔔';
+                let textoSemIcone = palavras.slice(1).join(' ') || h.descricao || '';
+                let classeTipo = `tipo-${h.tipo || 'status'}`;
+                return `
+                    <div class="historico-timeline-item">
+                        <div class="historico-timeline-icone ${classeTipo}">${icone}</div>
+                        <div class="historico-timeline-data">${formatarDataHistoricoCompra(h.data)}</div>
+                        <div class="historico-timeline-texto">${escapeHtml(textoSemIcone)}</div>
+                    </div>`;
+            }).join('');
+            return `<div class="historico-timeline">${itens}</div>`;
+        }
+
+        // Retorna a atualização mais recente especificamente do tipo "rastreio"
+        // (ex: Postado, Em trânsito), ignorando mudanças de status/pagamento.
+        function obterUltimoEventoRastreio(historico) {
+            if (!historico || historico.length === 0) return null;
+            return historico.find(h => h.tipo === 'rastreio') || null;
+        }
+
         function formatarDataHistoricoCompra(ts) {
             if (!ts) return "";
             try {
@@ -468,20 +497,28 @@
                     </div>
 
                     <div class="config-panel">
-                        <div class="config-panel-title">5. Chave Pix / Rastreio</div>
-                        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
+                        <div class="config-panel-title">5. Chave Pix</div>
+                        <div style="margin-top: 2px;">
                             <input type="text" id="det-chave-pix" class="config-input" value="${escapeHtml(comp.chavePix || '')}" placeholder="Chave Pix Copia e Cola Global" style="font-size: 0.78rem;">
-                            <div style="display: flex; gap: 6px;">
-                                <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem; flex: 1;" oninput="document.getElementById('btn-verificar-rastreio-${compraGerenciandoKey}').style.display = this.value.trim() ? 'inline-flex' : 'none';">
-                                <button id="btn-verificar-rastreio-${compraGerenciandoKey}" class="btn" style="background: rgba(58,134,255,0.15); color: #3a86ff; border: 1px solid #3a86ff; padding: 4px 10px; font-size: 0.72rem; white-space: nowrap; ${comp.rastreio ? '' : 'display: none;'}" onclick="window.open('https://rastreamento.correios.com.br/app/index.php?objetos=' + encodeURIComponent(document.getElementById('det-rastreio').value.trim()), '_blank')">🔎 Verificar</button>
-                            </div>
-                            <p style="font-size: 0.7rem; color: var(--text-muted); margin: 2px 0 0;">Atalho pra registrar a atualização no histórico com 1 clique (salva na hora):</p>
-                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'postado')">📮 Postado</button>
-                                <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'transito')">🚚 Em trânsito</button>
-                                <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'saiu_entrega')">📦 Saiu p/ entrega</button>
-                                <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'entregue')">✅ Entregue</button>
-                            </div>
+                        </div>
+                    </div>
+
+                    <div class="config-panel">
+                        <div class="config-panel-title">6. Rastreio</div>
+                        <div style="display: flex; gap: 6px; margin-top: 2px;">
+                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem; flex: 1;" oninput="document.getElementById('btn-verificar-rastreio-${compraGerenciandoKey}').style.display = this.value.trim() ? 'inline-flex' : 'none';">
+                            <button id="btn-verificar-rastreio-${compraGerenciandoKey}" class="btn" style="background: rgba(58,134,255,0.15); color: #3a86ff; border: 1px solid #3a86ff; padding: 4px 10px; font-size: 0.72rem; white-space: nowrap; ${comp.rastreio ? '' : 'display: none;'}" onclick="window.open('https://rastreamento.correios.com.br/app/index.php?objetos=' + encodeURIComponent(document.getElementById('det-rastreio').value.trim()), '_blank')">🔎 Verificar</button>
+                        </div>
+                    </div>
+
+                    <div class="config-panel">
+                        <div class="config-panel-title">7. Histórico de Rastreio</div>
+                        <p style="font-size: 0.7rem; color: var(--text-muted); margin: 2px 0 6px;">Atalho pra registrar a atualização no histórico com 1 clique (salva na hora):</p>
+                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'postado')">📮 Postado</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'transito')">🚚 Em trânsito</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'saiu_entrega')">📦 Saiu p/ entrega</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'entregue')">✅ Entregue</button>
                         </div>
                     </div>
 
@@ -537,22 +574,7 @@
 
                 let ultimaAtualizacaoTs = obterTimestampAtualizacaoCompra(comp);
                 let historico = Array.isArray(comp.historico) ? comp.historico : [];
-                // Estilo "rastreador de encomendas": linha do tempo vertical com um
-                // círculo colorido por evento (cor conforme o tipo: status/pagamento/rastreio).
-                let historicoItensHtml = historico.length > 0
-                    ? `<div class="historico-timeline">` + historico.slice(0, 8).map(h => {
-                        let palavras = (h.descricao || '').trim().split(' ');
-                        let icone = palavras[0] || '🔔';
-                        let textoSemIcone = palavras.slice(1).join(' ') || h.descricao || '';
-                        let classeTipo = `tipo-${h.tipo || 'status'}`;
-                        return `
-                            <div class="historico-timeline-item">
-                                <div class="historico-timeline-icone ${classeTipo}">${icone}</div>
-                                <div class="historico-timeline-data">${formatarDataHistoricoCompra(h.data)}</div>
-                                <div class="historico-timeline-texto">${escapeHtml(textoSemIcone)}</div>
-                            </div>`;
-                    }).join('') + `</div>`
-                    : `<div style="font-size: 0.72rem; color: var(--text-muted); padding: 4px 0;">Nenhuma atualização registrada ainda.</div>`;
+                let historicoItensHtml = renderizarHistoricoTimelineHtml(historico, 8);
 
                 return `
                     <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 5px solid ${finalizada ? 'var(--accent-green)' : (quitada ? 'var(--accent-blue)' : 'var(--accent-gold)')}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
@@ -567,10 +589,18 @@
                                 <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="gerenciarCompraColetiva('${k}')">⚙️ Gerenciar</button>
                             </div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <span style="font-size: 0.7rem; color: var(--text-muted);">🕘 Última atualização: ${ultimaAtualizacaoTs ? formatarDataHistoricoCompra(ultimaAtualizacaoTs) : '—'}</span>
                             <button class="btn" style="background: transparent; color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 2px 8px; font-size: 0.7rem;" onclick="let el = document.getElementById('historico-compra-${k}'); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';">Ver Histórico (${historico.length})</button>
                         </div>
+                        ${(() => {
+                            let ultimoRastreio = obterUltimoEventoRastreio(historico);
+                            if (!ultimoRastreio) return '';
+                            let partes = (ultimoRastreio.descricao || '').trim().split(' ');
+                            let icone = partes[0] || '🚚';
+                            let textoSemIcone = partes.slice(1).join(' ') || ultimoRastreio.descricao;
+                            return `<div style="font-size: 0.7rem; color: var(--accent-gold);">${icone} Rastreio: ${escapeHtml(textoSemIcone)} <span style="color: var(--text-muted);">(${formatarDataHistoricoCompra(ultimoRastreio.data)})</span></div>`;
+                        })()}
                         <div id="historico-compra-${k}" style="display: none; background: var(--bg-body); border-radius: 6px; padding: 10px 14px; max-height: 260px; overflow-y: auto;">
                             ${historicoItensHtml}
                         </div>
@@ -648,9 +678,18 @@
                 `;
             }).join('') || `<div style="text-align: center; color: var(--text-muted);">Nenhum participante.</div>`;
 
+            let historicoHtml = renderizarHistoricoTimelineHtml(comp.historico, 20);
+
             modalCorpoEl.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow-y: auto; padding-right: 4px;">
-                    ${participantesHtml}
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 6px; max-height: 55vh; overflow-y: auto; padding-right: 4px;">
+                        <div class="config-panel-title" style="font-size: 0.78rem;">💰 Financeiro</div>
+                        ${participantesHtml}
+                    </div>
+                    <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 6px; max-height: 55vh; overflow-y: auto; padding-right: 4px; border-left: 1px solid var(--border-card); padding-left: 16px;">
+                        <div class="config-panel-title" style="font-size: 0.78rem;">🕘 Histórico de Movimentação</div>
+                        ${historicoHtml}
+                    </div>
                 </div>
             `;
             document.getElementById('compra-resumo-modal').style.display = 'flex';
