@@ -428,8 +428,11 @@
     <div id="compra-resumo-modal" class="custom-modal" style="z-index: 10600;">
         <div class="modal-content" style="max-width: 920px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
-                <div class="modal-title" id="compra-resumo-titulo">📊 Resumo da Compra Coletiva</div>
-                <button class="modal-close" onclick="fecharModalResumoCompra()">&times;</button>
+                <div class="modal-title" id="compra-resumo-titulo" style="flex: 1;">📊 Resumo da Compra Coletiva</div>
+                <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                    <button type="button" id="btn-compartilhar-resumo-compra" onclick="compartilharResumoCompra(compraResumoAtualKey)" title="Compartilhar resumo" style="border:1px solid #25D366; background:rgba(37,211,102,0.12); color:#25D366; border-radius:8px; padding:7px 11px; font-weight:700; cursor:pointer; font-size:0.78rem; white-space:nowrap;">📤 Compartilhar</button>
+                    <button class="modal-close" onclick="fecharModalResumoCompra()">&times;</button>
+                </div>
             </div>
             <div class="modal-body" id="compra-resumo-corpo" style="display: flex; flex-direction: column; gap: 12px;"></div>
         </div>
@@ -627,6 +630,8 @@
         let campeonatoAtivoKey = null;
         let campeonatoParticiparKey = null;
         let compraGerenciandoKey = null;
+        let compraResumoAtualKey = null;
+        let atalhosRastreioCustomCache = [];
         let pilotoSendoConfigurado = null;
         let ultimaBateriaTopoKeyCache = null;
 
@@ -740,6 +745,11 @@
                     }
                 });
 
+                db.ref('configuracoesGlobais/atalhosRastreioCustom').on('value', snapshot => {
+                    atalhosRastreioCustomCache = snapshot.val() || [];
+                    renderizarModalComprasColetivas();
+                });
+
                 db.ref('pilotosMetadados').on('value', snapshot => {
                     pilotosMetadadosCache = snapshot.val() || {};
                     gerarFiltrosDinamicos();
@@ -757,12 +767,14 @@
                     campeonatosCache = snapshot.val() || {};
                     renderizarListaCampeonatosModal();
                     atualizarDashboard();
+                    processarLinkDiretoModal();
                 });
 
                 db.ref('comprasColetivas').on('value', snapshot => {
                     comprasColetivasCache = snapshot.val() || {};
                     renderizarModalComprasColetivas();
                     atualizarDashboard();
+                    processarLinkDiretoModal();
                 });
 
                 db.ref('baterias').on('value', snapshot => {
@@ -1252,7 +1264,7 @@
             const usaGridTreino = !!conf.usaGridTreino;
             const inverterSegunda = conf.inverterSegundaBateria === undefined ? true : !!conf.inverterSegundaBateria;
             const nome = camp.nome || 'Campeonato';
-            const texto = `🏁 *${nome}*\n\n📋 *Resumo das regras*\n🏎️ Número de provas: ${numeroProvas || 'Não definido'}\n🏆 Grid a partir do 1º treino: ${usaGridTreino ? 'SIM' : 'NÃO'}\n🔄 Inversão da 2ª bateria: ${inverterSegunda ? 'SIM' : 'NÃO'}\n\n🏎️ *Participe do campeonato!*\nAcesse o sistema para realizar sua inscrição.`;
+            const texto = `🏁 *${nome}*\n\n📋 *Resumo das regras*\n🏎️ Número de provas: ${numeroProvas || 'Não definido'}\n🏆 Grid a partir do 1º treino: ${usaGridTreino ? 'SIM' : 'NÃO'}\n🔄 Inversão da 2ª bateria: ${inverterSegunda ? 'SIM' : 'NÃO'}\n\n🏎️ *Participe do campeonato!*\nhttps://luisrcsb.github.io/ctad/#participar=${campeonatoParticiparKey}`;
 
             // O link direto wa.me?text= costuma corromper emojis (vira "�" ou some
             // o caractere). O compartilhamento nativo do celular e a cópia pro
@@ -1707,6 +1719,46 @@
             }
 
             return distribuicao;
+        }
+
+        // Abre um modal específico direto a partir da URL, ex:
+        //   #participar=camp_xyz   -> abre a inscrição daquele campeonato
+        //   #compra=compra_xyz     -> abre o resumo daquela compra coletiva
+        //   #modal=compras         -> abre um modal genérico pelo nome
+        // Chamada pelos listeners do Firebase (precisa dos dados já carregados
+        // pra abrir algo específico); só executa uma vez.
+        let linkDiretoJaProcessado = false;
+        function processarLinkDiretoModal() {
+            if (linkDiretoJaProcessado) return;
+            let hash = (window.location.hash || '').replace('#', '');
+            if (!hash) { linkDiretoJaProcessado = true; return; }
+            let [chave, valor] = hash.split('=');
+            valor = valor ? decodeURIComponent(valor) : valor;
+
+            if (chave === 'participar' && valor) {
+                if (!campeonatosCache[valor]) return; // espera os dados do campeonato chegarem
+                linkDiretoJaProcessado = true;
+                abrirModalParticipar(valor);
+            } else if (chave === 'compra' && valor) {
+                if (!comprasColetivasCache[valor]) return; // espera os dados da compra chegarem
+                linkDiretoJaProcessado = true;
+                resumirCompraColetiva(valor);
+            } else if (chave === 'modal' && valor) {
+                linkDiretoJaProcessado = true;
+                const mapaModais = {
+                    'compras': 'abrirModalCompras',
+                    'campeonatos': 'abrirModalCampeonatos',
+                    'pilotos': 'abrirModalPilotos',
+                    'patch-notes': 'abrirModalPatchNotes',
+                    'admin': 'abrirModalAdmin',
+                    'tags': 'abrirModalTagsPilotos',
+                    'acessibilidade': 'abrirModalAcessibilidade'
+                };
+                let nomeFuncao = mapaModais[valor];
+                if (nomeFuncao && typeof window[nomeFuncao] === 'function') window[nomeFuncao]();
+            } else {
+                linkDiretoJaProcessado = true;
+            }
         }
 
         function atualizarInterfacePainelZRound() {

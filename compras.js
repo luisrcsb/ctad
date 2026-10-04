@@ -19,11 +19,16 @@
         }
 
         // Registra uma entrada no histórico de uma compra (mudança de status,
-        // pagamento confirmado, rastreio atualizado etc) e atualiza o timestamp
-        // de última atualização, usado pra reordenar a lista.
-        function registrarHistoricoCompra(comp, tipo, descricao) {
+        // pagamento confirmado, rastreio atualizado etc). "dataCustom" (timestamp
+        // em ms) permite lançar um evento retroativo com a data real do ocorrido
+        // — nesse caso a lista é reordenada pela data do evento, mas a "última
+        // atualização" da compra (usada para ordenar a lista de compras) sempre
+        // reflete o momento em que o admin mexeu no registro.
+        function registrarHistoricoCompra(comp, tipo, descricao, dataCustom) {
             if (!comp.historico || !Array.isArray(comp.historico)) comp.historico = [];
-            comp.historico.unshift({ data: Date.now(), tipo, descricao });
+            let ts = dataCustom || Date.now();
+            comp.historico.push({ data: ts, tipo, descricao });
+            comp.historico.sort((a, b) => b.data - a.data);
             if (comp.historico.length > 30) comp.historico = comp.historico.slice(0, 30);
             comp.ultimaAtualizacao = Date.now();
         }
@@ -316,6 +321,10 @@
 
         // Atalho de 1 clique pra registrar um evento comum de rastreio no histórico,
         // sem precisar digitar nada. Não depende de nenhuma API externa.
+        // "evento" pode ser uma das chaves padrão (postado/transito/...) ou, para
+        // atalhos personalizados, a própria descrição pronta (ex: "🧾 Nota fiscal emitida").
+        // Se o campo de data/hora do card estiver preenchido, usa essa data no
+        // lugar de "agora" (pra lançar atualizações retroativas).
         window.registrarEventoRastreioCompra = async function(compraKey, evento) {
             if (!db) return;
             let comp = comprasColetivasCache[compraKey];
@@ -327,12 +336,33 @@
                 saiu_entrega: '📦 Saiu para entrega',
                 entregue: '✅ Objeto entregue (rastreio)'
             };
-            let descricao = textos[evento] || 'Atualização de rastreio';
-            registrarHistoricoCompra(comp, 'rastreio', descricao);
+            let descricao = textos[evento] || evento || 'Atualização de rastreio';
+
+            let dataInputEl = document.getElementById(`det-rastreio-data-${compraKey}`);
+            let dataCustom = (dataInputEl && dataInputEl.value) ? new Date(dataInputEl.value).getTime() : null;
+
+            registrarHistoricoCompra(comp, 'rastreio', descricao, dataCustom);
 
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                if (dataInputEl) dataInputEl.value = '';
                 renderizarModalComprasColetivas();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        // Cria um novo atalho de rastreio personalizado (ícone + texto), salvo
+        // globalmente em configuracoesGlobais — fica disponível em todas as compras.
+        window.adicionarAtalhoRastreioCustom = async function() {
+            if (!db) return;
+            let icone = prompt("Ícone do atalho (um emoji, ex: 🧾):", "🔖");
+            if (icone === null) return;
+            let texto = prompt("Texto do atalho (ex: Nota fiscal emitida):", "");
+            if (texto === null || !texto.trim()) return;
+
+            let atalhos = Array.isArray(atalhosRastreioCustomCache) ? [...atalhosRastreioCustomCache] : [];
+            atalhos.push({ icone: icone.trim() || '🔖', texto: texto.trim() });
+            try {
+                await db.ref('configuracoesGlobais/atalhosRastreioCustom').set(atalhos);
             } catch (err) { alert("Erro: " + err.message); }
         };
 
@@ -513,12 +543,21 @@
 
                     <div class="config-panel">
                         <div class="config-panel-title">7. Histórico de Rastreio</div>
+                        <div style="margin: 4px 0 8px;">
+                            <label style="font-size: 0.7rem; color: var(--text-muted);">Data/hora do evento (opcional — deixe vazio para usar "agora"):</label>
+                            <input type="datetime-local" id="det-rastreio-data-${compraGerenciandoKey}" class="config-input" style="font-size: 0.78rem; margin-top: 2px;">
+                        </div>
                         <p style="font-size: 0.7rem; color: var(--text-muted); margin: 2px 0 6px;">Atalho pra registrar a atualização no histórico com 1 clique (salva na hora):</p>
                         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                             <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'postado')">📮 Postado</button>
                             <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'transito')">🚚 Em trânsito</button>
                             <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'saiu_entrega')">📦 Saiu p/ entrega</button>
                             <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'entregue')">✅ Entregue</button>
+                            ${(atalhosRastreioCustomCache || []).map(a => {
+                                let descricaoCompleta = `${a.icone || '🔖'} ${a.texto || ''}`.trim();
+                                return `<button class="btn" data-descricao="${escapeHtml(descricaoCompleta)}" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', this.dataset.descricao)">${a.icone || '🔖'} ${escapeHtml(a.texto || '')}</button>`;
+                            }).join('')}
+                            <button class="btn" style="background: transparent; border: 1px dashed var(--border-card); color: var(--text-muted); padding: 3px 8px; font-size: 0.7rem;" onclick="adicionarAtalhoRastreioCustom()">➕ Novo atalho</button>
                         </div>
                     </div>
 
@@ -586,6 +625,7 @@
                             <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
                                 <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="alternarEntregueCompra('${k}')">${entregue ? '✅ Entregue' : '📦 Marcar Entregue'}</button>
                                 <button class="btn" style="background: rgba(114,9,183,0.25); color: #e0aaff; border: 1px solid #7209b7; padding: 4px 8px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${k}')">📊 Resumo</button>
+                                <button class="btn" style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 8px; font-size: 0.75rem;" onclick="compartilharResumoCompra('${k}')">📤</button>
                                 <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="gerenciarCompraColetiva('${k}')">⚙️ Gerenciar</button>
                             </div>
                         </div>
@@ -625,9 +665,50 @@
             `;
         }
 
+        // Compartilha o resumo financeiro de uma compra coletiva (igual ao
+        // compartilhamento de campeonato: nativo > clipboard > link do WhatsApp).
+        window.compartilharResumoCompra = async function(compraKey) {
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            sincronizarParticipantesCompra(comp);
+            calcularValoresDevidosCompra(comp);
+
+            let participantes = Object.values(comp.participantes || {}).filter(p => p && p.nome && p.nome.trim() !== "" && p.ativo);
+            let linhas = [
+                `🛒 *${comp.nome || comp.chave}*`,
+                `Status: ${comp.status || '—'}`,
+                ''
+            ];
+            participantes.forEach(p => {
+                linhas.push(`${p.pago ? '✅' : '❌'} ${p.nome} — R$ ${(p.valorDevido || 0).toFixed(2)} ${p.pago ? '(Pago)' : '(Pendente)'}`);
+            });
+            linhas.push('');
+            linhas.push(`🔗 https://luisrcsb.github.io/ctad/#compra=${compraKey}`);
+            const texto = linhas.join('\n');
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ text: texto });
+                    return;
+                } catch (err) {
+                    if (err && err.name === 'AbortError') return;
+                }
+            }
+            if (navigator.clipboard) {
+                try {
+                    await navigator.clipboard.writeText(texto);
+                    alert("Texto copiado! Cole (Ctrl+V) na conversa do WhatsApp.");
+                    return;
+                } catch (err) { /* segue pro último recurso abaixo */ }
+            }
+            const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+        };
+
         window.resumirCompraColetiva = function(compraKey) {
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
+            compraResumoAtualKey = compraKey;
             sincronizarParticipantesCompra(comp);
             calcularValoresDevidosCompra(comp);
 
