@@ -44,7 +44,7 @@
                     : `<span style="font-size:0.65rem; color:var(--text-muted);">✏️ Cadastro manual</span>`;
 
                 return `
-                    <div class="config-panel" style="display:flex; gap:10px; align-items:flex-start;">
+                    <div class="config-panel" style="display:flex; flex-direction:row; gap:10px; align-items:flex-start;">
                         <img src="${escapeHtml(p.linkImagem || '')}" alt="" style="width:56px; height:56px; object-fit:cover; border-radius:6px; background:var(--bg-body); flex-shrink:0;" onerror="this.style.visibility='hidden'">
                         <div style="flex:1; display:flex; flex-direction:column; gap:4px; min-width:0;">
                             ${origemLabel}
