@@ -62,6 +62,44 @@
             return historico.find(h => h.tipo === 'rastreio') || null;
         }
 
+        // Sincroniza os itens de uma compra (marcados como "recomendar") com o
+        // catálogo de Produtos Recomendados. Cada item vira (ou atualiza) uma
+        // entrada própria; itens desmarcados ou removidos da compra têm sua
+        // entrada correspondente apagada. Não mexe em freteAprox/impostoAprox,
+        // que são preenchidos manualmente pelo admin no painel de recomendados.
+        async function sincronizarProdutosRecomendadosDaCompra(compraKey, comp) {
+            if (!db) return;
+            let itens = (comp && comp.itens) || [];
+            let updates = {};
+
+            itens.forEach((it, idx) => {
+                let id = `compra_${compraKey}_${idx}`;
+                if (it.recomendar !== false && it.descricao && it.descricao.trim()) {
+                    updates[`produtosRecomendados/${id}/nome`] = it.descricao;
+                    updates[`produtosRecomendados/${id}/linkImagem`] = it.imagem || '';
+                    updates[`produtosRecomendados/${id}/linkSite`] = it.link || '';
+                    updates[`produtosRecomendados/${id}/valorAprox`] = it.valor || 0;
+                    updates[`produtosRecomendados/${id}/origem`] = 'compra';
+                    updates[`produtosRecomendados/${id}/compraOrigemKey`] = compraKey;
+                } else {
+                    updates[`produtosRecomendados/${id}`] = null;
+                }
+            });
+
+            // Limpa entradas órfãs (itens que existiam antes e foram removidos da compra).
+            let prefixo = `compra_${compraKey}_`;
+            Object.keys(produtosRecomendadosCache || {}).forEach(id => {
+                if (!id.startsWith(prefixo)) return;
+                let idx = parseInt(id.substring(prefixo.length), 10);
+                if (!Number.isFinite(idx) || idx >= itens.length) {
+                    updates[`produtosRecomendados/${id}`] = null;
+                }
+            });
+
+            if (Object.keys(updates).length === 0) return;
+            try { await db.ref().update(updates); } catch (err) { console.warn('Erro ao sincronizar recomendados:', err); }
+        }
+
         function formatarDataHistoricoCompra(ts) {
             if (!ts) return "";
             try {
@@ -221,7 +259,8 @@
                     link: document.getElementById(`item-link-${idx}`)?.value || "",
                     valor: parseFloat(document.getElementById(`item-val-${idx}`)?.value) || 0,
                     qtd: parseInt(document.getElementById(`item-qtd-${idx}`)?.value, 10) || 1,
-                    atribuidoA: document.getElementById(`item-atr-${idx}`)?.value || "TODOS"
+                    atribuidoA: document.getElementById(`item-atr-${idx}`)?.value || "TODOS",
+                    recomendar: document.getElementById(`item-rec-${idx}`)?.checked !== false
                 });
             });
             comp.itens = novasItens;
@@ -267,6 +306,7 @@
 
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                await sincronizarProdutosRecomendadosDaCompra(compraKey, comp);
                 alert("Salvo com sucesso!");
                 renderizarModalComprasColetivas();
             } catch(err) { alert("Erro: " + err.message); }
@@ -289,6 +329,7 @@
             comp.itens.splice(index, 1);
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set(comp);
+                await sincronizarProdutosRecomendadosDaCompra(compraKey, comp);
                 renderizarModalComprasColetivas();
             } catch(err) { alert("Erro: " + err.message); }
         };
@@ -383,6 +424,7 @@
             if (confirm("Excluir esta compra coletiva?")) {
                 try {
                     await db.ref(`comprasColetivas/${compraKey}`).remove();
+                    await sincronizarProdutosRecomendadosDaCompra(compraKey, { itens: [] });
                     compraGerenciandoKey = null;
                     renderizarModalComprasColetivas();
                 } catch(err) { alert("Erro: " + err.message); }
@@ -424,7 +466,7 @@
                         listaPilotosDisponiveis.map(p => `<option value="${escapeHtml(p)}" ${it.atribuidoA === p ? 'selected' : ''}>${escapeHtml(p)}</option>`).join('');
                     
                     return `
-                        <div class="det-item-row" data-index="${idx}" style="display: grid; grid-template-columns: 1fr 1.8fr 1.2fr 75px 45px 85px 1.2fr 32px; gap: 6px; align-items: center; margin-bottom: 6px;">
+                        <div class="det-item-row" data-index="${idx}" style="display: grid; grid-template-columns: 1fr 1.8fr 1.2fr 75px 45px 85px 1.2fr 28px 32px; gap: 6px; align-items: center; margin-bottom: 6px;">
                             <input type="text" id="item-img-${idx}" class="config-input" value="${escapeHtml(it.imagem || '')}" placeholder="Img URL" style="font-size: 0.75rem;">
                             <input type="text" id="item-desc-${idx}" class="config-input" value="${escapeHtml(it.descricao || '')}" placeholder="Descrição" style="font-size: 0.75rem;">
                             <input type="text" id="item-link-${idx}" class="config-input" value="${escapeHtml(it.link || '')}" placeholder="Link" style="font-size: 0.75rem;">
@@ -432,6 +474,7 @@
                             <input type="number" id="item-qtd-${idx}" class="config-input" value="${it.qtd || 1}" placeholder="Qtd" style="font-size: 0.75rem;">
                             <span style="color: var(--accent-gold); font-weight: 700; font-size: 0.78rem;">R$ ${subtotalItem.toFixed(2)}</span>
                             <select id="item-atr-${idx}" class="config-select" style="font-size: 0.75rem;">${optionsPilotos}</select>
+                            <input type="checkbox" id="item-rec-${idx}" ${it.recomendar !== false ? 'checked' : ''} title="Incluir nos Produtos Recomendados" style="width: 16px; height: 16px; accent-color: var(--accent-gold); cursor: pointer; justify-self: center;">
                             <button class="btn-action-danger" style="padding: 3px 6px;" onclick="removerItemCompra('${compraGerenciandoKey}', ${idx})">🗑️</button>
                         </div>
                     `;
@@ -475,6 +518,7 @@
 
                     <div class="config-panel">
                         <div class="config-panel-title">2. Itens da Compra</div>
+                        <p style="font-size: 0.68rem; color: var(--text-muted); margin: 0 0 2px;">A caixinha dourada de cada item controla se ele entra nos Produtos Recomendados (marcada por padrão).</p>
                         <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 2px;">
                             ${itensHtml}
                         </div>

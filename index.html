@@ -397,6 +397,39 @@
         </div>
     </div>
 
+    <div id="vitrine-produtos-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 820px;">
+            <div class="modal-header">
+                <div class="modal-title">🛍️ Produtos Recomendados</div>
+                <button class="modal-close" onclick="fecharVitrineProdutosRecomendados()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0 0 10px;">Itens já comprados pela galera (ou indicados pela administração). Clique num item pra ver o produto.</p>
+                <div id="vitrine-produtos-corpo">
+                    <div style="color: var(--text-muted);">Carregando...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="produtos-recomendados-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <div class="modal-title">🛍️ Produtos Recomendados (Admin)</div>
+                <button class="modal-close" onclick="fecharModalProdutosRecomendados()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
+                    Itens marcados com 🔗 vêm automaticamente de Compras Coletivas (editar nome/imagem/link/valor aqui
+                    só dura até a próxima vez que aquela compra for salva). Frete e imposto são sempre manuais.
+                </p>
+                <div id="produtos-recomendados-corpo" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="color: var(--text-muted);">Carregando...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="tags-config-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
@@ -479,6 +512,7 @@
                     <h1>CTAD - Central de Telemetria</h1>
                 </div>
                 <div class="header-actions">
+                    <button class="btn" onclick="abrirVitrineProdutosRecomendados()">🛍️ Recomendados</button>
                     <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
                     <button class="btn btn-admin-trigger" onclick="abrirModalAdmin()">🔐 Administração</button>
                     <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
@@ -583,6 +617,7 @@
     <script src="graficos.js"></script>
     <script src="pdf-utils.js"></script>
     <script src="compras.js"></script>
+    <script src="produtos-recomendados.js"></script>
     <script src="comentarios.js"></script>
     <script src="pilotos.js"></script>
     <script src="tags.js"></script>
@@ -632,6 +667,7 @@
         let compraGerenciandoKey = null;
         let compraResumoAtualKey = null;
         let atalhosRastreioCustomCache = [];
+        let produtosRecomendadosCache = {};
         let pilotoSendoConfigurado = null;
         let ultimaBateriaTopoKeyCache = null;
 
@@ -748,6 +784,12 @@
                 db.ref('configuracoesGlobais/atalhosRastreioCustom').on('value', snapshot => {
                     atalhosRastreioCustomCache = snapshot.val() || [];
                     renderizarModalComprasColetivas();
+                });
+
+                db.ref('produtosRecomendados').on('value', snapshot => {
+                    produtosRecomendadosCache = snapshot.val() || {};
+                    if (typeof renderizarPainelProdutosRecomendados === 'function') renderizarPainelProdutosRecomendados();
+                    if (typeof renderizarVitrineProdutosRecomendados === 'function') renderizarVitrineProdutosRecomendados();
                 });
 
                 db.ref('pilotosMetadados').on('value', snapshot => {
@@ -1178,6 +1220,10 @@
                             <div class="config-panel-title" style="color: var(--accent-gold);">🏷️ Tags dos Pilotos</div>
                             <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Veja as tags automáticas e atribua tags manuais a cada piloto.</p>
                         </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('recomendados')">
+                            <div class="config-panel-title" style="color: var(--accent-gold);">🛍️ Produtos Recomendados</div>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Edite frete/imposto dos itens das compras ou cadastre produtos manualmente.</p>
+                        </div>
                     </div>
                 `;
             }
@@ -1191,6 +1237,7 @@
             if (tipo === 'pilotos') abrirModalPilotos();
             if (tipo === 'compras') abrirModalCompras();
             if (tipo === 'tags') abrirModalTagsPilotos();
+            if (tipo === 'recomendados') abrirModalProdutosRecomendados();
         };
 
         window.abrirModalUpload = function() { document.getElementById('upload-modal').style.display = 'flex'; };
@@ -2298,7 +2345,7 @@
 
 
         window.onclick = function(event) {
-            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'tags-config-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal', 'patch-notes-modal'].forEach(id => {
+            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'tags-config-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal', 'patch-notes-modal', 'vitrine-produtos-modal', 'produtos-recomendados-modal'].forEach(id => {
                 if (event.target === document.getElementById(id)) document.getElementById(id).style.display = 'none';
             });
         };
