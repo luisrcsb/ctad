@@ -1,10 +1,30 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v5.90.0";
-        const TITULO_VERSAO_ATUAL = "Sistema de Tags dos Pilotos";
+        const VERSAO_ATUAL_SISTEMA = "v5.92.0";
+        const TITULO_VERSAO_ATUAL = "Produtos Recomendados";
 
         const historicoAtualizacoesDB = [
+            {
+                versao: "v5.92.0",
+                data: "04 de Outubro de 2026",
+                titulo: "Produtos Recomendados",
+                relevante: [
+                    { tipo: "novo", texto: "Catálogo de Produtos Recomendados: itens de Compras Coletivas entram automaticamente (com opção de desmarcar por item)." },
+                    { tipo: "novo", texto: "Painel de administração para editar, reordenar (▲▼) e cadastrar produtos manualmente, com vitrine pública acessível pelo botão \"🛍️ Recomendados\"." }
+                ]
+            },
+            {
+                versao: "v5.91.0",
+                data: "04 de Outubro de 2026",
+                titulo: "Links Diretos, Compartilhamento e Atalhos Personalizados",
+                relevante: [
+                    { tipo: "novo", texto: "Links diretos que abrem um modal específico (ex: inscrição de campeonato ou resumo de compra) direto pela URL." },
+                    { tipo: "novo", texto: "Botão de compartilhar o resumo de uma Compra Coletiva pelo WhatsApp." },
+                    { tipo: "melhoria", texto: "Atalhos de rastreio agora aceitam data/hora retroativa e podem ser personalizados (ícone + texto) pelo administrador." },
+                    { tipo: "melhoria", texto: "Histórico de Compras Coletivas redesenhado em linha do tempo, com seções de Chave Pix, Rastreio e Histórico de Rastreio separadas na Gestão de Compra." }
+                ]
+            },
             {
                 versao: "v5.90.0",
                 data: "03 de Outubro de 2026",

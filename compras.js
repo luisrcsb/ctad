@@ -81,6 +81,9 @@
                     updates[`produtosRecomendados/${id}/valorAprox`] = it.valor || 0;
                     updates[`produtosRecomendados/${id}/origem`] = 'compra';
                     updates[`produtosRecomendados/${id}/compraOrigemKey`] = compraKey;
+                    if (!produtosRecomendadosCache[id]) {
+                        updates[`produtosRecomendados/${id}/ordem`] = Date.now();
+                    }
                 } else {
                     updates[`produtosRecomendados/${id}`] = null;
                 }
