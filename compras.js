@@ -596,15 +596,15 @@
                         </div>
                         <p style="font-size: 0.7rem; color: var(--text-muted); margin: 2px 0 6px;">Atalho pra registrar a atualização no histórico com 1 clique (salva na hora):</p>
                         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'postado')">📮 Postado</button>
-                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'transito')">🚚 Em trânsito</button>
-                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'saiu_entrega')">📦 Saiu p/ entrega</button>
-                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'entregue')">✅ Entregue</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'postado')">📮 Postado</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'transito')">🚚 Em trânsito</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'saiu_entrega')">📦 Saiu p/ entrega</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'entregue')">✅ Entregue</button>
                             ${(atalhosRastreioCustomCache || []).map(a => {
                                 let descricaoCompleta = `${a.icone || '🔖'} ${a.texto || ''}`.trim();
-                                return `<button class="btn" data-descricao="${escapeHtml(descricaoCompleta)}" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', this.dataset.descricao)">${a.icone || '🔖'} ${escapeHtml(a.texto || '')}</button>`;
+                                return `<button class="btn" data-descricao="${escapeHtml(descricaoCompleta)}" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', this.dataset.descricao)">${a.icone || '🔖'} ${escapeHtml(a.texto || '')}</button>`;
                             }).join('')}
-                            <button class="btn" style="background: transparent; border: 1px dashed var(--border-card); color: var(--text-muted); padding: 3px 8px; font-size: 0.7rem;" onclick="adicionarAtalhoRastreioCustom()">➕ Novo atalho</button>
+                            <button class="btn" style="background: transparent; border: 1px dashed var(--border-card); color: #fff; padding: 3px 8px; font-size: 0.7rem;" onclick="adicionarAtalhoRastreioCustom()">➕ Novo atalho</button>
                         </div>
                     </div>
 

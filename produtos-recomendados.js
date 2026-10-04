@@ -68,7 +68,7 @@
                                 </div>
                                 <div style="display:flex; gap:6px; margin-top:4px;">
                                     <button class="btn-action-primary" style="padding:4px 12px; font-size:0.74rem;" onclick="salvarEdicaoProdutoRecomendado('${id}')">💾 Salvar</button>
-                                    <button class="btn" style="background:var(--bg-body); border:1px solid var(--border-card); padding:4px 12px; font-size:0.74rem;" onclick="cancelarEdicaoProdutoRecomendado()">✖️ Cancelar</button>
+                                    <button class="btn" style="background:var(--bg-body); border:1px solid var(--border-card); padding:4px 12px; font-size:0.74rem; color:#fff;" onclick="cancelarEdicaoProdutoRecomendado()">✖️ Cancelar</button>
                                 </div>
                             </div>
                         </div>`;
@@ -84,8 +84,8 @@
                             <span style="font-size:0.68rem; color:var(--text-muted);">${origemTexto} • ~R$ ${total.toFixed(2)}</span>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:2px; flex-shrink:0;">
-                            <button class="btn" style="background:var(--bg-body); border:1px solid var(--border-card); padding:1px 6px; font-size:0.62rem; line-height:1.3; ${idx === 0 ? 'opacity:0.3; cursor:default;' : 'cursor:pointer;'}" ${idx === 0 ? 'disabled' : ''} onclick="moverProdutoRecomendado('${id}', -1)">▲</button>
-                            <button class="btn" style="background:var(--bg-body); border:1px solid var(--border-card); padding:1px 6px; font-size:0.62rem; line-height:1.3; ${idx === ids.length - 1 ? 'opacity:0.3; cursor:default;' : 'cursor:pointer;'}" ${idx === ids.length - 1 ? 'disabled' : ''} onclick="moverProdutoRecomendado('${id}', 1)">▼</button>
+                            <button class="btn" style="background:var(--bg-body); border:1px solid var(--border-card); padding:1px 6px; font-size:0.62rem; line-height:1.3; color:#fff; ${idx === 0 ? 'opacity:0.3; cursor:default;' : 'cursor:pointer;'}" ${idx === 0 ? 'disabled' : ''} onclick="moverProdutoRecomendado('${id}', -1)">▲</button>
+                            <button class="btn" style="background:var(--bg-body); border:1px solid var(--border-card); padding:1px 6px; font-size:0.62rem; line-height:1.3; color:#fff; ${idx === ids.length - 1 ? 'opacity:0.3; cursor:default;' : 'cursor:pointer;'}" ${idx === ids.length - 1 ? 'disabled' : ''} onclick="moverProdutoRecomendado('${id}', 1)">▼</button>
                         </div>
                         <button class="btn" style="background:rgba(58,134,255,0.15); color:#3a86ff; border:1px solid #3a86ff; padding:4px 8px; font-size:0.72rem; flex-shrink:0;" onclick="editarProdutoRecomendado('${id}')">✏️ Editar</button>
                         <button class="btn-action-danger" style="padding:4px 8px; flex-shrink:0;" onclick="excluirProdutoRecomendado('${id}')">🗑️</button>
