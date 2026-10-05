@@ -542,7 +542,7 @@
                     <button class="btn" onclick="abrirModalMinhaConta()">👤 Minha Conta</button>
                     <button class="btn" onclick="abrirVitrineProdutosRecomendados()">🛍️ Recomendados</button>
                     <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
-                    <button class="btn btn-admin-trigger" onclick="abrirModalAdmin()">🔐 Administração</button>
+                    <button class="btn btn-admin-trigger" id="btn-administracao-header" style="display:none;" onclick="abrirModalAdmin()">🔐 Administração</button>
                     <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
                 </div>
             </div>
@@ -1137,6 +1137,15 @@
         }
 
 
+
+        // Mostra ou esconde o botão "🔐 Administração" no topo do site conforme
+        // o login atual. Chamada pelo onAuthStateChanged toda vez que o estado
+        // de login muda — o botão só aparece depois de logar (via "Minha Conta")
+        // com o e-mail do administrador.
+        function atualizarUiAdminLogado() {
+            let btn = document.getElementById('btn-administracao-header');
+            if (btn) btn.style.display = isAdminLogado ? 'inline-flex' : 'none';
+        }
 
         window.abrirModalAdmin = function() {
             document.getElementById('admin-modal').style.display = 'flex';
