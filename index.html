@@ -145,8 +145,11 @@
     <div id="piloto-modal" class="custom-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title" id="modal-piloto-nome">🏎️ Ficha do Piloto</div>
-                <button class="modal-close" onclick="fecharDossiePiloto()">&times;</button>
+                <div class="modal-title" id="modal-piloto-nome" style="flex:1;">🏎️ Ficha do Piloto</div>
+                <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+                    <button type="button" id="btn-compartilhar-dossie" onclick="compartilharDossiePiloto()" title="Compartilhar" style="border:1px solid #25D366; background:rgba(37,211,102,0.12); color:#25D366; border-radius:8px; padding:7px 11px; font-weight:700; cursor:pointer; font-size:0.78rem; white-space:nowrap;">📤</button>
+                    <button class="modal-close" onclick="fecharDossiePiloto()">&times;</button>
+                </div>
             </div>
             <div class="modal-body" id="modal-piloto-corpo"></div>
         </div>
@@ -700,6 +703,8 @@
         let usuarioAtual = null;
         let pilotoVinculadoAoUsuario = null;
         let solicitacoesCadastroCache = {};
+        let notasPilotoCache = {};
+        let dossiePilotoAbertoNome = null;
         let pilotoSendoConfigurado = null;
         let ultimaBateriaTopoKeyCache = null;
 

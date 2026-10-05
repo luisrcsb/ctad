@@ -273,12 +273,24 @@
             } catch (err) { alert("Erro: " + err.message); }
         };
 
-        window.abrirDossiePiloto = function(nomePiloto) {
+        window.abrirDossiePiloto = async function(nomePiloto) {
             const modal = document.getElementById('piloto-modal');
             let meta = pilotosMetadadosCache[nomePiloto] || {};
             let tituloNome = meta.apelido ? `${nomePiloto} (${meta.apelido})` : nomePiloto;
             document.getElementById('modal-piloto-nome').innerHTML = `🏎️ Resumo do Piloto: <span style="color: var(--accent-gold);">${escapeHtml(tituloNome)}</span>`;
-            
+            dossiePilotoAbertoNome = nomePiloto;
+
+            // Notas pessoais só existem (e só são carregadas) quando o piloto
+            // logado está vendo o PRÓPRIO dossiê — são privadas, ninguém mais lê.
+            let ehMeuProprioDossie = !!(usuarioAtual && pilotoVinculadoAoUsuario === nomePiloto);
+            notasPilotoCache = {};
+            if (ehMeuProprioDossie && db) {
+                try {
+                    let snap = await db.ref(`notasPilotos/${usuarioAtual.uid}`).once('value');
+                    notasPilotoCache = snap.val() || {};
+                } catch (e) { /* segue sem notas se der erro */ }
+            }
+
             let dadosBase = obterTodosDadosConsolidados();
             let participacoes = dadosBase.filter(d => d.piloto === nomePiloto && d.laps && d.laps.length > 0);
             let bodyEl = document.getElementById('modal-piloto-corpo');
@@ -320,12 +332,22 @@
                     totalVoltasDadas += qtdV;
                     if (pData.desvioVal) somaDesvios += pData.desvioVal;
 
+                    let notaExistente = notasPilotoCache[arq.firebaseKey]?.texto || '';
+                    let celulaNotaHtml = ehMeuProprioDossie
+                        ? `<td style="max-width:160px;">
+                                <span style="font-size:0.7rem; color:var(--text-muted); cursor:pointer;" title="${escapeHtml(notaExistente)}" onclick="editarNotaPilotoBateria('${arq.firebaseKey}', '${escapeHtml((arq.sessao || arq.nomeArquivoOriginal || '').replace(/'/g, '’'))}')">
+                                    ${notaExistente ? `📝 ${escapeHtml(notaExistente.length > 24 ? notaExistente.slice(0, 24) + '…' : notaExistente)}` : '➕ Nota'}
+                                </span>
+                           </td>`
+                        : '';
+
                     historicoSessaoHtml.push(`
                         <tr>
                             <td><span class="session-badge">${formatarNomeSessao(arq.sessao || arq.nomeArquivoOriginal)}</span></td>
                             <td><span class="pos-badge">${pos}º</span></td>
                             <td class="text-green">${pData.melhorVoltaTxt || '--'}</td>
                             <td>${qtdV}v</td>
+                            ${celulaNotaHtml}
                         </tr>
                     `);
                 }
@@ -363,7 +385,7 @@
                     <div class="card-header" style="margin-bottom: 6px;">📜 Histórico de Corridas</div>
                     <div class="table-container">
                         <table>
-                            <thead><tr><th>Sessão</th><th>Pos</th><th>Melhor Volta</th><th>Voltas</th></tr></thead>
+                            <thead><tr><th>Sessão</th><th>Pos</th><th>Melhor Volta</th><th>Voltas</th>${ehMeuProprioDossie ? '<th>Nota</th>' : ''}</tr></thead>
                             <tbody>${historicoSessaoHtml.join('')}</tbody>
                         </table>
                     </div>
@@ -373,3 +395,70 @@
         };
 
         window.fecharDossiePiloto = function() { document.getElementById('piloto-modal').style.display = 'none'; };
+
+        // Adiciona/edita/remove a nota pessoal de uma corrida específica. São
+        // privadas: só o próprio piloto (dono da conta) as lê, guardadas por uid.
+        window.editarNotaPilotoBateria = async function(bateriaKey, nomeSessao) {
+            if (!db || !usuarioAtual) return;
+            let notaAtual = notasPilotoCache[bateriaKey]?.texto || '';
+            let novaNota = prompt(`Sua nota pessoal sobre "${nomeSessao}":`, notaAtual);
+            if (novaNota === null) return;
+            novaNota = novaNota.trim();
+            try {
+                if (novaNota === '') {
+                    await db.ref(`notasPilotos/${usuarioAtual.uid}/${bateriaKey}`).remove();
+                } else {
+                    await db.ref(`notasPilotos/${usuarioAtual.uid}/${bateriaKey}`).set({ texto: novaNota, atualizadoEm: Date.now() });
+                }
+                if (dossiePilotoAbertoNome) abrirDossiePiloto(dossiePilotoAbertoNome);
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        // Compartilha um resumo do dossiê aberto (nativo > clipboard > WhatsApp),
+        // igual ao padrão já usado pra campeonatos e compras.
+        window.compartilharDossiePiloto = async function() {
+            if (!dossiePilotoAbertoNome) return;
+            let nomePiloto = dossiePilotoAbertoNome;
+            let meta = pilotosMetadadosCache[nomePiloto] || {};
+            let tituloNome = meta.apelido ? `${nomePiloto} (${meta.apelido})` : nomePiloto;
+
+            let dadosBase = obterTodosDadosConsolidados();
+            let participacoes = dadosBase.filter(d => d.piloto === nomePiloto && d.laps && d.laps.length > 0);
+            let vitorias = 0, podios = 0, melhorVoltaGeral = 999999;
+            listaJsonsCache.forEach(arq => {
+                let todosBat = (arq.dados || []).map(d => {
+                    let pReal = d.piloto ? d.piloto.trim() : "";
+                    let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                    if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
+                    return { ...d, piloto: pReal };
+                }).filter(d => d.piloto && d.laps && d.laps.length > 0);
+                let ordenados = ordenarParticipantesBateria(todosBat);
+                let idx = ordenados.findIndex(o => o.piloto === nomePiloto);
+                if (idx !== -1) {
+                    if (idx === 0) vitorias++;
+                    if (idx <= 2) podios++;
+                    let mv = ordenados[idx].melhorVoltaVal || 0;
+                    if (mv > 0 && mv < melhorVoltaGeral) melhorVoltaGeral = mv;
+                }
+            });
+
+            let texto = `🏎️ *${tituloNome}*\n\n` +
+                `🏆 Vitórias: ${vitorias}\n` +
+                `🥈 Pódios: ${podios}\n` +
+                `🏁 Corridas: ${participacoes.length}\n` +
+                (melhorVoltaGeral < 999999 ? `⚡ Melhor volta: ${melhorVoltaGeral.toFixed(3)}s\n` : '') +
+                `\n🔗 https://luisrcsb.github.io/ctad/`;
+
+            if (navigator.share) {
+                try { await navigator.share({ text: texto }); return; }
+                catch (err) { if (err && err.name === 'AbortError') return; }
+            }
+            if (navigator.clipboard) {
+                try {
+                    await navigator.clipboard.writeText(texto);
+                    alert("Texto copiado! Cole (Ctrl+V) na conversa do WhatsApp.");
+                    return;
+                } catch (err) { /* segue pro último recurso */ }
+            }
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener,noreferrer');
+        };
