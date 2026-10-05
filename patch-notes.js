@@ -1,10 +1,20 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v5.92.0";
-        const TITULO_VERSAO_ATUAL = "Produtos Recomendados";
+        const VERSAO_ATUAL_SISTEMA = "v5.93.0";
+        const TITULO_VERSAO_ATUAL = "Contas de Piloto (Fase 1)";
 
         const historicoAtualizacoesDB = [
+            {
+                versao: "v5.93.0",
+                data: "04 de Outubro de 2026",
+                titulo: "Contas de Piloto (Fase 1: Cadastro e Aprovação)",
+                relevante: [
+                    { tipo: "novo", texto: "Pilotos agora podem criar uma conta própria (\"👤 Minha Conta\") e, após aprovação do admin, acessar seu dossiê pessoal direto pelo login." },
+                    { tipo: "novo", texto: "Painel administrativo \"Solicitações de Acesso\" para vincular cada cadastro novo a um piloto já existente na base." },
+                    { tipo: "correcao", texto: "Reforço de segurança: a checagem de administrador agora usa uma lista real de admins (nó \"admins\" no banco), em vez de assumir que qualquer login era o admin — necessário antes de abrir cadastro público." }
+                ]
+            },
             {
                 versao: "v5.92.0",
                 data: "04 de Outubro de 2026",

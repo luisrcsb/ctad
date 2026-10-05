@@ -397,6 +397,33 @@
         </div>
     </div>
 
+    <div id="minha-conta-modal" class="custom-modal" style="z-index: 10700;">
+        <div class="modal-content" style="max-width: 440px;">
+            <div class="modal-header">
+                <div class="modal-title">👤 Minha Conta</div>
+                <button class="modal-close" onclick="fecharModalMinhaConta()">&times;</button>
+            </div>
+            <div class="modal-body" id="minha-conta-corpo" style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="color: var(--text-muted);">Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="solicitacoes-cadastro-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <div class="modal-title">📝 Solicitações de Acesso</div>
+                <button class="modal-close" onclick="fecharModalSolicitacoesCadastro()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Vincule cada solicitação a um piloto já existente na base pra liberar o acesso dele.</p>
+                <div id="solicitacoes-cadastro-corpo" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="color: var(--text-muted);">Carregando...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="vitrine-produtos-modal" class="custom-modal" style="z-index: 10500;">
         <div class="modal-content" style="max-width: 820px;">
             <div class="modal-header">
@@ -512,6 +539,7 @@
                     <h1>CTAD - Central de Telemetria</h1>
                 </div>
                 <div class="header-actions">
+                    <button class="btn" onclick="abrirModalMinhaConta()">👤 Minha Conta</button>
                     <button class="btn" onclick="abrirVitrineProdutosRecomendados()">🛍️ Recomendados</button>
                     <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
                     <button class="btn btn-admin-trigger" onclick="abrirModalAdmin()">🔐 Administração</button>
@@ -618,6 +646,7 @@
     <script src="pdf-utils.js"></script>
     <script src="compras.js"></script>
     <script src="produtos-recomendados.js"></script>
+    <script src="piloto-conta.js"></script>
     <script src="comentarios.js"></script>
     <script src="pilotos.js"></script>
     <script src="tags.js"></script>
@@ -668,6 +697,9 @@
         let compraResumoAtualKey = null;
         let atalhosRastreioCustomCache = [];
         let produtosRecomendadosCache = {};
+        let usuarioAtual = null;
+        let pilotoVinculadoAoUsuario = null;
+        let solicitacoesCadastroCache = {};
         let pilotoSendoConfigurado = null;
         let ultimaBateriaTopoKeyCache = null;
 
@@ -684,11 +716,28 @@
             firebase.initializeApp(firebaseConfig);
             db = firebase.database();
             auth = firebase.auth();
-            // Mantém o admin logado entre recarregamentos da página, mas SEMPRE
-            // valida contra o Firebase (não é mais um "true" salvo localmente).
-            auth.onAuthStateChanged(user => {
-                isAdminLogado = !!user;
+            // Mantém o login entre recarregamentos da página, mas SEMPRE valida
+            // contra o Firebase. IMPORTANTE: "estar logado" não é mais sinônimo
+            // de "ser admin" — agora pilotos também podem ter conta própria, então
+            // checamos de verdade o nó admins/{uid} antes de liberar qualquer coisa
+            // de administrador.
+            auth.onAuthStateChanged(async user => {
+                usuarioAtual = user;
+                if (user) {
+                    try {
+                        let snap = await db.ref(`admins/${user.uid}`).once('value');
+                        isAdminLogado = snap.val() === true;
+                    } catch (e) { isAdminLogado = false; }
+                    try {
+                        let snapVinculo = await db.ref(`usuariosPilotos/${user.uid}`).once('value');
+                        pilotoVinculadoAoUsuario = (snapVinculo.val() && snapVinculo.val().piloto) || null;
+                    } catch (e) { pilotoVinculadoAoUsuario = null; }
+                } else {
+                    isAdminLogado = false;
+                    pilotoVinculadoAoUsuario = null;
+                }
                 if (typeof atualizarUiAdminLogado === 'function') atualizarUiAdminLogado();
+                if (typeof atualizarUiContaPiloto === 'function') atualizarUiContaPiloto();
             });
         } catch (e) {
             console.warn("Erro Firebase:", e);
@@ -784,6 +833,11 @@
                 db.ref('configuracoesGlobais/atalhosRastreioCustom').on('value', snapshot => {
                     atalhosRastreioCustomCache = snapshot.val() || [];
                     renderizarModalComprasColetivas();
+                });
+
+                db.ref('solicitacoesCadastro').on('value', snapshot => {
+                    solicitacoesCadastroCache = snapshot.val() || {};
+                    if (typeof renderizarPainelSolicitacoesCadastro === 'function') renderizarPainelSolicitacoesCadastro();
                 });
 
                 db.ref('produtosRecomendados').on('value', snapshot => {
@@ -1224,6 +1278,10 @@
                             <div class="config-panel-title" style="color: var(--accent-gold);">🛍️ Produtos Recomendados</div>
                             <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Edite frete/imposto dos itens das compras ou cadastre produtos manualmente.</p>
                         </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('solicitacoes')">
+                            <div class="config-panel-title" style="color: var(--accent-gold);">📝 Solicitações de Acesso</div>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Vincule cadastros de pilotos novos aos pilotos já existentes na base.</p>
+                        </div>
                     </div>
                 `;
             }
@@ -1238,6 +1296,7 @@
             if (tipo === 'compras') abrirModalCompras();
             if (tipo === 'tags') abrirModalTagsPilotos();
             if (tipo === 'recomendados') abrirModalProdutosRecomendados();
+            if (tipo === 'solicitacoes') abrirModalSolicitacoesCadastro();
         };
 
         window.abrirModalUpload = function() { document.getElementById('upload-modal').style.display = 'flex'; };
@@ -2345,7 +2404,7 @@
 
 
         window.onclick = function(event) {
-            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'tags-config-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal', 'patch-notes-modal', 'vitrine-produtos-modal', 'produtos-recomendados-modal'].forEach(id => {
+            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'tags-config-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal', 'patch-notes-modal', 'vitrine-produtos-modal', 'produtos-recomendados-modal', 'minha-conta-modal', 'solicitacoes-cadastro-modal'].forEach(id => {
                 if (event.target === document.getElementById(id)) document.getElementById(id).style.display = 'none';
             });
         };
