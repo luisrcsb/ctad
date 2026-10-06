@@ -1,10 +1,19 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v5.93.0";
-        const TITULO_VERSAO_ATUAL = "Contas de Piloto (Fase 1)";
+        const VERSAO_ATUAL_SISTEMA = "v5.94.0";
+        const TITULO_VERSAO_ATUAL = "Notas Pessoais e Compartilhamento do Dossiê";
 
         const historicoAtualizacoesDB = [
+            {
+                versao: "v5.94.0",
+                data: "05 de Outubro de 2026",
+                titulo: "Notas Pessoais e Compartilhamento do Dossiê",
+                relevante: [
+                    { tipo: "novo", texto: "Pilotos logados podem adicionar notas pessoais e privadas em qualquer corrida do próprio histórico, direto no Dossiê." },
+                    { tipo: "novo", texto: "Botão de compartilhar o resumo do Dossiê (vitórias, pódios, melhor volta) pelo WhatsApp." }
+                ]
+            },
             {
                 versao: "v5.93.0",
                 data: "04 de Outubro de 2026",
