@@ -61,12 +61,14 @@
             }
 
             if (pilotoVinculadoAoUsuario) {
+                let secaoDesafios = typeof renderizarSecaoDesafiosMinhaConta === 'function' ? renderizarSecaoDesafiosMinhaConta() : '';
                 corpo.innerHTML = `
                     <div style="font-size:0.9rem; color:var(--text-title);">👋 Bem-vindo, <strong>${escapeHtml(pilotoVinculadoAoUsuario)}</strong>!</div>
-                    <div style="display:flex; gap:8px; margin-top:12px;">
+                    <div style="display:flex; gap:8px; margin-top:12px; margin-bottom: 14px;">
                         <button class="btn-action-primary" onclick="fecharModalMinhaConta(); abrirDossiePiloto('${escapeHtml(pilotoVinculadoAoUsuario)}')">📊 Ver Meu Dossiê</button>
                         <button class="btn-action-danger" onclick="logoutContaPiloto()">Sair</button>
-                    </div>`;
+                    </div>
+                    ${secaoDesafios}`;
                 return;
             }
 

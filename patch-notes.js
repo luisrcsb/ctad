@@ -1,10 +1,20 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v5.94.0";
-        const TITULO_VERSAO_ATUAL = "Notas Pessoais e Compartilhamento do Dossiê";
+        const VERSAO_ATUAL_SISTEMA = "v5.95.0";
+        const TITULO_VERSAO_ATUAL = "Área de Desafios";
 
         const historicoAtualizacoesDB = [
+            {
+                versao: "v5.95.0",
+                data: "06 de Outubro de 2026",
+                titulo: "Área de Desafios entre Pilotos",
+                relevante: [
+                    { tipo: "novo", texto: "Pilotos logados podem desafiar outros pilotos direto pelo Dossiê, com mensagem opcional." },
+                    { tipo: "novo", texto: "O desafiado recebe o convite em \"Minha Conta\" e pode Aceitar, Recusar ou marcar como Talvez." },
+                    { tipo: "novo", texto: "Desafios aceitos aparecem publicamente no dashboard, no novo card \"⚔️ Desafios Ativos\"." }
+                ]
+            },
             {
                 versao: "v5.94.0",
                 data: "05 de Outubro de 2026",

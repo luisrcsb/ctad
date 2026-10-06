@@ -280,6 +280,14 @@
             document.getElementById('modal-piloto-nome').innerHTML = `🏎️ Resumo do Piloto: <span style="color: var(--accent-gold);">${escapeHtml(tituloNome)}</span>`;
             dossiePilotoAbertoNome = nomePiloto;
 
+            // O botão de desafiar só aparece pra quem está logado como um
+            // piloto DIFERENTE do dono deste dossiê.
+            let btnDesafiar = document.getElementById('btn-desafiar-dossie');
+            if (btnDesafiar) {
+                let podeDesafiar = !!(usuarioAtual && pilotoVinculadoAoUsuario && pilotoVinculadoAoUsuario !== nomePiloto);
+                btnDesafiar.style.display = podeDesafiar ? 'inline-flex' : 'none';
+            }
+
             // Notas pessoais só existem (e só são carregadas) quando o piloto
             // logado está vendo o PRÓPRIO dossiê — são privadas, ninguém mais lê.
             let ehMeuProprioDossie = !!(usuarioAtual && pilotoVinculadoAoUsuario === nomePiloto);
