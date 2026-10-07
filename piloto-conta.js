@@ -49,6 +49,7 @@
                                 <button class="btn-action-primary" style="background:#2ec4b6; color:#000;" onclick="cadastrarPiloto()">Cadastrar</button>
                             </div>
                         </div>
+                        ${renderizarSecaoAcessibilidadeMinhaConta()}
                     </div>`;
                 return;
             }
@@ -56,19 +57,23 @@
             if (isAdminLogado) {
                 corpo.innerHTML = `
                     <div style="color:var(--text-muted); font-size:0.85rem;">Você está logado como administrador (${escapeHtml(usuarioAtual.email || '')}).</div>
-                    <button class="btn-action-danger" style="margin-top:10px;" onclick="logoutContaPiloto()">Sair</button>`;
+                    <button class="btn-action-danger" style="margin-top:10px;" onclick="logoutContaPiloto()">Sair</button>
+                    ${renderizarSecaoAcessibilidadeMinhaConta()}`;
                 return;
             }
 
             if (pilotoVinculadoAoUsuario) {
                 let secaoDesafios = typeof renderizarSecaoDesafiosMinhaConta === 'function' ? renderizarSecaoDesafiosMinhaConta() : '';
+                let secaoDesejos = typeof renderizarListaDesejosMinhaConta === 'function' ? renderizarListaDesejosMinhaConta() : '';
                 corpo.innerHTML = `
                     <div style="font-size:0.9rem; color:var(--text-title);">👋 Bem-vindo, <strong>${escapeHtml(pilotoVinculadoAoUsuario)}</strong>!</div>
                     <div style="display:flex; gap:8px; margin-top:12px; margin-bottom: 14px;">
                         <button class="btn-action-primary" onclick="fecharModalMinhaConta(); abrirDossiePiloto('${escapeHtml(pilotoVinculadoAoUsuario)}')">📊 Ver Meu Dossiê</button>
                         <button class="btn-action-danger" onclick="logoutContaPiloto()">Sair</button>
                     </div>
-                    ${secaoDesafios}`;
+                    ${secaoDesejos}
+                    ${secaoDesafios}
+                    ${renderizarSecaoAcessibilidadeMinhaConta()}`;
                 return;
             }
 
@@ -76,7 +81,21 @@
                 <div style="color:var(--text-muted); font-size:0.85rem;">
                     ✅ Cadastro recebido (${escapeHtml(usuarioAtual.email || '')})! Assim que o administrador vincular sua conta a um piloto, seu painel pessoal aparece aqui.
                 </div>
-                <button class="btn-action-danger" style="margin-top:10px;" onclick="logoutContaPiloto()">Sair</button>`;
+                <button class="btn-action-danger" style="margin-top:10px;" onclick="logoutContaPiloto()">Sair</button>
+                ${renderizarSecaoAcessibilidadeMinhaConta()}`;
+        }
+
+        // Seção de acessibilidade embutida em "Minha Conta" — abre o modal de
+        // acessibilidade já existente (alto contraste, filtros de daltonismo).
+        // Disponível em qualquer estado de login, já que é uma preferência do
+        // navegador/visitante, não do piloto.
+        function renderizarSecaoAcessibilidadeMinhaConta() {
+            return `
+                <div class="config-panel" style="margin-top:14px;">
+                    <div class="config-panel-title">♿ Acessibilidade</div>
+                    <p style="font-size:0.72rem; color:var(--text-muted); margin:2px 0 6px;">Alto contraste e filtros de daltonismo.</p>
+                    <button class="btn" style="background:var(--bg-body); border:1px solid var(--border-card); color:#fff;" onclick="abrirModalAcessibilidade()">♿ Abrir Configurações de Acessibilidade</button>
+                </div>`;
         }
 
         window.fazerLoginPiloto = async function() {

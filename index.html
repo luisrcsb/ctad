@@ -544,8 +544,6 @@
                 </div>
                 <div class="header-actions">
                     <button class="btn" onclick="abrirModalMinhaConta()">👤 Minha Conta</button>
-                    <button class="btn" onclick="abrirVitrineProdutosRecomendados()">🛍️ Recomendados</button>
-                    <button class="btn btn-accessibility-trigger" id="btn-accessibility" onclick="abrirModalAcessibilidade()">♿ Acessibilidade</button>
                     <button class="btn btn-admin-trigger" id="btn-administracao-header" style="display:none;" onclick="abrirModalAdmin()">🔐 Administração</button>
                     <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
                 </div>
@@ -624,6 +622,12 @@
                     <div class="card-header">🛒 Compras Coletivas & Pagamentos</div>
                     <div id="kpi-compras-conteudo" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
                         <div style="color: var(--text-muted); font-size: 0.8rem;">Carregando compras coletivas...</div>
+                    </div>
+                </div>
+                <div class="card" style="margin-bottom: 0; cursor: pointer;" onclick="abrirVitrineProdutosRecomendados()">
+                    <div class="card-header">🛍️ Produtos Recomendados</div>
+                    <div id="kpi-recomendados-conteudo" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
+                        <div style="color: var(--text-muted); font-size: 0.8rem;">Carregando produtos...</div>
                     </div>
                 </div>
                 <div class="card" style="margin-bottom: 0;">
@@ -864,6 +868,8 @@
                     produtosRecomendadosCache = snapshot.val() || {};
                     if (typeof renderizarPainelProdutosRecomendados === 'function') renderizarPainelProdutosRecomendados();
                     if (typeof renderizarVitrineProdutosRecomendados === 'function') renderizarVitrineProdutosRecomendados();
+                    if (typeof renderizarWidgetRecomendadosDashboard === 'function') renderizarWidgetRecomendadosDashboard();
+                    if (typeof atualizarUiContaPiloto === 'function' && usuarioAtual) atualizarUiContaPiloto();
                 });
 
                 db.ref('pilotosMetadados').on('value', snapshot => {
@@ -1887,7 +1893,8 @@
                     'patch-notes': 'abrirModalPatchNotes',
                     'admin': 'abrirModalAdmin',
                     'tags': 'abrirModalTagsPilotos',
-                    'acessibilidade': 'abrirModalAcessibilidade'
+                    'acessibilidade': 'abrirModalAcessibilidade',
+                    'recomendados': 'abrirVitrineProdutosRecomendados'
                 };
                 let nomeFuncao = mapaModais[valor];
                 if (nomeFuncao && typeof window[nomeFuncao] === 'function') window[nomeFuncao]();
