@@ -718,6 +718,7 @@
         let notasPilotoCache = {};
         let dossiePilotoAbertoNome = null;
         let desafiosCache = {};
+        let acessibilidadeHabilitadaGlobal = false;
         let pilotoSendoConfigurado = null;
         let ultimaBateriaTopoKeyCache = null;
 
@@ -833,11 +834,7 @@
                 });
 
                 db.ref('configuracoesGlobais/acessibilidadeHabilitada').on('value', snapshot => {
-                    let ativo = snapshot.val() === true;
-                    let btnAcess = document.getElementById('btn-accessibility');
-                    if (btnAcess) {
-                        btnAcess.style.display = ativo ? 'inline-flex' : 'none';
-                    }
+                    acessibilidadeHabilitadaGlobal = snapshot.val() === true;
                 });
 
                 db.ref('configuracoesGlobais/nomePista').on('value', snapshot => {
@@ -1255,7 +1252,7 @@
                 `;
             } else {
                 let responsivoAtual = document.body.classList.contains('responsivo-ativo');
-                let acessibilidadeHabilitada = document.getElementById('btn-accessibility').style.display === 'inline-flex';
+                let acessibilidadeHabilitada = acessibilidadeHabilitadaGlobal;
                 bodyEl.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
                         <span style="font-weight: 700; color: var(--accent-green); font-size: 0.82rem;">🟢 Sessão Administrativa Autenticada</span>
