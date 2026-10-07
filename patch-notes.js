@@ -1,10 +1,22 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v5.95.0";
-        const TITULO_VERSAO_ATUAL = "Área de Desafios";
+        const VERSAO_ATUAL_SISTEMA = "v5.96.0";
+        const TITULO_VERSAO_ATUAL = "Lista de Desejos e Compartilhamento de Produtos";
 
         const historicoAtualizacoesDB = [
+            {
+                versao: "v5.96.0",
+                data: "06 de Outubro de 2026",
+                titulo: "Lista de Desejos e Compartilhamento de Produtos",
+                relevante: [
+                    { tipo: "novo", texto: "Campo de Descrição nos Produtos Recomendados, incluído automaticamente ao compartilhar." },
+                    { tipo: "novo", texto: "Botão de compartilhar um produto específico (nome, foto, valores com aviso de estimativa, descrição e link) ou a lista inteira." },
+                    { tipo: "novo", texto: "❤️ Lista de Desejos: pilotos logados podem favoritar produtos; os mais favoritados sobem ao topo da vitrine." },
+                    { tipo: "melhoria", texto: "\"Recomendados\" deixou de ser um botão no topo e virou um card de KPI no dashboard, ao lado de \"Desafios Ativos\"." },
+                    { tipo: "melhoria", texto: "Acessibilidade movida para dentro de \"Minha Conta\"." }
+                ]
+            },
             {
                 versao: "v5.95.0",
                 data: "06 de Outubro de 2026",
