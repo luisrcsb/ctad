@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CTAD - Central de Telemetria</title>
+    <title>Central de Telemetria e Análise de Desempenho</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsQR@1.4.0/dist/jsQR.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
@@ -33,7 +33,7 @@
         <div class="modal-content" style="max-width: 750px; border-top-color: var(--accent-blue);">
             <div class="modal-header">
                 <div class="modal-title" style="flex: 1;">🎮 Registo de Atualizações (Patch Notes)</div>
-                <button class="modal-close" onclick="fecharModalPatchNotes()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalPatchNotes()">Voltar</button>
             </div>
             <div class="modal-body">
                 <p style="font-size: 0.82rem; color: var(--text-muted);">Consulte o histórico completo de melhorias, novas funcionalidades e correções implementadas na CTAD.</p>
@@ -42,11 +42,23 @@
         </div>
     </div>
 
+    <div id="redes-sociais-modal" class="custom-modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <div class="modal-title">📡 Redes Sociais & Menções</div>
+                <button class="modal-close" onclick="fecharModalRedesSociais()">Voltar</button>
+            </div>
+            <div class="modal-body" id="redes-sociais-corpo">
+                <div style="color:var(--text-muted);">Carregando...</div>
+            </div>
+        </div>
+    </div>
+
     <div id="accessibility-modal" class="custom-modal" style="z-index: 10800;">
         <div class="modal-content" style="max-width: 500px; border-top-color: var(--accent-green);">
             <div class="modal-header">
                 <div class="modal-title">♿ Opções de Acessibilidade</div>
-                <button class="modal-close" onclick="fecharModalAcessibilidade()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalAcessibilidade()">Voltar</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
                 <p style="font-size: 0.8rem; color: var(--text-muted);">Personalize a visualização da tela conforme sua necessidade:</p>
@@ -66,7 +78,7 @@
         <div class="modal-content" style="max-width: 800px; border-top-color: var(--accent-red);">
             <div class="modal-header">
                 <div class="modal-title">🔐 Painel de Administração Central</div>
-                <button class="modal-close" onclick="fecharModalAdmin()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalAdmin()">Voltar</button>
             </div>
             <div class="modal-body" id="admin-modal-body"></div>
         </div>
@@ -76,7 +88,7 @@
         <div class="modal-content" style="max-width: 650px; border-top-color: var(--accent-gold);">
             <div class="modal-header">
                 <div class="modal-title">🏁 Configurar Telão 4K - Última Prova</div>
-                <button class="modal-close" onclick="fecharModalConfigPista()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalConfigPista()">Voltar</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
                 <div id="pista-info-ultima-prova" style="background: var(--bg-input); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border-card); font-size: 0.85rem; color: var(--accent-gold);">
@@ -149,7 +161,7 @@
                 <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
                     <button type="button" id="btn-desafiar-dossie" onclick="criarDesafio(dossiePilotoAbertoNome)" style="display:none; border:1px solid var(--accent-red); background:rgba(230,57,70,0.12); color:var(--accent-red); border-radius:8px; padding:7px 11px; font-weight:700; cursor:pointer; font-size:0.78rem; white-space:nowrap;">⚔️ Desafiar</button>
                     <button type="button" id="btn-compartilhar-dossie" onclick="compartilharDossiePiloto()" title="Compartilhar" style="border:1px solid #25D366; background:rgba(37,211,102,0.12); color:#25D366; border-radius:8px; padding:7px 11px; font-weight:700; cursor:pointer; font-size:0.78rem; white-space:nowrap;">📤</button>
-                    <button class="modal-close" onclick="fecharDossiePiloto()">← Voltar</button>
+                    <button class="modal-close" onclick="fecharDossiePiloto()">Voltar</button>
                 </div>
             </div>
             <div class="modal-body" id="modal-piloto-corpo"></div>
@@ -160,7 +172,7 @@
         <div class="modal-content" style="max-width: 700px; border-top-color: var(--accent-blue);">
             <div class="modal-header">
                 <div class="modal-title" id="modal-config-piloto-titulo">⚙️ Configurar Piloto</div>
-                <button class="modal-close" onclick="fecharModalConfigurarPiloto()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalConfigurarPiloto()">Voltar</button>
             </div>
             <div class="modal-body" id="modal-config-piloto-corpo" style="display: flex; flex-direction: column; gap: 14px;"></div>
         </div>
@@ -170,7 +182,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">📤 Central de Upload de Relatórios (Banco Principal)</div>
-                <button class="modal-close" onclick="fecharModalUpload()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalUpload()">Voltar</button>
             </div>
             <div class="modal-body">
                 <div class="upload-grid-manager">
@@ -203,7 +215,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">🏆 Championship Manager</div>
-                <button class="modal-close" onclick="fecharModalCampeonatos()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalCampeonatos()">Voltar</button>
             </div>
             <div class="modal-body">
                 <div style="display: flex; flex-direction: column; gap: 14px;">
@@ -374,7 +386,7 @@
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <div class="modal-title">👤 Gestão e Configuração de Pilotos</div>
-                <button class="modal-close" onclick="fecharModalPilotos()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalPilotos()">Voltar</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
                 <div class="config-panel">
@@ -405,7 +417,7 @@
         <div class="modal-content" style="max-width: 440px;">
             <div class="modal-header">
                 <div class="modal-title">👤 Minha Conta</div>
-                <button class="modal-close" onclick="fecharModalMinhaConta()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalMinhaConta()">Voltar</button>
             </div>
             <div class="modal-body" id="minha-conta-corpo" style="display: flex; flex-direction: column; gap: 10px;">
                 <div style="color: var(--text-muted);">Carregando...</div>
@@ -417,7 +429,7 @@
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
                 <div class="modal-title">📝 Solicitações de Acesso</div>
-                <button class="modal-close" onclick="fecharModalSolicitacoesCadastro()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalSolicitacoesCadastro()">Voltar</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
                 <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Vincule cada solicitação a um piloto já existente na base pra liberar o acesso dele.</p>
@@ -428,14 +440,18 @@
         </div>
     </div>
 
-    <div id="produto-detalhe-modal" class="custom-modal" style="z-index: 10800;">
-        <div class="modal-content" style="max-width: 520px;">
+    <div id="contas-vinculadas-modal" class="custom-modal" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
-                <div class="modal-title" style="flex: 1;">🛍️ Detalhes do Produto</div>
-                <button class="modal-close" onclick="fecharDetalheProduto()">← Voltar</button>
+                <div class="modal-title">🔗 Contas Vinculadas</div>
+                <button class="modal-close" onclick="fecharModalContasVinculadas()">Voltar</button>
             </div>
-            <div class="modal-body" id="produto-detalhe-corpo"></div>
-            <div id="produto-detalhe-rodape" style="padding: 12px 16px; border-top: 1px solid var(--border-card); background: var(--bg-card-header);"></div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Todas as contas de piloto já vinculadas. Revincule pra trocar o piloto da conta ou desvincule pra tirar o acesso ao painel pessoal — nesse caso a solicitação volta a aparecer como pendente em "Solicitações de Acesso".</p>
+                <div id="contas-vinculadas-corpo" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="color: var(--text-muted);">Carregando...</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -443,7 +459,7 @@
         <div class="modal-content" style="max-width: 820px;">
             <div class="modal-header">
                 <div class="modal-title">🛍️ Produtos Recomendados</div>
-                <button class="modal-close" onclick="fecharVitrineProdutosRecomendados()">← Voltar</button>
+                <button class="modal-close" onclick="fecharVitrineProdutosRecomendados()">Voltar</button>
             </div>
             <div class="modal-body">
                 <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0 0 10px;">Itens já comprados pela galera (ou indicados pela administração). Clique num item pra ver o produto.</p>
@@ -458,7 +474,7 @@
         <div class="modal-content" style="max-width: 700px;">
             <div class="modal-header">
                 <div class="modal-title">🛍️ Produtos Recomendados (Admin)</div>
-                <button class="modal-close" onclick="fecharModalProdutosRecomendados()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalProdutosRecomendados()">Voltar</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
                 <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
@@ -476,7 +492,7 @@
         <div class="modal-content" style="max-width: 800px;">
             <div class="modal-header">
                 <div class="modal-title">🏷️ Tags dos Pilotos</div>
-                <button class="modal-close" onclick="fecharModalTagsPilotos()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalTagsPilotos()">Voltar</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
                 <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
@@ -494,7 +510,7 @@
         <div class="modal-content" style="max-width: 1000px; border-top-color: var(--accent-cc);">
             <div class="modal-header">
                 <div class="modal-title" id="compras-modal-titulo">🛒 Gestão de Compras Coletivas</div>
-                <button class="modal-close" onclick="fecharModalCompras()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalCompras()">Voltar</button>
             </div>
             <div class="modal-body" id="compras-modal-body" style="display: flex; flex-direction: column; gap: 14px;"></div>
         </div>
@@ -506,7 +522,7 @@
                 <div class="modal-title" id="compra-resumo-titulo" style="flex: 1;">📊 Resumo da Compra Coletiva</div>
                 <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
                     <button type="button" id="btn-compartilhar-resumo-compra" onclick="compartilharResumoCompra(compraResumoAtualKey)" title="Compartilhar resumo" style="border:1px solid #25D366; background:rgba(37,211,102,0.12); color:#25D366; border-radius:8px; padding:7px 11px; font-weight:700; cursor:pointer; font-size:0.78rem; white-space:nowrap;">📤 Compartilhar</button>
-                    <button class="modal-close" onclick="fecharModalResumoCompra()">← Voltar</button>
+                    <button class="modal-close" onclick="fecharModalResumoCompra()">Voltar</button>
                 </div>
             </div>
             <div class="modal-body" id="compra-resumo-corpo" style="display: flex; flex-direction: column; gap: 12px;"></div>
@@ -518,7 +534,7 @@
             <div class="modal-header" style="background: var(--bg-card-header); gap: 10px;">
                 <div class="modal-title" id="participar-modal-titulo" style="flex: 1;">🏎️ Participar do Campeonato</div>
                 <button class="btn-action-primary" onclick="compartilharCampeonatoWhatsApp()" style="background:#25D366; color:#fff; border:none; padding:7px 10px; font-size:0.78rem; white-space:nowrap;">📲 Compartilhar</button>
-                <button class="modal-close" onclick="fecharModalParticipar()">← Voltar</button>
+                <button class="modal-close" onclick="fecharModalParticipar()">Voltar</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
                 <div id="participar-regras-resumo" style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 3px solid var(--accent-gold); border-radius: 8px; padding: 10px 12px;">
@@ -555,8 +571,6 @@
                 </div>
                 <div class="header-actions">
                     <button class="btn" onclick="abrirModalMinhaConta()">👤 Minha Conta</button>
-                    <button class="btn btn-admin-trigger" id="btn-administracao-header" style="display:none;" onclick="abrirModalAdmin()">🔐 Administração</button>
-                    <button class="btn btn-pdf-global" onclick="gerarRelatórioPDF()">📄 Gerar relatório</button>
                 </div>
             </div>
             <div id="display-nome-pista" class="pista-display-banner">
@@ -629,7 +643,7 @@
                         <div style="color: var(--text-muted); font-size: 0.8rem;">Carregando campeonatos...</div>
                     </div>
                 </div>
-                <div class="card" style="margin-bottom: 0;">
+                <div class="card" id="card-compras-dashboard" style="margin-bottom: 0;">
                     <div class="card-header">🛒 Compras Coletivas & Pagamentos</div>
                     <div id="kpi-compras-conteudo" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
                         <div style="color: var(--text-muted); font-size: 0.8rem;">Carregando compras coletivas...</div>
@@ -659,6 +673,8 @@
                 </span>
                 <span>•</span>
                 <span>🟢 Status: <strong>Ativo</strong></span>
+                <span>•</span>
+                <span id="status-dados" style="color: var(--text-muted);">📡 Dados: <strong>conectando…</strong></span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -682,17 +698,147 @@
         // ATENÇÃO: preencha com o e-mail que você cadastrou no Firebase Authentication
         // (Console > Authentication > Users). A senha fica só no Firebase, nunca aqui no código.
         const ADMIN_EMAIL = "luisrcsb@gmail.com";
-        let isAdminLogado = false;
+
+        // ============================================================
+        // PERFIS DE ACESSO (FASE 2)
+        // ============================================================
+        // Perfis padrão locais: fallback caso o nó `perfis` do Firebase
+        // ainda não exista. Cada perfil declara, por módulo, as ações
+        // liberadas. "*" no módulo ou na ação libera tudo.
+        const PERFIS_PADRAO = {
+            admin: {
+                rotulo: "Administrador",
+                permissoes: { "*": ["*"] }
+            },
+            gestor: {
+                rotulo: "Gestor",
+                permissoes: {
+                    campeonatos: ["gerenciar", "criar", "editar", "excluir"],
+                    configuracoes: ["gerenciar"],
+                    pilotos: ["gerenciar"],
+                    compras: ["gerenciar"],
+                    contas: ["aprovar"],
+                    solicitacoes: ["gerenciar"]
+                }
+            },
+            piloto: {
+                rotulo: "Piloto",
+                permissoes: {
+                    campeonatos: ["inscrever"],
+                    conta: ["editar"]
+                }
+            },
+            visitante: {
+                rotulo: "Visitante",
+                permissoes: {}
+            }
+        };
+
+        // Sessão corrente: uid do Firebase Auth, slug público, nível do
+        // perfil ativo e a bandeira legada lida de admins/{uid}.
+        let sessao = { uid: null, slug: null, nivel: null, legacyAdmin: false };
+        let perfisCache = {};
+
+        // Carrega os perfis locais (sempre disponíveis, mesmo offline).
+        function carregarPerfisPadrao() {
+            perfisCache = JSON.parse(JSON.stringify(PERFIS_PADRAO));
+            return perfisCache;
+        }
+
+        // Sobrepõe/combina com os perfis remotos do nó `perfis`.
+        // Silenciosa por design: sem rede o fallback local continua válido.
+        async function carregarPerfisFirebase() {
+            if (!db) return perfisCache;
+            try {
+                let snap = await db.ref('perfis').once('value');
+                let remotos = snap.val() || {};
+                Object.keys(remotos).forEach(nivel => {
+                    perfisCache[nivel] = Object.assign({}, PERFIS_PADRAO[nivel] || {}, remotos[nivel]);
+                });
+            } catch (e) {
+                console.warn("Erro ao carregar perfis do Firebase:", e);
+            }
+            return perfisCache;
+        }
+
+        // Guarda central de autorização por módulo/ação. Admin legado
+        // (admins/{uid} === true) possui todas as permissões.
+        function hasPerm(modulo, acao) {
+            if (!sessao.nivel) return false;
+            let perfil = perfisCache[sessao.nivel] || PERFIS_PADRAO[sessao.nivel];
+            if (!perfil || !perfil.permissoes) return false;
+            let permitidas = [].concat(perfil.permissoes[modulo] || [], perfil.permissoes['*'] || []);
+            return permitidas.includes('*') || permitidas.includes(acao);
+        }
+
+        // isAdminLogado removido (F6) - usar hasPerm() diretamente
+
+        carregarPerfisPadrao();
 
         // Controle central de acesso às funções administrativas de campeonatos.
         // A interface de "Gerenciar" só é exibida quando a sessão administrativa
         // estiver autenticada pela senha.
-        function exigirAcessoAdminCampeonato() {
-            if (!isAdminLogado) {
-                alert("🔒 Acesso restrito! Libere a Administração com a senha para gerenciar campeonatos.");
+        // exigirAcessoAdminCampeonato removido (F6) - usar exigirAcessoAdmin('campeonatos', 'gerenciar')
+
+        // Guarda central de autorização: bloqueia qualquer mutação administrativa
+        // se o usuário não tiver a permissão do módulo. Sem argumentos mantém a
+        // chamada antiga equivalente a exigirAcessoAdmin('campeonatos', 'gerenciar').
+        function exigirAcessoAdmin(modulo = 'campeonatos', acao = 'gerenciar') {
+            if (!hasPerm(modulo, acao)) {
+                alert("🔒 Faça login como administrador primeiro.");
                 return false;
             }
             return true;
+        }
+
+        function gerarSlugPerfil(user) {
+            let base = (user && (user.email || user.displayName)) || (user && user.uid) || 'usuario';
+            let slug = String(base).split('@')[0]
+                .toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+            return slug || 'usuario';
+        }
+
+        function limparSessao() {
+            sessao.uid = null;
+            sessao.slug = null;
+            sessao.nivel = null;
+            sessao.legacyAdmin = false;
+        }
+
+        // Garante que usuarios/{uid} exista e esteja alinhado ao acesso
+        // legado (admins/{uid}): legado vira perfil "admin"; quem não é
+        // legado mantém o nível já cadastrado ou cai no "piloto".
+        async function garantirUsuarioFirebase(user, ehAdminLegado) {
+            if (!db || !user) return null;
+            try {
+                let ref = db.ref(`usuarios/${user.uid}`);
+                let snap = await ref.once('value');
+                let atual = snap.val() || {};
+                let perfil = {
+                    uid: user.uid,
+                    email: user.email || atual.email || null,
+                    slug: atual.slug || gerarSlugPerfil(user),
+                    nivel: ehAdminLegado ? 'admin' : (atual.nivel || 'piloto'),
+                    atualizadoEm: firebase.database.ServerValue.TIMESTAMP
+                };
+                if (snap.exists()) {
+                    await ref.update(perfil);
+                } else {
+                    perfil.criadoEm = firebase.database.ServerValue.TIMESTAMP;
+                    await ref.set(perfil);
+                }
+                // Espelho somente-leitura em admins/ (transicao F5)
+                if (ehAdminLegado) {
+                    try { await db.ref(`admins/${user.uid}`).set(true); } catch (e) {}
+                }
+                return perfil;
+            } catch (e) {
+                console.warn("Erro ao garantir usuarios/:", e);
+                return null;
+            }
         }
 
         const firebaseConfig = {
@@ -726,12 +872,57 @@
         let usuarioAtual = null;
         let pilotoVinculadoAoUsuario = null;
         let solicitacoesCadastroCache = {};
+        let usuariosPilotosCache = {};
+        let usuariosCache = {};
         let notasPilotoCache = {};
         let dossiePilotoAbertoNome = null;
         let desafiosCache = {};
+        let redesSociaisCache = {};
         let acessibilidadeHabilitadaGlobal = false;
         let pilotoSendoConfigurado = null;
         let ultimaBateriaTopoKeyCache = null;
+
+        // Aviso visível de falha na conexão com o banco (script do Firebase
+        // bloqueado por antivírus/adblock, rede, etc.). Sem isso a página
+        // ficava vazia sem nenhuma explicação pro usuário.
+        function mostrarAvisoConexao(msg) {
+            let aviso = document.getElementById('aviso-conexao');
+            if (!aviso) {
+                aviso = document.createElement('div');
+                aviso.id = 'aviso-conexao';
+                aviso.style.cssText = 'position:fixed; top:0; left:0; right:0; z-index:99999; background:#b3541e; color:#fff; font-size:0.82rem; padding:10px 16px; display:flex; gap:12px; align-items:center; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.4); font-family:sans-serif;';
+                document.body.appendChild(aviso);
+            }
+            aviso.innerHTML = `<span>${msg}</span><button style="background:transparent; border:1px solid #fff; color:#fff; border-radius:4px; padding:2px 10px; cursor:pointer; white-space:nowrap;" onclick="document.getElementById('aviso-conexao').remove()">Fechar</button>`;
+        }
+
+        function ocultarAvisoConexao() {
+            let aviso = document.getElementById('aviso-conexao');
+            if (aviso) aviso.remove();
+        }
+
+        // Indicador de status dos dados no rodapé — junto com o aviso laranja,
+        // permite enxergar de fora o que o navegador está fazendo (diagnóstico
+        // de páginas "vazias" causadas por bloqueadores).
+        function atualizarStatusDados(qtdBaterias) {
+            let el = document.getElementById('status-dados');
+            if (!el) return;
+            if (qtdBaterias > 0) {
+                el.innerHTML = `📡 Dados: <strong style="color: var(--accent-green);">${qtdBaterias} baterias</strong>`;
+            } else {
+                el.innerHTML = `📡 Dados: <strong style="color: var(--accent-gold);">nenhuma bateria</strong>`;
+            }
+        }
+
+        // Card "🛒 Compras Coletivas & Pagamentos" do dashboard: o
+        // acompanhamento das compras do piloto foi para "Minha Conta"
+        // (Minhas Compras Coletivas), então no dashboard o card fica
+        // apenas para visitantes deslogados. Chamada toda vez que o
+        // estado de login muda (onAuthStateChanged).
+        function atualizarVisibilidadeCardComprasDashboard() {
+            let card = document.getElementById('card-compras-dashboard');
+            if (card) card.style.display = usuarioAtual ? 'none' : '';
+        }
 
         // ============================================================
         // PATCH NOTES / HISTÓRICO DE ATUALIZAÇÕES
@@ -754,24 +945,43 @@
             auth.onAuthStateChanged(async user => {
                 usuarioAtual = user;
                 if (user) {
+                    let ehAdminLegado = false;
                     try {
-                        let snap = await db.ref(`admins/${user.uid}`).once('value');
-                        isAdminLogado = snap.val() === true;
-                    } catch (e) { isAdminLogado = false; }
+                        let snapAdmins = await db.ref(`admins/${user.uid}`).once('value');
+                        ehAdminLegado = snapAdmins.val() === true;
+                    } catch (e) { ehAdminLegado = false; }
+                    // legacyAdmin removido do sessao (F5) - admins/ agora espelho somente-leitura
+                    let perfilUsuario = null;
+                    try {
+                        perfilUsuario = await garantirUsuarioFirebase(user, ehAdminLegado);
+                    } catch (e) { perfilUsuario = null; }
+                    sessao.uid = user.uid;
+                    sessao.slug = (perfilUsuario && perfilUsuario.slug) || gerarSlugPerfil(user);
+                    sessao.nivel = (perfilUsuario && perfilUsuario.nivel) || (ehAdminLegado ? 'admin' : 'piloto');
                     try {
                         let snapVinculo = await db.ref(`usuariosPilotos/${user.uid}`).once('value');
                         pilotoVinculadoAoUsuario = (snapVinculo.val() && snapVinculo.val().piloto) || null;
                     } catch (e) { pilotoVinculadoAoUsuario = null; }
                 } else {
-                    isAdminLogado = false;
+                    limparSessao();
                     pilotoVinculadoAoUsuario = null;
                 }
-                if (typeof atualizarUiAdminLogado === 'function') atualizarUiAdminLogado();
                 if (typeof atualizarUiContaPiloto === 'function') atualizarUiContaPiloto();
+                atualizarVisibilidadeCardComprasDashboard();
             });
         } catch (e) {
             console.warn("Erro Firebase:", e);
+            mostrarAvisoConexao("⚠️ Não foi possível iniciar a conexão com o banco de dados. Se você usa antivírus com proteção web (ex.: Kaspersky), AdBlock ou bloqueio de scripts, desative para este site e recarregue a página (Ctrl+F5).");
         }
+
+        // Se em 12s nenhum dado tiver chegado, a conexão está bloqueada
+        // (script do Firebase barrado, rede, etc.) — falha silenciosa deixava
+        // a página vazia sem explicação, então avisamos de forma visível.
+        setTimeout(() => {
+            if (db && listaJsonsCache.length === 0) {
+                mostrarAvisoConexao("⚠️ Os dados não carregaram. Pressione Ctrl+F5, tente outro navegador ou desative bloqueadores de script/antivírus para este site.");
+            }
+        }, 12000);
 
         const ALIAS_EDGARD_DJ_DEFAULTS = {
             "edgard": "Edgard Camilo (DJ)",
@@ -839,6 +1049,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             if (db) {
+                carregarPerfisFirebase();
                 db.ref('configuracoesGlobais/responsivo').on('value', snapshot => {
                     let ativo = snapshot.val() === true;
                     document.body.classList.toggle('responsivo-ativo', ativo);
@@ -866,9 +1077,39 @@
                     if (typeof renderizarWidgetDesafiosPublicos === 'function') renderizarWidgetDesafiosPublicos();
                     if (typeof atualizarUiContaPiloto === 'function' && usuarioAtual) atualizarUiContaPiloto();
                 });
+                db.ref('configuracoesGlobais/redesSociais').on('value', snap => {
+                    redesSociaisCache = snap.val() || {};
+                    if (document.getElementById('redes-sociais-modal') && document.getElementById('redes-sociais-modal').style.display === 'flex') {
+                        renderizarRedesSociais();
+                    }
+                });
 
                 db.ref('solicitacoesCadastro').on('value', snapshot => {
                     solicitacoesCadastroCache = snapshot.val() || {};
+                    if (typeof renderizarPainelSolicitacoesCadastro === 'function') renderizarPainelSolicitacoesCadastro();
+                });
+
+                db.ref('usuariosPilotos').on('value', snapshot => {
+                    usuariosPilotosCache = snapshot.val() || {};
+                    // Mantém o vínculo da própria conta em tempo real: se o
+                    // administrador desvincular/revincular, "Minha Conta"
+                    // reflete a mudança sem precisar relogar.
+                    if (usuarioAtual) {
+                        let vinculo = usuariosPilotosCache[usuarioAtual.uid];
+                        let novoPiloto = (vinculo && vinculo.piloto) || null;
+                        if (novoPiloto !== pilotoVinculadoAoUsuario) {
+                            pilotoVinculadoAoUsuario = novoPiloto;
+                            if (typeof atualizarUiContaPiloto === 'function') atualizarUiContaPiloto();
+                        }
+                    }
+                    if (typeof renderizarPainelContasVinculadas === 'function') renderizarPainelContasVinculadas();
+                });
+
+                // usuarios/ alimenta o painel de contas vinculadas com o e-mail
+                // de cada uid (fallback: solicitacoesCadastro).
+                db.ref('usuarios').on('value', snapshot => {
+                    usuariosCache = snapshot.val() || {};
+                    if (typeof renderizarPainelContasVinculadas === 'function') renderizarPainelContasVinculadas();
                     if (typeof renderizarPainelSolicitacoesCadastro === 'function') renderizarPainelSolicitacoesCadastro();
                 });
 
@@ -877,7 +1118,6 @@
                     if (typeof renderizarPainelProdutosRecomendados === 'function') renderizarPainelProdutosRecomendados();
                     if (typeof renderizarVitrineProdutosRecomendados === 'function') renderizarVitrineProdutosRecomendados();
                     if (typeof renderizarWidgetRecomendadosDashboard === 'function') renderizarWidgetRecomendadosDashboard();
-                    processarLinkDiretoModal();
                     if (typeof atualizarUiContaPiloto === 'function' && usuarioAtual) atualizarUiContaPiloto();
                 });
 
@@ -932,6 +1172,10 @@
                     atualizarListaUploadHistoricoPrincipal();
                     preencherSelectProvasBancoPrincipal();
                     atualizarDashboard();
+                    if (listaJsonsCache.length > 0) {
+                        ocultarAvisoConexao();
+                        atualizarStatusDados(listaJsonsCache.length);
+                    }
                 });
             }
         });
@@ -1163,6 +1407,11 @@
                 }
             });
 
+            const idsGraficosTelao = ['pista-chart-ritmo', 'pista-chart-posicao'];
+            const graficosTelaoAnteriores = chartInstances.filter(c => c && c.canvas && idsGraficosTelao.includes(c.canvas.id));
+            graficosTelaoAnteriores.forEach(c => c.destroy());
+            chartInstances = chartInstances.filter(c => !graficosTelaoAnteriores.includes(c));
+
             conteudoEl.innerHTML = htmlParts.join('');
 
             if (showGraficos && ordenados.length > 0) {
@@ -1173,15 +1422,9 @@
 
 
 
-        // Mostra ou esconde o botão "🔐 Administração" no topo do site conforme
-        // o login atual. Chamada pelo onAuthStateChanged toda vez que o estado
-        // de login muda — o botão só aparece depois de logar (via "Minha Conta")
-        // com o e-mail do administrador.
-        function atualizarUiAdminLogado() {
-            let btn = document.getElementById('btn-administracao-header');
-            if (btn) btn.style.display = isAdminLogado ? 'inline-flex' : 'none';
-        }
-
+        // O botão "🔐 Administração" vive dentro de "Minha Conta" (renderizado
+        // por atualizarUiContaPiloto) e só aparece para contas com o nó
+        // admins/{uid} liberado no Firebase.
         window.abrirModalAdmin = function() {
             document.getElementById('admin-modal').style.display = 'flex';
             renderizarAdminModal();
@@ -1198,10 +1441,24 @@
             if (!senhaInput) { alert("Digite a senha."); return; }
             try {
                 await auth.signInWithEmailAndPassword(ADMIN_EMAIL, senhaInput);
-                // isAdminLogado é atualizado pelo listener onAuthStateChanged,
-                // mas atualizamos a UI aqui também para resposta imediata.
-                isAdminLogado = true;
-                if (btnLogin) btnLogin.value = "";
+                // IMPORTANTE: "ter logado" NÃO é sinônimo de "ser admin". A flag
+                // só é liberada depois de confirmar o nó admins/{uid} no Firebase,
+                // evitando a janela de UI administrativa indevida logo após o sign-in.
+                let user = auth.currentUser;
+                let ehAdminLegado = false;
+                if (user) {
+                    try {
+                        let snap = await db.ref(`admins/${user.uid}`).once('value');
+                        ehAdminLegado = snap.val() === true;
+                    } catch (e) { ehAdminLegado = false; }
+                }
+                // Sessao hierarquica (F6) - sem isAdminLogado
+                if (!ehAdminLegado) {
+                    alert("❌ Este e-mail não possui privilégios de administrador.");
+                    auth.signOut();
+                } else if (btnLogin) {
+                    btnLogin.value = "";
+                }
                 renderizarAdminModal();
                 if (document.getElementById('campeonatos-modal')?.style.display === 'flex') {
                     renderizarListaCampeonatosModal();
@@ -1212,7 +1469,7 @@
         };
 
         window.logoutAdmin = function() {
-            isAdminLogado = false;
+            limparSessao();
             if (auth) auth.signOut();
             renderizarAdminModal();
 
@@ -1226,6 +1483,7 @@
         };
 
         window.alternarResponsividadeGlobal = async function(checkbox) {
+            if (!exigirAcessoAdmin('config', 'editar')) { checkbox.checked = !checkbox.checked; return; }
             if (!db) return;
             let ativo = checkbox.checked;
             try {
@@ -1236,6 +1494,7 @@
         };
 
         window.salvarNomePistaAdmin = async function() {
+            if (!exigirAcessoAdmin('config', 'editar')) return;
             if (!db) return;
             let val = document.getElementById('input-admin-nome-pista').value.trim();
             try {
@@ -1250,7 +1509,7 @@
             let bodyEl = document.getElementById('admin-modal-body');
             if (!bodyEl) return;
 
-            if (!isAdminLogado) {
+            if (!hasPerm('campeonatos', 'gerenciar')) {
                 bodyEl.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px 12px; text-align: center;">
                         <div style="font-size: 2.2rem;">🔒</div>
@@ -1266,9 +1525,12 @@
                 let responsivoAtual = document.body.classList.contains('responsivo-ativo');
                 let acessibilidadeHabilitada = acessibilidadeHabilitadaGlobal;
                 bodyEl.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 12px; background: var(--bg-input); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-card);">
                         <span style="font-weight: 700; color: var(--accent-green); font-size: 0.82rem;">🟢 Sessão Administrativa Autenticada</span>
-                        <button class="btn-action-danger" style="padding: 4px 10px; font-size: 0.75rem;" onclick="logoutAdmin()">Deslogar</button>
+                        <span style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.78rem; color: var(--text-muted); word-break: break-all;">${escapeHtml(usuarioAtual ? (usuarioAtual.email || '') : '')}</span>
+                            <button class="btn-action-danger" style="padding: 4px 10px; font-size: 0.75rem;" onclick="logoutAdmin()">Deslogar</button>
+                        </span>
                     </div>
 
                     <div class="config-panel" style="margin-top: 4px;">
@@ -1326,12 +1588,16 @@
                             <div class="config-panel-title" style="color: var(--accent-gold);">📝 Solicitações de Acesso</div>
                             <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Vincule cadastros de pilotos novos aos pilotos já existentes na base.</p>
                         </div>
+                        <div class="config-panel" style="cursor: pointer; transition: transform 0.2s;" onclick="abrirFerramentaAdmin('contas')">
+                            <div class="config-panel-title" style="color: var(--accent-blue);">🔗 Contas Vinculadas</div>
+                            <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Veja, revincule ou desvincule as contas de piloto já aprovadas.</p>
+                        </div>
                     </div>
                 `;
             }
         }
 
-        window.abrirFerramentaAdmin = function(tipo) {
+        window.abrirFerramentaAdmin = function(tipo) { if (!exigirAcessoAdmin('admin', 'acessar')) return;
             fecharModalAdmin();
             if (tipo === 'pista') abrirModalConfigPista();
             if (tipo === 'upload') abrirModalUpload();
@@ -1341,6 +1607,7 @@
             if (tipo === 'tags') abrirModalTagsPilotos();
             if (tipo === 'recomendados') abrirModalProdutosRecomendados();
             if (tipo === 'solicitacoes') abrirModalSolicitacoesCadastro();
+            if (tipo === 'contas') abrirModalContasVinculadas();
         };
 
         window.abrirModalUpload = function() { document.getElementById('upload-modal').style.display = 'flex'; };
@@ -1487,7 +1754,7 @@
         };
 
         window.criarCampeonatoProtegido = async function() {
-            if (!isAdminLogado) { alert("🔒 Faça login como administrador primeiro."); return; }
+            if (!exigirAcessoAdmin('campeonatos', 'criar')) return;
             let nomeCamp = document.getElementById('input-nome-campeonato').value.trim();
             if (!nomeCamp || !db) return;
             let campKey = "camp_" + nomeCamp.toLowerCase().replace(/[^a-z0-9]/g, "_") + "_" + Date.now();
@@ -1528,7 +1795,7 @@
 
                 // "Gerenciar" é uma função administrativa e só fica disponível
                 // após a liberação da Administração pela senha.
-                let botaoGerenciarHtml = isAdminLogado
+                let botaoGerenciarHtml = hasPerm('campeonatos', 'gerenciar')
                     ? `<button class="btn-action-primary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="selecionarCampeonatoZRound('${key}')">⚙️ Gerenciar</button>`
                     : '';
 
@@ -1549,7 +1816,7 @@
         }
 
         window.selecionarCampeonatoZRound = function(key) {
-            if (!exigirAcessoAdminCampeonato()) return;
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
 
             campeonatoAtivoKey = key;
             let camp = campeonatosCache[key];
@@ -1614,7 +1881,7 @@
         }
 
         window.salvarNomeCampeonatoAtual = async function() {
-            if (!isAdminLogado) { alert("🔒 Faça login como administrador primeiro."); return; }
+            if (!hasPerm('campeonatos', 'gerenciar')) { alert("🔒 Faça login como administrador primeiro."); return; }
             if (!campeonatoAtivoKey || !db) return;
             let novoNome = document.getElementById('zround-edit-nome-camp').value.trim();
             if (!novoNome) return;
@@ -1625,7 +1892,8 @@
             } catch (err) { alert("Erro: " + err.message); }
         };
 
-        window.importarPilotoBancoGeral = async function() {
+        window.importarPilotoBancoGeral = async function() { if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return; 
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
             if (!campeonatoAtivoKey || !db) return;
             let select = document.getElementById('zround-select-piloto-geral');
             let nomeP = select.value.trim();
@@ -1637,7 +1905,8 @@
             } catch (err) { alert("Erro: " + err.message); }
         };
 
-        window.adicionarPilotoManualZRound = async function() {
+        window.adicionarPilotoManualZRound = async function() { if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return; 
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
             if (!campeonatoAtivoKey || !db) return;
             let nomeP = document.getElementById('zround-novo-piloto-manual').value.trim();
             if (!nomeP) return;
@@ -1648,12 +1917,14 @@
             } catch (err) { alert("Erro: " + err.message); }
         };
 
-        window.removerPilotoCampeonatoZRound = async function(pKey) {
+        window.removerPilotoCampeonatoZRound = async function(pKey) { if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return; 
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
             if (!campeonatoAtivoKey || !db) return;
             await db.ref(`campeonatos/${campeonatoAtivoKey}/pilotosInscritos/${pKey}`).remove();
         };
 
-        window.salvarAba1ConfigGeral = async function() {
+        window.salvarAba1ConfigGeral = async function() { if (!exigirAcessoAdmin('campeonatos', 'editar')) return; 
+            if (!exigirAcessoAdmin('campeonatos', 'editar')) return;
             if (!campeonatoAtivoKey || !db) return;
             let numProvas = parseInt(document.getElementById('zround-num-provas').value, 10) || 4;
             let pilotosChave = parseInt(document.getElementById('zround-pilotos-chave').value, 10) || 10;
@@ -1673,7 +1944,7 @@
 
         window.excluirCampeonatoAtual = async function() {
             if (!campeonatoAtivoKey || !db) return;
-            if (!isAdminLogado) { alert("🔒 Faça login como administrador primeiro."); return; }
+            if (!hasPerm('campeonatos', 'gerenciar')) { alert("🔒 Faça login como administrador primeiro."); return; }
             if (confirm("Excluir este campeonato?")) {
                 try {
                     await db.ref(`campeonatos/${campeonatoAtivoKey}`).remove();
@@ -1712,7 +1983,8 @@
                 </div>`;
         }
 
-        window.processarTreinoParaGrid = async function() {
+        window.processarTreinoParaGrid = async function() { if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return; 
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
             if (!campeonatoAtivoKey || !db) return;
             let inputEl = document.getElementById('zround-input-file-treino-grid');
             if (!inputEl || !inputEl.files || inputEl.files.length === 0) return;
@@ -1770,7 +2042,8 @@
             } catch (err) { alert("Erro: " + err.message); }
         };
 
-        window.uploadProvasBancoSeparado = async function() {
+        window.uploadProvasBancoSeparado = async function() { if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return; 
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
             if (!campeonatoAtivoKey || !db) return;
             let inputEl = document.getElementById('zround-input-file-prova');
             if (!inputEl || !inputEl.files || !inputEl.files.length) return;
@@ -1799,7 +2072,8 @@
             atualizarInterfacePainelZRound();
         };
 
-        window.importarProvaDoBancoPrincipalParaCampeonato = async function() {
+        window.importarProvaDoBancoPrincipalParaCampeonato = async function() { if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return; 
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
             if (!campeonatoAtivoKey || !db) return;
             let select = document.getElementById('zround-select-prova-banco-principal');
             let firebaseKey = select.value;
@@ -1819,13 +2093,15 @@
             } catch (err) { alert("Erro: " + err.message); }
         };
 
-        window.excluirProvaBancoSeparado = async function(batKey) {
+        window.excluirProvaBancoSeparado = async function(batKey) { if (!exigirAcessoAdmin('campeonatos', 'excluir')) return; 
+            if (!exigirAcessoAdmin('campeonatos', 'excluir')) return;
             if (!campeonatoAtivoKey || !db) return;
             await db.ref(`campeonatos/${campeonatoAtivoKey}/bateriasBancoSeparado/${batKey}`).remove();
             atualizarInterfacePainelZRound();
         };
 
-        window.finalizarCampeonatoAtual = async function() {
+        window.finalizarCampeonatoAtual = async function() { if (!exigirAcessoAdmin('campeonatos', 'excluir')) return; 
+            if (!exigirAcessoAdmin('campeonatos', 'excluir')) return;
             if (!campeonatoAtivoKey || !db) return;
             if (confirm("Finalizar este campeonato?")) {
                 await db.ref(`campeonatos/${campeonatoAtivoKey}/status`).set("Finalizada");
@@ -1893,10 +2169,6 @@
                 if (!comprasColetivasCache[valor]) return; // espera os dados da compra chegarem
                 linkDiretoJaProcessado = true;
                 resumirCompraColetiva(valor);
-            } else if (chave === 'produto' && valor) {
-                if (!produtosRecomendadosCache[valor]) return; // espera os dados do produto chegarem
-                linkDiretoJaProcessado = true;
-                abrirDetalheProduto(valor);
             } else if (chave === 'modal' && valor) {
                 linkDiretoJaProcessado = true;
                 const mapaModais = {
@@ -2229,6 +2501,7 @@
         }
 
         window.processarUploadEEnviarNuvemPrincipal = async function() {
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
             const inputEl = document.getElementById('input-pdf-upload');
             if (!inputEl || !inputEl.files || inputEl.files.length === 0) {
                 alert('⚠️ Selecione pelo menos um arquivo PDF ou HTML.');
@@ -2334,6 +2607,7 @@
         }
 
         window.excluirArquivosSelecionadosPrincipal = async function() {
+            if (!exigirAcessoAdmin('campeonatos', 'excluir')) return;
             let checkboxes = document.querySelectorAll('.checkbox-excluir-lote-principal:checked');
             if (checkboxes.length === 0 || !db) return;
             if (confirm(`Excluir ${checkboxes.length} arquivo(s)?`)) {
@@ -2344,6 +2618,7 @@
         };
 
         window.inspecionarJsonUploadPrincipal = function(index) {
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
             const item = listaUploadsHistoricoCache[index];
             if (item) document.getElementById('upload-json-viewer').textContent = JSON.stringify(item, null, 4);
         };
@@ -2453,7 +2728,7 @@
 
 
         window.onclick = function(event) {
-            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'tags-config-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal', 'patch-notes-modal', 'vitrine-produtos-modal', 'produto-detalhe-modal', 'produtos-recomendados-modal', 'minha-conta-modal', 'solicitacoes-cadastro-modal'].forEach(id => {
+            ['admin-modal', 'piloto-modal', 'piloto-config-modal', 'upload-modal', 'campeonatos-modal', 'pilotos-gestao-modal', 'tags-config-modal', 'compras-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'pista-config-modal', 'patch-notes-modal', 'vitrine-produtos-modal', 'produtos-recomendados-modal', 'minha-conta-modal', 'solicitacoes-cadastro-modal', 'contas-vinculadas-modal'].forEach(id => {
                 if (event.target === document.getElementById(id)) document.getElementById(id).style.display = 'none';
             });
         };
@@ -2648,6 +2923,18 @@
 
         function renderizarSessõesCompletas(dadosBase, bateriasSel, pilotosSel, modulosSel) {
             chartInstances.forEach(c => c.destroy()); chartInstances = [];
+
+            // Escapa valor interpolado dentro de string JS ('...') em atributo onclick="...".
+            function escJs(v) {
+                return String(v == null ? '' : v)
+                    .replace(/\\/g, '\\\\')
+                    .replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, "\\'")
+                    .replace(/\r/g, '\\r')
+                    .replace(/\n/g, '\\n');
+            }
+
             const mainContainer = document.getElementById('sessions-container');
             if (!mainContainer) return;
             mainContainer.innerHTML = '';
@@ -2690,8 +2977,8 @@
                         <div class="session-block-title"><span>🏁 ${escapeHtml(nomeFormatado)}</span></div>
                         <div class="session-block-meta">
                             ${podiumTags}
-                            <button class="btn" style="background: rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 4px 8px; font-size: 0.75rem;" onclick="compartilharCorrida('${batKey}', '${escapeHtml(nomeFormatado)}')">📤</button>
-                            <button class="btn" style="background: rgba(230, 57, 70, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 4px 8px; font-size: 0.75rem;" onclick="curtirSessao('${batKey}')">❤️ <span id="like-count-${safeKey}">0</span></button>
+                            <button class="btn" style="background: rgba(58, 134, 255, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 4px 8px; font-size: 0.75rem;" onclick="compartilharCorrida('${escJs(batKey)}', '${escJs(nomeFormatado)}')">📤</button>
+                            <button class="btn" style="background: rgba(230, 57, 70, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 4px 8px; font-size: 0.75rem;" onclick="curtirSessao('${escJs(batKey)}')">❤️ <span id="like-count-${safeKey}">0</span></button>
                         </div>
                     </div>
                 `;
@@ -3032,6 +3319,94 @@
         window.gerarRelatórioPDF = function() {
             window.print();
         };
+
+    
+        
+        function renderizarRedesSociais() {
+            let container = document.getElementById('redes-sociais-corpo');
+            if (!container) return;
+            let config = redesSociaisCache || {};
+            let redes = config.redes || {};
+            let mencoes = config.mencoes || [];
+
+            let redesHtml = Object.keys(redes).length === 0 ?
+                '<div style="color:var(--text-muted); font-size:0.8rem;">Nenhuma rede cadastrada.</div>' :
+                Object.keys(redes).map(function(key) {
+                    let r = redes[key];
+                    return '<div style="background:var(--bg-card); padding:8px 12px; border-radius:6px; border:1px solid var(--border-card); margin-bottom:6px; display:flex; align-items:center; gap:8px;">' +
+                        '<span style="font-weight:600; color:var(--text-title);">' + escapeHtml(r.nome) + '</span>' +
+                        '<a href="' + escapeHtml(r.url) + '" target="_blank" style="color:var(--accent-blue); font-size:0.8rem;">Link</a>' +
+                        '<button style="margin-left:auto; background:var(--bg-body); border:1px solid var(--border-card); color:var(--text-muted); padding:2px 8px; border-radius:4px; cursor:pointer; font-size:0.7rem;" onclick="removerRedeSocial(\'' + escJs(key) + '\')">Remover</button>' +
+                    '</div>';
+                }).join('');
+
+            let mencoesHtml = mencoes.length === 0 ?
+                '<div style="color:var(--text-muted); font-size:0.8rem;">Nenhuma menção registrada.</div>' :
+                mencoes.map(function(m) {
+                    return '<div style="background:var(--bg-card); padding:8px 12px; border-radius:6px; border:1px solid var(--border-card); margin-bottom:6px;">' +
+                        '<div style="font-weight:600; color:var(--text-title); font-size:0.85rem;">' + escapeHtml(m.titulo || 'Sem título') + '</div>' +
+                        '<div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">' + escapeHtml(m.fonte || '') + ' — ' + escapeHtml(m.data || '') + '</div>' +
+                        (m.link ? '<a href="' + escapeHtml(m.link) + '" target="_blank" style="color:var(--accent-blue); font-size:0.75rem;">Ver link</a>' : '') +
+                    '</div>';
+                }).join('');
+
+            container.innerHTML = '<div style="margin-bottom:16px;">' +
+                    '<div style="font-size:0.85rem; font-weight:700; color:var(--text-title); margin-bottom:8px;">Redes Cadastradas</div>' +
+                    redesHtml +
+                    '<div style="display:flex; gap:6px; margin-top:8px;">' +
+                        '<input type="text" id="input-rede-nome" class="config-input" placeholder="Nome (Ex: Instagram)" style="flex:1;">' +
+                        '<input type="text" id="input-rede-url" class="config-input" placeholder="URL" style="flex:2;">' +
+                        '<button class="btn-action-primary" onclick="adicionarRedeSocial()">+</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div>' +
+                    '<div style="font-size:0.85rem; font-weight:700; color:var(--text-title); margin-bottom:8px;">Menções Registradas</div>' +
+                    mencoesHtml +
+                    '<div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">' +
+                        '<input type="text" id="input-mencao-titulo" class="config-input" placeholder="Título da menção" style="flex:1; min-width:150px;">' +
+                        '<input type="text" id="input-mencao-fonte" class="config-input" placeholder="Fonte (Ex: Instagram)" style="flex:1; min-width:120px;">' +
+                        '<input type="text" id="input-mencao-data" class="config-input" placeholder="Data (Ex: 08/10/2026)" style="width:120px;">' +
+                        '<input type="text" id="input-mencao-link" class="config-input" placeholder="Link" style="flex:2; min-width:150px;">' +
+                        '<button class="btn-action-primary" onclick="adicionarMencao()">+</button>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        function adicionarRedeSocial() {
+            if (!exigirAcessoAdmin('config', 'editar')) return;
+            let nome = document.getElementById('input-rede-nome') ? document.getElementById('input-rede-nome').value.trim() : '';
+            let url = document.getElementById('input-rede-url') ? document.getElementById('input-rede-url').value.trim() : '';
+            if (!nome || !url) return;
+            let key = 'rede_' + Date.now();
+            db.ref('configuracoesGlobais/redesSociais/redes/' + key).set({ nome: nome, url: url }).then(function() { renderizarRedesSociais(); });
+        }
+
+        function removerRedeSocial(key) {
+            if (!exigirAcessoAdmin('config', 'editar')) return;
+            db.ref('configuracoesGlobais/redesSociais/redes/' + key).remove().then(function() { renderizarRedesSociais(); });
+        }
+
+        function adicionarMencao() {
+            if (!exigirAcessoAdmin('config', 'editar')) return;
+            let titulo = document.getElementById('input-mencao-titulo') ? document.getElementById('input-mencao-titulo').value.trim() : '';
+            let fonte = document.getElementById('input-mencao-fonte') ? document.getElementById('input-mencao-fonte').value.trim() : '';
+            let data = document.getElementById('input-mencao-data') ? document.getElementById('input-mencao-data').value.trim() : '';
+            let link = document.getElementById('input-mencao-link') ? document.getElementById('input-mencao-link').value.trim() : '';
+            if (!titulo) return;
+            let mencoes = (redesSociaisCache && redesSociaisCache.mencoes) || [];
+            mencoes.push({ titulo: titulo, fonte: fonte, data: data, link: link });
+            db.ref('configuracoesGlobais/redesSociais/mencoes').set(mencoes).then(function() { renderizarRedesSociais(); });
+        }
+
+        function abrirModalRedesSociais() {
+            if (!exigirAcessoAdmin('config', 'editar')) return;
+            document.getElementById('redes-sociais-modal').style.display = 'flex';
+            renderizarRedesSociais();
+        }
+
+        function fecharModalRedesSociais() {
+            document.getElementById('redes-sociais-modal').style.display = 'none';
+        }
 
     </script>
 </body>

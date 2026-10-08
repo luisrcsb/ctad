@@ -39,6 +39,18 @@
         const TAGS_AUTOMATICAS_CHAVES = ['vitorias', 'podios', 'maisRapido', 'consistente', 'voltasRapidas', 'lideradas', 'ultrapassagens'];
         const TAGS_MANUAIS_CHAVES = ['poles', 'sequencia', 'recuperacao', 'velMax', 'largada', 'confiavel', 'reiPista', 'gestao', 'precisao'];
 
+        // Escapa valor para uso dentro de atributo HTML onclick="...('...')".
+        // Contexto: string JS entre aspas simples, dentro de atributo entre aspas duplas.
+        function escJs(v) {
+            return String(v == null ? '' : v)
+                .replace(/\\/g, '\\\\')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, "\\'")
+                .replace(/\r/g, '\\r')
+                .replace(/\n/g, '\\n');
+        }
+
         // Monta o HTML de um bloco de tags a partir de uma lista de chaves.
         // Use compacta=true para o estilo menor (ex: dentro de painéis administrativos).
         function renderizarTagsPilotoHtml(chaves, compacta) {
@@ -254,7 +266,7 @@
                     let marcado = manuaisAtuais.includes(chave);
                     return `
                         <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; background: var(--bg-body); border: 1px solid var(--border-card); border-radius: 4px; padding: 3px 8px; cursor: pointer;">
-                            <input type="checkbox" ${marcado ? 'checked' : ''} onchange="alternarTagManualPiloto('${escapeHtml(nome)}', '${chave}', this)">
+                            <input type="checkbox" ${marcado ? 'checked' : ''} onchange="alternarTagManualPiloto('${escJs(nome)}', '${escJs(chave)}', this)">
                             ${tag.icone} ${escapeHtml(tag.texto)}
                         </label>`;
                 }).join('');
@@ -270,6 +282,7 @@
         }
 
         window.alternarTagManualPiloto = async function(pilotoNome, chaveTag, checkbox) {
+            if (!exigirAcessoAdmin('tags', 'gerenciar')) return;
             if (!db) return;
             let metaKey = pilotoNome.replace(/[.#$\/\[\]]/g, "_");
             let atuais = (pilotosMetadadosCache[metaKey] && pilotosMetadadosCache[metaKey].tagsManuais) || [];

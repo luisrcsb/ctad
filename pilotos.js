@@ -3,6 +3,35 @@
    'pilotosMetadadosCache', 'mesclagensCache', 'listaJsonsCache', 'escapeHtml()',
    'obterTodosDadosConsolidados()', 'PILOTOS_CORE_PADRAO'. */
 
+        /* ---------------------------------------------------------------------------
+           escJs(valor) — escape para valores interpolados dentro de strings JS que
+           estão embutidas em atributos HTML (onclick="...", oninput="...").
+           Ex.: onclick="abrirModalConfigurarPiloto('${escJs(p)}')"
+
+           Problema que resolve: nomes com apóstrofo (ex.: "D'Angelo") quebravam a
+           string JS e o clique falhava com SyntaxError.
+
+           A ORDEM é essencial: o escape de JS é feito PRIMEIRO e o escapeHtml()
+           DEPOIS. O escapeHtml() converte ' em &#039; e o navegador decodifica essa
+           entidade de volta para ' quando lê o valor do atributo — ou seja, escapar
+           só com escapeHtml não adianta. Com escJs antes, o HTML recebe "\&#039;",
+           que o navegador decodifica para \' e o JS enxerga a aspa escapada.
+           Ex.: D'Angelo → D\'Angelo → D\&#039;Angelo → (decode do atributo)
+                D\'Angelo → string JS 'D\'Angelo' ✓
+
+           Uso correto: '${escJs(valor)}'
+           Uso INCORRETO (bug permanece): '${escapeHtml(valor)}' e
+           '${escJs(escapeHtml(valor))}' (ordem invertida não escapa a aspa). */
+        function escJs(valor) {
+            if (!valor) return '';
+            return escapeHtml(String(valor)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r'));
+        }
+
         window.abrirModalPilotos = function() {
             document.getElementById('pilotos-gestao-modal').style.display = 'flex';
             renderizarGerenciadorPilotos();
@@ -33,6 +62,7 @@
 
 
         window.cadastrarNovoPilotoGeral = async function() {
+            if (!exigirAcessoAdmin('pilotos', 'criar')) return;
             if (!db) return;
             let inputEl = document.getElementById('input-novo-piloto-geral');
             let nomeP = inputEl ? inputEl.value.trim() : "";
@@ -71,7 +101,7 @@
                         <tr>
                             <td><strong>${escapeHtml(p)}</strong></td>
                             <td><span style="color: var(--accent-gold);">${escapeHtml(apelidoVal)}</span></td>
-                            <td style="text-align: right;"><button class="btn-action-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="abrirModalConfigurarPiloto('${escapeHtml(p)}')">⚙️ Configurar</button></td>
+                            <td style="text-align: right;"><button class="btn-action-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="abrirModalConfigurarPiloto('${escJs(p)}')">⚙️ Configurar</button></td>
                         </tr>`;
                 }).join('');
             }
@@ -82,6 +112,9 @@
             if (!nomePiloto) return;
             let meta = pilotosMetadadosCache[nomePiloto] || {};
             let apelidoVal = meta.apelido || "";
+            let telefoneVal = meta.telefone || "";
+            let pixVal = meta.pix || "";
+            let redesVal = meta.redesSociais || "";
             let carrosObj = meta.carros || {};
             let carrosArr = Object.keys(carrosObj).map(k => ({ key: k, ...carrosObj[k] }));
 
@@ -96,7 +129,7 @@
                 aliasesPiloto.map(alias => `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 3px;">
                         <span style="font-weight: 600; color: var(--accent-gold); font-size: 0.82rem;">${escapeHtml(alias)}</span>
-                        <button class="btn-text-action" style="color: var(--accent-red);" onclick="removerAliasPiloto('${escapeHtml(alias)}')">Remover</button>
+                        <button class="btn-text-action" style="color: var(--accent-red);" onclick="removerAliasPiloto('${escJs(alias)}')">Remover</button>
                     </div>
                 `).join('');
 
@@ -111,7 +144,7 @@
                                 <div style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(car.categoria || '1/28 4x4')}</div>
                             </div>
                         </div>
-                        <button class="btn-action-danger" style="padding: 3px 6px; font-size: 0.72rem;" onclick="removerCarroPiloto('${escapeHtml(nomePiloto)}', '${car.key}')">🗑️</button>
+                        <button class="btn-action-danger" style="padding: 3px 6px; font-size: 0.72rem;" onclick="removerCarroPiloto('${escJs(nomePiloto)}', '${escJs(car.key)}')">🗑️</button>
                     </div>
                 `).join('');
 
@@ -121,7 +154,17 @@
                     <div class="config-panel-title">1. Apelido / Nome de Exibição</div>
                     <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
                         <input type="text" id="input-config-apelido" class="config-input" value="${escapeHtml(apelidoVal)}" placeholder="Digite o apelido...">
-                        <button class="btn-action-primary" onclick="salvarApelidoPilotoModal('${escapeHtml(nomePiloto)}')">Salvar</button>
+                        <button class="btn-action-primary" onclick="salvarApelidoPilotoModal('${escJs(nomePiloto)}')">Salvar</button>
+                    </div>
+                </div>
+
+                <div class="config-panel">
+                    <div class="config-panel-title">1b. Dados de Contato</div>
+                    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 2px;">
+                        <input type="text" id="input-config-telefone" class="config-input" value="${escapeHtml(telefoneVal)}" placeholder="Telefone (Ex: (11) 99999-9999)">
+                        <input type="text" id="input-config-pix" class="config-input" value="${escapeHtml(pixVal)}" placeholder="Chave PIX">
+                        <input type="text" id="input-config-redes" class="config-input" value="${escapeHtml(redesVal)}" placeholder="Redes Sociais (Ex: @instagram, nome/canal)">
+                        <button class="btn-action-primary" style="align-self: flex-start;" onclick="salvarContatoPiloto('${escJs(nomePiloto)}')">Salvar Contato</button>
                     </div>
                 </div>
 
@@ -129,7 +172,7 @@
                     <div class="config-panel-title">2. Mesclagem de Nomes (Aliases)</div>
                     <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
                         <input type="text" id="input-config-alias" class="config-input" placeholder="Ex: Edgar">
-                        <button class="btn-action-primary" onclick="adicionarAliasParaPiloto('${escapeHtml(nomePiloto)}')">Adicionar</button>
+                        <button class="btn-action-primary" onclick="adicionarAliasParaPiloto('${escJs(nomePiloto)}')">Adicionar</button>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
                         ${aliasHtml}
@@ -143,7 +186,7 @@
                         <input type="text" id="input-carro-categoria" class="config-input" placeholder="Categoria (Ex: 1/28 4x4)">
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                             <input type="file" id="input-carro-foto" accept="image/*" style="background: var(--bg-body); padding: 4px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); font-size: 0.75rem; flex: 1;">
-                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarCarroPiloto('${escapeHtml(nomePiloto)}')">+ Carro</button>
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarCarroPiloto('${escJs(nomePiloto)}')">+ Carro</button>
                         </div>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
@@ -161,8 +204,8 @@
                     </p>
                     <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
                         <label style="font-size: 0.72rem; color: var(--text-muted);">Digite <strong>${escapeHtml(nomePiloto)}</strong> para confirmar:</label>
-                        <input type="text" id="input-confirmar-exclusao-piloto" class="config-input" placeholder="Digite o nome exato do piloto" oninput="alternarBotaoExcluirPiloto('${escapeHtml(nomePiloto)}')">
-                        <button id="btn-excluir-piloto-confirmado" class="btn-action-danger" disabled style="opacity: 0.5; cursor: not-allowed;" onclick="excluirPilotoDoGerenciador('${escapeHtml(nomePiloto)}')">🗑️ Excluir Cadastro Definitivamente</button>
+                        <input type="text" id="input-confirmar-exclusao-piloto" class="config-input" placeholder="Digite o nome exato do piloto" oninput="alternarBotaoExcluirPiloto('${escJs(nomePiloto)}')">
+                        <button id="btn-excluir-piloto-confirmado" class="btn-action-danger" disabled style="opacity: 0.5; cursor: not-allowed;" onclick="excluirPilotoDoGerenciador('${escJs(nomePiloto)}')">🗑️ Excluir Cadastro Definitivamente</button>
                     </div>
                 </div>
             `;
@@ -179,6 +222,7 @@
         };
 
         window.excluirPilotoDoGerenciador = async function(nomePiloto) {
+            if (!exigirAcessoAdmin('pilotos', 'excluir')) return;
             if (!db) return;
             let confirmado = confirm(
                 `Tem certeza ABSOLUTA que deseja excluir o cadastro de "${nomePiloto}"?\n\n` +
@@ -206,6 +250,7 @@
         };
 
         window.salvarApelidoPilotoModal = async function(nomePiloto) {
+            if (!exigirAcessoAdmin('pilotos', 'editar')) return;
             if (!db) return;
             let inputEl = document.getElementById('input-config-apelido');
             let novoApelido = inputEl ? inputEl.value.trim() : "";
@@ -220,6 +265,7 @@
         };
 
         window.adicionarAliasParaPiloto = async function(nomePiloto) {
+            if (!exigirAcessoAdmin('pilotos', 'editar')) return;
             if (!db) return;
             let aliasInput = document.getElementById('input-config-alias').value.trim();
             if (!aliasInput) return;
@@ -233,6 +279,7 @@
         };
 
         window.removerAliasPiloto = async function(aliasKey) {
+            if (!exigirAcessoAdmin('pilotos', 'editar')) return;
             if (!db) return;
             let safeKey = aliasKey.replace(/[.#$\/\[\]]/g, "_");
             try {
@@ -243,6 +290,7 @@
         };
 
         window.adicionarCarroPiloto = async function(nomePiloto) {
+            if (!exigirAcessoAdmin('pilotos', 'editar')) return;
             if (!db) return;
             let modeloInput = document.getElementById('input-carro-modelo').value.trim();
             let categoriaInput = document.getElementById('input-carro-categoria').value.trim();
@@ -264,7 +312,22 @@
             } catch (err) { alert("Erro: " + err.message); }
         };
 
+        window.salvarContatoPiloto = async function(nomePiloto) {
+            if (!exigirAcessoAdmin('pilotos', 'editar')) return;
+            if (!db) return;
+            let telefone = document.getElementById('input-config-telefone') ? document.getElementById('input-config-telefone').value.trim() : "";
+            let pix = document.getElementById('input-config-pix') ? document.getElementById('input-config-pix').value.trim() : "";
+            let redes = document.getElementById('input-config-redes') ? document.getElementById('input-config-redes').value.trim() : "";
+            let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
+            try {
+                await db.ref(`pilotosMetadados/${metaKey}`).update({ telefone, pix, redesSociais: redes });
+                alert("Dados de contato salvos!");
+                renderizarCorpoConfigurarPiloto();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
         window.removerCarroPiloto = async function(nomePiloto, carKey) {
+            if (!exigirAcessoAdmin('pilotos', 'editar')) return;
             if (!db) return;
             let metaKey = nomePiloto.replace(/[.#$\/\[\]]/g, "_");
             try {
@@ -338,12 +401,12 @@
 
                     let qtdV = pData.laps ? pData.laps.length : 0;
                     totalVoltasDadas += qtdV;
-                    if (pData.desvioVal) somaDesvios += pData.desvioVal;
+                    if (pData.desvioVal != null && pData.desvioVal !== undefined) somaDesvios += pData.desvioVal;
 
                     let notaExistente = notasPilotoCache[arq.firebaseKey]?.texto || '';
                     let celulaNotaHtml = ehMeuProprioDossie
                         ? `<td style="max-width:160px;">
-                                <span style="font-size:0.7rem; color:var(--text-muted); cursor:pointer;" title="${escapeHtml(notaExistente)}" onclick="editarNotaPilotoBateria('${arq.firebaseKey}', '${escapeHtml((arq.sessao || arq.nomeArquivoOriginal || '').replace(/'/g, '’'))}')">
+                                <span style="font-size:0.7rem; color:var(--text-muted); cursor:pointer;" title="${escapeHtml(notaExistente)}" onclick="editarNotaPilotoBateria('${escJs(arq.firebaseKey)}', '${escJs(arq.sessao || arq.nomeArquivoOriginal || '')}')">
                                     ${notaExistente ? `📝 ${escapeHtml(notaExistente.length > 24 ? notaExistente.slice(0, 24) + '…' : notaExistente)}` : '➕ Nota'}
                                 </span>
                            </td>`

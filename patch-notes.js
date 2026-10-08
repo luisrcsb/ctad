@@ -1,20 +1,32 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v5.97.0";
-        const TITULO_VERSAO_ATUAL = "Detalhes do Produto e Padronização dos Modais";
+        const VERSAO_ATUAL_SISTEMA = "v5.99.0";
+        const TITULO_VERSAO_ATUAL = "Contas de Piloto (Fase 2: Senha e Gestão de Contas)";
 
         const historicoAtualizacoesDB = [
             {
-                versao: "v5.97.0",
-                data: "07 de Outubro de 2026",
-                titulo: "Detalhes do Produto e Padronização dos Modais",
+                versao: "v5.99.0",
+                data: "08 de Outubro de 2026",
+                titulo: "Contas de Piloto (Fase 2: Senha e Gestão de Contas)",
                 relevante: [
-                    { tipo: "novo", texto: "Clicar em um produto recomendado abre um modal com foto, descrição, valor/frete/imposto aproximados e botão para o site original." },
-                    { tipo: "melhoria", texto: "Compartilhar um produto agora envia o link direto que abre esse modal de detalhes." },
-                    { tipo: "melhoria", texto: "Campos de valor, frete e imposto no admin não vêm mais preenchidos com \"0\" e ganharam rótulos visíveis." },
-                    { tipo: "melhoria", texto: "Todos os modais passaram a usar o botão \"← Voltar\" no lugar do \"X\"; \"Sair\" virou \"Deslogar\" e fica ao lado do e-mail em Minha Conta." },
-                    { tipo: "correcao", texto: "Corrigido o Painel de Administração que abria em branco após a mudança da Acessibilidade." }
+                    { tipo: "novo", texto: "\"Esqueci minha senha\" em \"Minha Conta\": o piloto informa o e-mail e recebe um link do Firebase pra criar uma nova senha, sem depender do administrador." },
+                    { tipo: "novo", texto: "Nova ferramenta de administração \"🔗 Contas Vinculadas\": lista todas as contas já aprovadas com e-mail, piloto vinculado e data — dá pra revincular (trocar o piloto da conta) ou desvincular, casos em que a solicitação volta como pendente em \"Solicitações de Acesso\"." },
+                    { tipo: "correcao", texto: "Segurança: o vínculo conta-piloto (usuariosPilotos) não pode mais ser escrito pela própria conta — só administrador/gestor conseguem criar ou alterar um vínculo, fechando a possibilidade de auto-vinculação a qualquer piloto sem aprovação. Nas rules, o status da solicitação agora só é criado como 'pendente'; mudar de status é exclusivo de administrador/gestor." },
+                    { tipo: "melhoria", texto: "Perfil Gestor passou a ter permissão no módulo \"contas\" (aprovar): antes a permissão existia com o nome \"solicitacoes\" e não habilitava nada na prática — agora o gestor consegue aprovar e revincular contas." }
+                ]
+            },
+            {
+                versao: "v5.98.0",
+                data: "08 de Outubro de 2026",
+                titulo: "Minha Conta como Central e Segurança Reforçada",
+                relevante: [
+                    { tipo: "melhoria", texto: "\"📄 Gerar Relatório\" e \"🔐 Administração\" saíram do cabeçalho e viraram botões de ação rápida dentro de \"Minha Conta\", ao lado de \"📊 Ver Meu Dossiê\" — o topo do site ficou só com \"👤 Minha Conta\"." },
+                    { tipo: "novo", texto: "Nova seção \"🛒 Minhas Compras Coletivas\" em \"Minha Conta\": lista apenas as compras em que o piloto participa, com o valor da própria cota, situação (Pago ✅ / Pendente ⏳) e botão direto pro Resumo." },
+                    { tipo: "melhoria", texto: "\"Minha Conta\" reorganizado em seções: linha da conta (e-mail + Deslogar) em todos os estados, \"❤️ Minha Lista de Desejos\" sempre visível com contador e atalho pra vitrine, e \"♿ Acessibilidade\" reduzida a um único botão com a explicação no tooltip." },
+                    { tipo: "correcao", texto: "Segurança reforçada: guarda central de administrador aplicada em todas as ações que gravam no banco (compras coletivas, produtos recomendados, solicitações de acesso, upload, configurações globais e campeonatos) e escape seguro nos valores interpolados dos botões gerados por código — sem admin validado nada é alterado, e aspas/quebras de linha não quebram mais os botões." },
+                    { tipo: "correcao", texto: "Chave Pix fixa no código foi removida do resumo da compra: sem Pix configurado na compra, o painel mostra um aviso em vez de um QR Code inválido." },
+                    { tipo: "melhoria", texto: "Card \"🛒 Compras Coletivas & Pagamentos\" deixou de aparecer no dashboard para contas logadas (o acompanhamento foi pra \"Minha Conta\"); visitantes deslogados continuam vendo o card." }
                 ]
             },
             {

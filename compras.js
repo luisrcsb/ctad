@@ -2,6 +2,16 @@
    Depende de variáveis globais do script principal:
    'db' (Firebase), 'comprasColetivasCache', 'compraGerenciandoKey', 'escapeHtml()'. */
 
+        function escJs(s) {
+            if (s == null) return '';
+            return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r/g, '\\r').replace(/\n/g, '\\n');
+        }
+
+        function sanitizeId(s) {
+            if (!s) return '';
+            return String(s).replace(/[^\w-]/g, '_');
+        }
+
         // Retorna o timestamp de referência pra ordenar as compras: usa a última
         // atualização registrada (status, pagamento, rastreio...) e cai para a
         // data de criação em compras antigas que ainda não têm esse campo.
@@ -119,6 +129,7 @@
         window.fecharModalCompras = function() { document.getElementById('compras-modal').style.display = 'none'; };
 
         window.criarCompraColetiva = async function() {
+            if (!exigirAcessoAdmin('compras', 'criar')) return;
             if (!db) return;
             let item = document.getElementById('input-compra-item').value.trim();
             let preco = parseFloat(document.getElementById('input-compra-preco').value) || 0;
@@ -134,7 +145,7 @@
             Array.from(pilotosSet).filter(p => p && p.trim()).sort().forEach(pNome => {
                 let pKey = "part_" + pNome.toLowerCase().replace(/[^a-z0-9]/g, "_");
                 participantesObj[pKey] = {
-                    nome: pNome, ativo: true, comprador: (pNome === "Raphael"), valorDevido: 0, pago: (pNome === "Raphael"), pixPersonalizado: ""
+                    nome: pNome, ativo: true, comprador: false, valorDevido: 0, pago: false, pixPersonalizado: ""
                 };
             });
 
@@ -204,6 +215,7 @@
         }
 
         window.alternarEntregueCompra = async function(compraKey) {
+            if (!exigirAcessoAdmin('compras', 'gerenciar')) return;
             if (!db) return;
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
@@ -227,6 +239,7 @@
         };
 
         window.salvarCompraGerenciada = async function(compraKey) {
+            if (!exigirAcessoAdmin('compras', 'editar')) return;
             if (!db) return;
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
@@ -316,6 +329,7 @@
         };
 
         window.adicionarItemCompra = async function(compraKey) {
+            if (!exigirAcessoAdmin('compras', 'editar')) return;
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
             if (!comp.itens) comp.itens = [];
@@ -327,6 +341,7 @@
         };
 
         window.removerItemCompra = async function(compraKey, index) {
+            if (!exigirAcessoAdmin('compras', 'editar')) return;
             let comp = comprasColetivasCache[compraKey];
             if (!comp || !comp.itens) return;
             comp.itens.splice(index, 1);
@@ -338,6 +353,7 @@
         };
 
         window.adicionarParticipanteCompra = async function(compraKey) {
+            if (!exigirAcessoAdmin('compras', 'gerenciar')) return;
             let nomeInput = document.getElementById('input-novo-participante-compra');
             let nome = nomeInput ? nomeInput.value.trim() : "";
             if (!nome) return;
@@ -354,6 +370,7 @@
         };
 
         window.removerParticipanteCompra = async function(compraKey, pKey) {
+            if (!exigirAcessoAdmin('compras', 'gerenciar')) return;
             let comp = comprasColetivasCache[compraKey];
             if (!comp || !comp.participantes) return;
             delete comp.participantes[pKey];
@@ -370,6 +387,7 @@
         // Se o campo de data/hora do card estiver preenchido, usa essa data no
         // lugar de "agora" (pra lançar atualizações retroativas).
         window.registrarEventoRastreioCompra = async function(compraKey, evento) {
+            if (!exigirAcessoAdmin('compras', 'gerenciar')) return;
             if (!db) return;
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
@@ -397,6 +415,7 @@
         // Cria um novo atalho de rastreio personalizado (ícone + texto), salvo
         // globalmente em configuracoesGlobais — fica disponível em todas as compras.
         window.adicionarAtalhoRastreioCustom = async function() {
+            if (!exigirAcessoAdmin('compras', 'gerenciar')) return;
             if (!db) return;
             let icone = prompt("Ícone do atalho (um emoji, ex: 🧾):", "🔖");
             if (icone === null) return;
@@ -411,6 +430,7 @@
         };
 
         window.finalizarCompraColetivaStatus = async function(compraKey) {
+            if (!exigirAcessoAdmin('compras', 'excluir')) return;
             let comp = comprasColetivasCache[compraKey];
             if (!comp) return;
             comp.entregue = true;
@@ -423,7 +443,7 @@
         };
 
         window.excluirCompraColetiva = async function(compraKey) {
-            if (!isAdminLogado) { alert("🔒 Faça login como administrador primeiro."); return; }
+            if (!hasPerm('compras', 'gerenciar')) { alert("🔒 Faça login como administrador primeiro."); return; }
             if (confirm("Excluir esta compra coletiva?")) {
                 try {
                     await db.ref(`comprasColetivas/${compraKey}`).remove();
@@ -478,7 +498,7 @@
                             <span style="color: var(--accent-gold); font-weight: 700; font-size: 0.78rem;">R$ ${subtotalItem.toFixed(2)}</span>
                             <select id="item-atr-${idx}" class="config-select" style="font-size: 0.75rem;">${optionsPilotos}</select>
                             <input type="checkbox" id="item-rec-${idx}" ${it.recomendar !== false ? 'checked' : ''} title="Incluir nos Produtos Recomendados" style="width: 16px; height: 16px; accent-color: var(--accent-gold); cursor: pointer; justify-self: center;">
-                            <button class="btn-action-danger" style="padding: 3px 6px;" onclick="removerItemCompra('${compraGerenciandoKey}', ${idx})">🗑️</button>
+                            <button class="btn-action-danger" style="padding: 3px 6px;" onclick="removerItemCompra('${escJs(compraGerenciandoKey)}', ${idx})">🗑️</button>
                         </div>
                     `;
                 }).join('');
@@ -493,7 +513,7 @@
                             <div style="color: var(--accent-gold); font-weight: 700; font-size: 0.82rem;">R$ ${(p.valorDevido || 0).toFixed(2)}</div>
                             <div style="text-align: center;"><input type="checkbox" id="part-pago-${pk}" ${p.pago ? 'checked' : ''} style="width: 15px; height: 15px; accent-color: var(--accent-green); cursor: pointer;"></div>
                             <div><input type="text" id="part-recibo-${pk}" class="config-input" value="${escapeHtml(p.pixPersonalizado || '')}" placeholder="Pix Copia e Cola" style="width: 100%; font-size: 0.75rem;"></div>
-                            <div style="text-align: right;"><button class="btn-action-danger" style="padding: 3px 6px;" onclick="removerParticipanteCompra('${compraGerenciandoKey}', '${pk}')">🗑️</button></div>
+                            <div style="text-align: right;"><button class="btn-action-danger" style="padding: 3px 6px;" onclick="removerParticipanteCompra('${escJs(compraGerenciandoKey)}', '${escJs(pk)}')">🗑️</button></div>
                         </div>
                     `;
                 }).join('');
@@ -525,7 +545,7 @@
                         <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 2px;">
                             ${itensHtml}
                         </div>
-                        <div><button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarItemCompra('${compraGerenciandoKey}')">+ Item</button></div>
+                        <div><button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarItemCompra('${escJs(compraGerenciandoKey)}')">+ Item</button></div>
                     </div>
 
                     <div class="config-panel">
@@ -566,7 +586,7 @@
                         <div class="config-panel-title">4. Participantes & Rateio</div>
                         <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px; flex-wrap: wrap;">
                             <input type="text" id="input-novo-participante-compra" class="config-input" placeholder="Novo participante (Ex: Carlos)" style="max-width: 220px; font-size: 0.78rem;">
-                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarParticipanteCompra('${compraGerenciandoKey}')">+ Participante</button>
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarParticipanteCompra('${escJs(compraGerenciandoKey)}')">+ Participante</button>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
                             ${participantesHtml}
@@ -583,7 +603,7 @@
                     <div class="config-panel">
                         <div class="config-panel-title">6. Rastreio</div>
                         <div style="display: flex; gap: 6px; margin-top: 2px;">
-                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem; flex: 1;" oninput="document.getElementById('btn-verificar-rastreio-${compraGerenciandoKey}').style.display = this.value.trim() ? 'inline-flex' : 'none';">
+                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem; flex: 1;" oninput="document.getElementById('btn-verificar-rastreio-${escJs(compraGerenciandoKey)}').style.display = this.value.trim() ? 'inline-flex' : 'none';">
                             <button id="btn-verificar-rastreio-${compraGerenciandoKey}" class="btn" style="background: rgba(58,134,255,0.15); color: #3a86ff; border: 1px solid #3a86ff; padding: 4px 10px; font-size: 0.72rem; white-space: nowrap; ${comp.rastreio ? '' : 'display: none;'}" onclick="window.open('https://rastreamento.correios.com.br/app/index.php?objetos=' + encodeURIComponent(document.getElementById('det-rastreio').value.trim()), '_blank')">🔎 Verificar</button>
                         </div>
                     </div>
@@ -596,23 +616,23 @@
                         </div>
                         <p style="font-size: 0.7rem; color: var(--text-muted); margin: 2px 0 6px;">Atalho pra registrar a atualização no histórico com 1 clique (salva na hora):</p>
                         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'postado')">📮 Postado</button>
-                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'transito')">🚚 Em trânsito</button>
-                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'saiu_entrega')">📦 Saiu p/ entrega</button>
-                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', 'entregue')">✅ Entregue</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${escJs(compraGerenciandoKey)}', 'postado')">📮 Postado</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${escJs(compraGerenciandoKey)}', 'transito')">🚚 Em trânsito</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${escJs(compraGerenciandoKey)}', 'saiu_entrega')">📦 Saiu p/ entrega</button>
+                            <button class="btn" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${escJs(compraGerenciandoKey)}', 'entregue')">✅ Entregue</button>
                             ${(atalhosRastreioCustomCache || []).map(a => {
                                 let descricaoCompleta = `${a.icone || '🔖'} ${a.texto || ''}`.trim();
-                                return `<button class="btn" data-descricao="${escapeHtml(descricaoCompleta)}" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${compraGerenciandoKey}', this.dataset.descricao)">${a.icone || '🔖'} ${escapeHtml(a.texto || '')}</button>`;
+                                return `<button class="btn" data-descricao="${escapeHtml(descricaoCompleta)}" style="background: var(--bg-body); border: 1px solid var(--border-card); padding: 3px 8px; font-size: 0.7rem; color: #fff;" onclick="registrarEventoRastreioCompra('${escJs(compraGerenciandoKey)}', this.dataset.descricao)">${a.icone || '🔖'} ${escapeHtml(a.texto || '')}</button>`;
                             }).join('')}
                             <button class="btn" style="background: transparent; border: 1px dashed var(--border-card); color: #fff; padding: 3px 8px; font-size: 0.7rem;" onclick="adicionarAtalhoRastreioCustom()">➕ Novo atalho</button>
                         </div>
                     </div>
 
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 6px;">
-                        <button class="btn-action-danger" style="padding: 7px 14px; font-size: 0.78rem;" onclick="excluirCompraColetiva('${compraGerenciandoKey}')">🗑️ Excluir</button>
+                        <button class="btn-action-danger" style="padding: 7px 14px; font-size: 0.78rem;" onclick="excluirCompraColetiva('${escJs(compraGerenciandoKey)}')">🗑️ Excluir</button>
                         <div style="display: flex; gap: 6px;">
-                            <button class="btn-action-primary" style="background: #3a86ff; padding: 7px 14px; font-size: 0.78rem;" onclick="finalizarCompraColetivaStatus('${compraGerenciandoKey}')">✔️ Concluir</button>
-                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; padding: 7px 14px; font-size: 0.78rem;" onclick="salvarCompraGerenciada('${compraGerenciandoKey}')">💾 Salvar</button>
+                            <button class="btn-action-primary" style="background: #3a86ff; padding: 7px 14px; font-size: 0.78rem;" onclick="finalizarCompraColetivaStatus('${escJs(compraGerenciandoKey)}')">✔️ Concluir</button>
+                            <button class="btn-action-primary" style="background: #2ec4b6; color: #000; padding: 7px 14px; font-size: 0.78rem;" onclick="salvarCompraGerenciada('${escJs(compraGerenciandoKey)}')">💾 Salvar</button>
                         </div>
                     </div>
                 `;
@@ -670,15 +690,15 @@
                                 <span style="font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${badgeColor}">${statusExibicao}</span>
                             </div>
                             <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
-                                <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="alternarEntregueCompra('${k}')">${entregue ? '✅ Entregue' : '📦 Marcar Entregue'}</button>
-                                <button class="btn" style="background: rgba(114,9,183,0.25); color: #e0aaff; border: 1px solid #7209b7; padding: 4px 8px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${k}')">📊 Resumo</button>
-                                <button class="btn" style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 8px; font-size: 0.75rem;" onclick="compartilharResumoCompra('${k}')">📤</button>
-                                <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="gerenciarCompraColetiva('${k}')">⚙️ Gerenciar</button>
+                                <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="alternarEntregueCompra('${escJs(k)}')">${entregue ? '✅ Entregue' : '📦 Marcar Entregue'}</button>
+                                <button class="btn" style="background: rgba(114,9,183,0.25); color: #e0aaff; border: 1px solid #7209b7; padding: 4px 8px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${escJs(k)}')">📊 Resumo</button>
+                                <button class="btn" style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 8px; font-size: 0.75rem;" onclick="compartilharResumoCompra('${escJs(k)}')">📤</button>
+                                <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="gerenciarCompraColetiva('${escJs(k)}')">⚙️ Gerenciar</button>
                             </div>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <span style="font-size: 0.7rem; color: var(--text-muted);">🕘 Última atualização: ${ultimaAtualizacaoTs ? formatarDataHistoricoCompra(ultimaAtualizacaoTs) : '—'}</span>
-                            <button class="btn" style="background: transparent; color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 2px 8px; font-size: 0.7rem;" onclick="let el = document.getElementById('historico-compra-${k}'); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';">Ver Histórico (${historico.length})</button>
+                            <button class="btn" style="background: transparent; color: var(--accent-blue); border: 1px solid var(--accent-blue); padding: 2px 8px; font-size: 0.7rem;" onclick="let el = document.getElementById('historico-compra-${escJs(k)}'); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';">Ver Histórico (${historico.length})</button>
                         </div>
                         ${(() => {
                             let ultimoRastreio = obterUltimoEventoRastreio(historico);
@@ -768,28 +788,36 @@
 
             if (modalTituloEl) modalTituloEl.innerHTML = `📊 Resumo: ${escapeHtml(comp.nome || comp.chave)}`;
 
-            let chavePixBase = comp.chavePix || "00020126580014br.gov.pix.pix0136aac94da7-9d9a-463a-b33a-b974665b3022520400005303986540546.705802BR5925LUIS RAPHAEL";
+            let chavePixBase = (comp.chavePix || "").trim();
 
             let participantesHtml = participantesAtivos.map(p => {
                 let statusBadge = p.pago ? `<span style="color: var(--accent-green); font-weight: 700;">Pago ✅</span>` : `<span style="color: var(--accent-red); font-weight: 700;">Pendente ❌</span>`;
                 let pixBoxHtml = "";
                 if (!p.pago) {
                     let valorStr = (p.valorDevido || 0).toFixed(2);
-                    let payloadPixPiloto = (p.pixPersonalizado && p.pixPersonalizado.trim() !== "") ? p.pixPersonalizado : `${chavePixBase} (Valor: R$ ${valorStr} - ${p.nome})`;
-                    let qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(payloadPixPiloto)}`;
+                    let payloadPixPiloto = (p.pixPersonalizado && p.pixPersonalizado.trim() !== "") ? p.pixPersonalizado : (chavePixBase ? `${chavePixBase} (Valor: R$ ${valorStr} - ${p.nome})` : "");
+                    if (payloadPixPiloto) {
+                        let qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(payloadPixPiloto)}`;
+                        let pixInputId = 'pix-resumo-' + sanitizeId(p.nome);
 
-                    pixBoxHtml = `
+                        pixBoxHtml = `
                         <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-card); display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--bg-body); padding: 6px; border-radius: 6px;">
                             <span style="font-size: 0.72rem; color: var(--accent-gold); font-weight: 700;">Pix (R$ ${valorStr})</span>
                             <div style="background: #fff; padding: 3px; border-radius: 4px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;">
                                 <img src="${escapeHtml(qrCodeUrl)}" alt="QR Code Pix" style="max-width: 100%; max-height: 100%;">
                             </div>
                             <div style="display: flex; gap: 4px; width: 100%;">
-                                <input type="text" readonly class="config-input" id="pix-resumo-${p.nome.replace(/\s+/g, '')}" value="${escapeHtml(payloadPixPiloto)}" style="font-size: 0.68rem; text-align: center; color: var(--text-muted);">
-                                <button class="btn-action-primary" style="padding: 3px 6px; font-size: 0.68rem;" onclick="navigator.clipboard.writeText(document.getElementById('pix-resumo-${p.nome.replace(/\s+/g, '')}').value); alert('Pix Copia e Cola copiado!');">Copiar</button>
+                                <input type="text" readonly class="config-input" id="${pixInputId}" value="${escapeHtml(payloadPixPiloto)}" style="font-size: 0.68rem; text-align: center; color: var(--text-muted);">
+                                <button class="btn-action-primary" style="padding: 3px 6px; font-size: 0.68rem;" data-pix-input="${pixInputId}" onclick="navigator.clipboard.writeText(document.getElementById(this.dataset.pixInput).value); alert('Pix Copia e Cola copiado!');">Copiar</button>
                             </div>
                         </div>
                     `;
+                    } else {
+                        pixBoxHtml = `
+                        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-card); font-size: 0.72rem; color: var(--text-muted); text-align: center;">
+                            Pix ainda não configurado pelo administrador desta compra.
+                        </div>`;
+                    }
                 }
 
                 return `
