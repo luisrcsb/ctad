@@ -56,8 +56,7 @@
 
             if (isAdminLogado) {
                 corpo.innerHTML = `
-                    <div style="color:var(--text-muted); font-size:0.85rem;">Você está logado como administrador (${escapeHtml(usuarioAtual.email || '')}).</div>
-                    <button class="btn-action-danger" style="margin-top:10px;" onclick="logoutContaPiloto()">Sair</button>
+                    ${renderizarLinhaContaLogada('🔐 Logado como administrador', usuarioAtual.email)}
                     ${renderizarSecaoAcessibilidadeMinhaConta()}`;
                 return;
             }
@@ -66,10 +65,9 @@
                 let secaoDesafios = typeof renderizarSecaoDesafiosMinhaConta === 'function' ? renderizarSecaoDesafiosMinhaConta() : '';
                 let secaoDesejos = typeof renderizarListaDesejosMinhaConta === 'function' ? renderizarListaDesejosMinhaConta() : '';
                 corpo.innerHTML = `
-                    <div style="font-size:0.9rem; color:var(--text-title);">👋 Bem-vindo, <strong>${escapeHtml(pilotoVinculadoAoUsuario)}</strong>!</div>
+                    ${renderizarLinhaContaLogada(`👋 Bem-vindo, <strong>${escapeHtml(pilotoVinculadoAoUsuario)}</strong>!`, usuarioAtual.email)}
                     <div style="display:flex; gap:8px; margin-top:12px; margin-bottom: 14px;">
                         <button class="btn-action-primary" onclick="fecharModalMinhaConta(); abrirDossiePiloto('${escapeHtml(pilotoVinculadoAoUsuario)}')">📊 Ver Meu Dossiê</button>
-                        <button class="btn-action-danger" onclick="logoutContaPiloto()">Sair</button>
                     </div>
                     ${secaoDesejos}
                     ${secaoDesafios}
@@ -78,11 +76,24 @@
             }
 
             corpo.innerHTML = `
-                <div style="color:var(--text-muted); font-size:0.85rem;">
-                    ✅ Cadastro recebido (${escapeHtml(usuarioAtual.email || '')})! Assim que o administrador vincular sua conta a um piloto, seu painel pessoal aparece aqui.
+                ${renderizarLinhaContaLogada('✅ Cadastro recebido', usuarioAtual.email)}
+                <div style="color:var(--text-muted); font-size:0.82rem; margin-top:8px;">
+                    Assim que o administrador vincular sua conta a um piloto, seu painel pessoal aparece aqui.
                 </div>
-                <button class="btn-action-danger" style="margin-top:10px;" onclick="logoutContaPiloto()">Sair</button>
                 ${renderizarSecaoAcessibilidadeMinhaConta()}`;
+        }
+
+        // Linha de topo da conta logada: texto + e-mail à esquerda e o botão
+        // "Deslogar" à direita, ao lado do e-mail.
+        function renderizarLinhaContaLogada(tituloHtml, email) {
+            return `
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <div style="min-width:0;">
+                        <div style="font-size:0.9rem; color:var(--text-title);">${tituloHtml}</div>
+                        <div style="font-size:0.74rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(email || '')}</div>
+                    </div>
+                    <button class="btn-action-danger" style="flex-shrink:0;" onclick="logoutContaPiloto()">Deslogar</button>
+                </div>`;
         }
 
         // Seção de acessibilidade embutida em "Minha Conta" — abre o modal de

@@ -91,7 +91,8 @@
         }
         .modal-header { padding: 16px 20px; background: var(--bg-card-header); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); }
         .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--text-title); display: flex; align-items: center; gap: 8px; }
-        .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; font-weight: bold; }
+        .modal-close { background: var(--bg-input); border: 1px solid var(--border-card); color: #fff; font-size: 0.78rem; cursor: pointer; font-weight: 700; padding: 7px 12px; border-radius: 8px; white-space: nowrap; }
+        .modal-close:hover { background: var(--border-card); }
         .modal-body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 
         #modo-pista-fullscreen {

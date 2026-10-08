@@ -78,9 +78,18 @@
                                 <input type="text" id="edit-link-${id}" class="config-input" value="${escapeHtml(p.linkSite || '')}" placeholder="Link do site" style="font-size:0.74rem;">
                                 <textarea id="edit-descricao-${id}" class="config-input" placeholder="Descrição do produto (opcional — vai junto quando compartilhado)" style="font-size:0.74rem; min-height:50px; resize:vertical;">${escapeHtml(p.descricao || '')}</textarea>
                                 <div style="display:flex; gap:6px;">
-                                    <input type="number" step="0.01" id="edit-valor-${id}" class="config-input" value="${p.valorAprox || 0}" placeholder="Valor aprox." title="Valor aproximado" style="font-size:0.74rem;">
-                                    <input type="number" step="0.01" id="edit-frete-${id}" class="config-input" value="${p.freteAprox || 0}" placeholder="Frete aprox." title="Frete aproximado por unidade" style="font-size:0.74rem;">
-                                    <input type="number" step="0.01" id="edit-imposto-${id}" class="config-input" value="${p.impostoAprox || 0}" placeholder="Imposto aprox." title="Imposto aproximado por unidade" style="font-size:0.74rem;">
+                                    <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                                        <label style="font-size:0.64rem; color:var(--text-muted);">Valor aproximado (R$)</label>
+                                        <input type="number" step="0.01" id="edit-valor-${id}" class="config-input" value="${p.valorAprox ? p.valorAprox : ''}" placeholder="Valor aproximado" style="font-size:0.74rem;">
+                                    </div>
+                                    <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                                        <label style="font-size:0.64rem; color:var(--text-muted);">Frete aproximado (R$)</label>
+                                        <input type="number" step="0.01" id="edit-frete-${id}" class="config-input" value="${p.freteAprox ? p.freteAprox : ''}" placeholder="Frete aproximado" style="font-size:0.74rem;">
+                                    </div>
+                                    <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                                        <label style="font-size:0.64rem; color:var(--text-muted);">Imposto aproximado (R$)</label>
+                                        <input type="number" step="0.01" id="edit-imposto-${id}" class="config-input" value="${p.impostoAprox ? p.impostoAprox : ''}" placeholder="Imposto aproximado" style="font-size:0.74rem;">
+                                    </div>
                                 </div>
                                 <div style="display:flex; gap:6px; margin-top:4px;">
                                     <button class="btn-action-primary" style="padding:4px 12px; font-size:0.74rem;" onclick="salvarEdicaoProdutoRecomendado('${id}')">💾 Salvar</button>
@@ -208,21 +217,26 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank', 'noopener,noreferrer');
         }
 
-        // Compartilha UM produto: nome, foto (link), valores (com aviso de que
-        // são estimativa), descrição (se preenchida) e link direto.
+        function formatarMoedaProduto(v) {
+            return 'R$ ' + (Number(v) || 0).toFixed(2).replace('.', ',');
+        }
+
+        // Compartilha UM produto: manda o resumo + o LINK DIRETO do modal de
+        // detalhes (quem abrir o link já cai no modal com foto, descrição,
+        // valores e o botão pro site original).
         window.compartilharProdutoRecomendado = async function(id) {
             let p = produtosRecomendadosCache[id];
             if (!p) return;
             let total = (Number(p.valorAprox) || 0) + (Number(p.freteAprox) || 0) + (Number(p.impostoAprox) || 0);
-            let linhas = [
-                `🛍️ *${p.nome || 'Produto'}*`,
-                ''
-            ];
-            if (p.linkImagem) linhas.push(`📷 ${p.linkImagem}`, '');
+            let linhas = [`🛍️ *${p.nome || 'Produto'}*`, ''];
             if (p.descricao && p.descricao.trim()) linhas.push(p.descricao.trim(), '');
-            linhas.push(`💰 Valor aproximado: R$ ${total.toFixed(2)}`);
+            linhas.push(`💰 Valor aproximado: ${formatarMoedaProduto(p.valorAprox)}`);
+            if (Number(p.freteAprox) > 0) linhas.push(`🚚 Frete aproximado: ${formatarMoedaProduto(p.freteAprox)}`);
+            if (Number(p.impostoAprox) > 0) linhas.push(`🧾 Imposto aproximado: ${formatarMoedaProduto(p.impostoAprox)}`);
+            linhas.push(`📊 Total estimado: ${formatarMoedaProduto(total)}`);
             linhas.push(`_(estimativa — pode variar por data, modelo e quantidade)_`);
-            if (p.linkSite) linhas.push('', `🔗 ${p.linkSite}`);
+            linhas.push('', `🔎 Ver detalhes e foto: https://luisrcsb.github.io/ctad/#produto=${encodeURIComponent(id)}`);
+            if (p.linkSite) linhas.push(`🛒 Site do produto: ${p.linkSite}`);
             await compartilharTexto(linhas.join('\n'));
         };
 
@@ -345,10 +359,10 @@
                     let qtdFavoritos = contarFavoritosProduto(p);
                     return `
                         <div style="background:var(--bg-input); border:1px solid var(--border-card); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px;">
-                            <a href="${escapeHtml(p.linkSite || '#')}" target="_blank" rel="noopener" style="text-decoration:none; color:inherit;">
+                            <div style="cursor:pointer;" onclick="abrirDetalheProduto('${id}')" title="Ver detalhes">
                                 <img src="${escapeHtml(p.linkImagem || '')}" alt="" style="width:100%; height:110px; object-fit:cover; border-radius:6px; background:var(--bg-body);" onerror="this.style.opacity='0.15'">
                                 <strong style="display:block; font-size:0.78rem; color:var(--text-title); line-height:1.3; margin-top:6px;">${escapeHtml(p.nome || '')}</strong>
-                            </a>
+                            </div>
                             <span style="font-size:0.8rem; font-weight:700; color:var(--accent-gold);">~R$ ${total.toFixed(2)}</span>
                             <div style="display:flex; gap:4px;">
                                 <button class="btn" style="flex:1; background:transparent; border:1px solid ${jaFavoritado ? 'var(--accent-red)' : 'var(--border-card)'}; color:${jaFavoritado ? 'var(--accent-red)' : '#fff'}; padding:4px 6px; font-size:0.68rem;" onclick="alternarFavoritoProduto('${id}')">${jaFavoritado ? '❤️' : '🤍'} ${qtdFavoritos > 0 ? qtdFavoritos : ''}</button>
@@ -356,4 +370,65 @@
                             </div>
                         </div>`;
                 }).join('') + `</div>`;
+            if (produtoDetalheAbertoId) renderizarDetalheProduto();
+        }
+
+        // ===================== Modal de detalhes do produto =====================
+
+        let produtoDetalheAbertoId = null;
+
+        window.abrirDetalheProduto = function(id) {
+            if (!produtosRecomendadosCache[id]) return;
+            produtoDetalheAbertoId = id;
+            let modal = document.getElementById('produto-detalhe-modal');
+            if (modal) modal.style.display = 'flex';
+            renderizarDetalheProduto();
+        };
+
+        window.fecharDetalheProduto = function() {
+            produtoDetalheAbertoId = null;
+            let modal = document.getElementById('produto-detalhe-modal');
+            if (modal) modal.style.display = 'none';
+        };
+
+        function renderizarDetalheProduto() {
+            let corpo = document.getElementById('produto-detalhe-corpo');
+            let rodape = document.getElementById('produto-detalhe-rodape');
+            if (!corpo || !rodape || !produtoDetalheAbertoId) return;
+            let id = produtoDetalheAbertoId;
+            let p = produtosRecomendadosCache[id];
+            if (!p) { fecharDetalheProduto(); return; }
+
+            let valor = Number(p.valorAprox) || 0, frete = Number(p.freteAprox) || 0, imposto = Number(p.impostoAprox) || 0;
+            let total = valor + frete + imposto;
+            let jaFavoritado = !!(usuarioAtual && p.favoritadoPor && p.favoritadoPor[usuarioAtual.uid]);
+            let qtdFavoritos = contarFavoritosProduto(p);
+            let linhaValor = (rotulo, v) => `
+                <div style="display:flex; justify-content:space-between; font-size:0.84rem; padding:4px 0; border-bottom:1px dashed var(--border-card);">
+                    <span style="color:var(--text-muted);">${rotulo}</span>
+                    <strong style="color:var(--text-main);">${v > 0 ? formatarMoedaProduto(v) : '—'}</strong>
+                </div>`;
+
+            corpo.innerHTML = `
+                <img src="${escapeHtml(p.linkImagem || '')}" alt="" style="width:100%; max-height:260px; object-fit:contain; background:var(--bg-body); border-radius:8px;" onerror="this.style.display='none'">
+                <div style="font-size:1.05rem; font-weight:700; color:var(--text-title); line-height:1.3;">${escapeHtml(p.nome || '')}</div>
+                ${p.descricao && p.descricao.trim() ? `<div style="font-size:0.84rem; color:var(--text-main); line-height:1.5; white-space:pre-wrap;">${escapeHtml(p.descricao.trim())}</div>` : ''}
+                <div class="config-panel">
+                    ${linhaValor('Valor aproximado', valor)}
+                    ${linhaValor('Frete aproximado', frete)}
+                    ${linhaValor('Imposto aproximado', imposto)}
+                    <div style="display:flex; justify-content:space-between; font-size:0.95rem; padding-top:6px;">
+                        <span style="color:var(--text-title); font-weight:700;">Total estimado</span>
+                        <strong style="color:var(--accent-gold);">${formatarMoedaProduto(total)}</strong>
+                    </div>
+                </div>
+                <p style="font-size:0.72rem; color:var(--text-muted); margin:0;">⚠️ Valores são uma estimativa e podem variar por data, modelo e quantidade.</p>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn" style="flex:1; justify-content:center; background:transparent; border:1px solid ${jaFavoritado ? 'var(--accent-red)' : 'var(--border-card)'}; color:${jaFavoritado ? 'var(--accent-red)' : '#fff'};" onclick="alternarFavoritoProduto('${id}')">${jaFavoritado ? '❤️ Na sua lista' : '🤍 Lista de desejos'} ${qtdFavoritos > 0 ? '(' + qtdFavoritos + ')' : ''}</button>
+                    <button class="btn" style="background:rgba(37,211,102,0.15); color:#25D366; border:1px solid #25D366;" onclick="compartilharProdutoRecomendado('${id}')">📤 Compartilhar</button>
+                </div>`;
+
+            rodape.innerHTML = p.linkSite
+                ? `<a href="${escapeHtml(p.linkSite)}" target="_blank" rel="noopener noreferrer" class="btn-action-primary" style="display:block; text-align:center; text-decoration:none; padding:11px 14px; font-size:0.9rem;">🛒 Ir para o site original do produto</a>`
+                : `<div style="text-align:center; font-size:0.78rem; color:var(--text-muted);">Link do produto ainda não cadastrado.</div>`;
         }

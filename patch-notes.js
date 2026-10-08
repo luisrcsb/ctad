@@ -1,10 +1,22 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v5.96.0";
-        const TITULO_VERSAO_ATUAL = "Lista de Desejos e Compartilhamento de Produtos";
+        const VERSAO_ATUAL_SISTEMA = "v5.97.0";
+        const TITULO_VERSAO_ATUAL = "Detalhes do Produto e Padronização dos Modais";
 
         const historicoAtualizacoesDB = [
+            {
+                versao: "v5.97.0",
+                data: "07 de Outubro de 2026",
+                titulo: "Detalhes do Produto e Padronização dos Modais",
+                relevante: [
+                    { tipo: "novo", texto: "Clicar em um produto recomendado abre um modal com foto, descrição, valor/frete/imposto aproximados e botão para o site original." },
+                    { tipo: "melhoria", texto: "Compartilhar um produto agora envia o link direto que abre esse modal de detalhes." },
+                    { tipo: "melhoria", texto: "Campos de valor, frete e imposto no admin não vêm mais preenchidos com \"0\" e ganharam rótulos visíveis." },
+                    { tipo: "melhoria", texto: "Todos os modais passaram a usar o botão \"← Voltar\" no lugar do \"X\"; \"Sair\" virou \"Deslogar\" e fica ao lado do e-mail em Minha Conta." },
+                    { tipo: "correcao", texto: "Corrigido o Painel de Administração que abria em branco após a mudança da Acessibilidade." }
+                ]
+            },
             {
                 versao: "v5.96.0",
                 data: "06 de Outubro de 2026",
