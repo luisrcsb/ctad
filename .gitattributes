@@ -1,0 +1,2 @@
+# Normaliza fim de linha no repositório (evita diffs gigantes CRLF vs LF)
+* text=auto
