@@ -1,0 +1,3 @@
+# Firebase Hosting cache local — não versionar
+.firebase/
+*.log
