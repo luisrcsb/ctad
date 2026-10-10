@@ -69,7 +69,7 @@ function formatarDataDesafio(ts) {
 }
 
 function pilotoKeyDesafio(nome) {
-    return String(nome).replace(/[.#$\/\[\]]/g, '_');
+    return String(nome).trim().toLowerCase().replace(/[.#$\/\[\]]/g, '_');
 }
 
 function uidDoPilotoDesafio(nome) {
