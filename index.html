@@ -1175,9 +1175,18 @@
             if (!db) return;
             // ATENÇÃO: no SDK do Firebase, ref.off() retorna undefined — não dá
             // pra encadear .off().on() numa linha só.
-            let refSol = db.ref('solicitacoesCadastro');
-            refSol.off('value', onSolicitacoesCadastroChange);
-            refSol.on('value', onSolicitacoesCadastroChange);
+            
+            // solicitacoesCadastro: apenas staff (contas/aprovar) lê a raiz completa.
+            // Pilotos leem apenas o próprio filho via listener per-uid abaixo.
+            if (hasPerm('contas', 'aprovar')) {
+                let refSol = db.ref('solicitacoesCadastro');
+                refSol.off('value', onSolicitacoesCadastroChange);
+                refSol.on('value', onSolicitacoesCadastroChange);
+            } else {
+                // Garante que listener da raiz seja removido se usuário perdeu permissão
+                db.ref('solicitacoesCadastro').off('value', onSolicitacoesCadastroChange);
+            }
+            
             // O dono da conta lê apenas o próprio filho (o nó raiz é negado a
             // pilotos) para exibir o status da sua solicitação em "Minha Conta".
             let refMinhaNova = null;
@@ -1193,10 +1202,19 @@
                 minhaSolicitacaoRef = refMinhaNova;
                 minhaSolicitacaoRef.on('value', onMinhaSolicitacaoChange);
             }
-            let refUsu = db.ref('usuarios');
-            refUsu.off('value', onUsuariosChange);
-            refUsu.on('value', onUsuariosChange);
+            
+            // usuarios: apenas staff (config/editar) lê a lista completa.
+            // Pilotos não precisam da lista completa de usuários.
+            if (hasPerm('config', 'editar')) {
+                let refUsu = db.ref('usuarios');
+                refUsu.off('value', onUsuariosChange);
+                refUsu.on('value', onUsuariosChange);
+            } else {
+                db.ref('usuarios').off('value', onUsuariosChange);
+            }
+            
             // Convites de desafio também exigem login — mesmo tratamento.
+            // Regra permite .read: auth != null, então todos logados podem ler.
             let refConv = db.ref('convitesDesafio');
             refConv.off('value', onConvitesDesafioChange);
             refConv.on('value', onConvitesDesafioChange);
@@ -1406,7 +1424,10 @@
                     if (typeof atualizarBarraGrupoWhatsapp === 'function') atualizarBarraGrupoWhatsapp();
                 });
 
-                db.ref('solicitacoesCadastro').on('value', onSolicitacoesCadastroChange);
+                // solicitacoesCadastro: apenas staff (contas/aprovar) lê a raiz completa
+                if (hasPerm('contas', 'aprovar')) {
+                    db.ref('solicitacoesCadastro').on('value', onSolicitacoesCadastroChange);
+                }
 
                 db.ref('usuariosPilotos').on('value', snapshot => {
                     usuariosPilotosCache = snapshot.val() || {};
@@ -1426,7 +1447,10 @@
 
                 // usuarios/ alimenta o painel de contas vinculadas com o e-mail
                 // de cada uid (fallback: solicitacoesCadastro).
-                db.ref('usuarios').on('value', onUsuariosChange);
+                // Apenas staff (config/editar) lê a lista completa.
+                if (hasPerm('config', 'editar')) {
+                    db.ref('usuarios').on('value', onUsuariosChange);
+                }
 
                 db.ref('produtosRecomendados').on('value', snapshot => {
                     produtosRecomendadosCache = snapshot.val() || {};
