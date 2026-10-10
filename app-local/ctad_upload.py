@@ -52,6 +52,9 @@ from parsers import PARSER_VERSION, parsear_texto, gerar_resumo  # noqa: E402
 
 MAX_ARQUIVO = 25 * 1024 * 1024
 
+#: Versão única do app (GUI, --versao e autoupdate usam esta).
+APP_VERSAO = "1.2.0"
+
 #: Modelo gravado automaticamente no primeiro uso da interface gráfica.
 CONFIG_MODELO = {
     "firebase": {
@@ -105,6 +108,8 @@ def carregar_config():
     cfg.setdefault("pistaId", "krathus")
     cfg.setdefault("mover_para_enviados", True)
     cfg.setdefault("apagar_remoto", False)
+    cfg.setdefault("atualizar_auto", True)
+    cfg.setdefault("update_url", "https://krathus-telemetria.web.app/downloads/versao.json")
     return cfg
 
 
@@ -269,11 +274,12 @@ class Uploader:
                 except OSError as e:
                     self.log.warning(f"Nao consegui ler {rel}: {e}")
                     continue
-                if reg and reg.get("sha256") == digest:
+                if reg and reg.get("sha256") == digest and reg.get("status") != "falha":
                     with self.lock:
                         self.estado[rel] = {**reg, "size": st.st_size, "mtime": st.st_mtime}
-                    continue
-                novos.append((abs_path, rel, st, digest, "modificado" if reg else "novo"))
+                    continue  # so metadados mudaram (falha sempre reprocessa)
+                kind = "nova-tentativa" if (reg and reg.get("status") == "falha") else ("modificado" if reg else "novo")
+                novos.append((abs_path, rel, st, digest, kind))
         removidos = [rel for rel, reg in self.estado.items()
                      if rel not in vistos and reg.get("status") not in ("removido_local", "falha")]
         if total:
@@ -410,6 +416,10 @@ def iniciar_temporeal(up, pasta, log):
         def _tocou(self, caminho):
             if os.path.isdir(caminho) or ignorado(caminho):
                 return
+            # Ignorar pasta 'enviados' para não processar arquivos já movidos
+            rel_path = os.path.relpath(caminho, pasta)
+            if rel_path.startswith("enviados") or rel_path.startswith("enviados" + os.sep):
+                return
             agora = time.time()
             if agora - self.deb.get(caminho, 0) < 5:
                 return
@@ -419,13 +429,15 @@ def iniciar_temporeal(up, pasta, log):
                 rel = os.path.relpath(caminho, pasta)
                 st = os.stat(caminho)
                 reg = up.estado.get(rel)
-                if reg and reg.get("size") == st.st_size and reg.get("mtime") == st.st_mtime:
+                if (reg and reg.get("size") == st.st_size and reg.get("mtime") == st.st_mtime
+                        and reg.get("status") != "falha"):
                     return
                 digest = sha256_arquivo(caminho)
-                if reg and reg.get("sha256") == digest:
+                if reg and reg.get("sha256") == digest and reg.get("status") != "falha":
                     return
                 log.info(f"Tempo real detectou: {rel}")
-                up.processar([(caminho, rel, st, digest, "modificado" if reg else "novo")], [])
+                kind = "nova-tentativa" if (reg and reg.get("status") == "falha") else ("modificado" if reg else "novo")
+                up.processar([(caminho, rel, st, digest, kind)], [])
             except OSError:
                 pass
 
@@ -499,12 +511,39 @@ def configurar():
         print(f"Aviso: nao conectou agora ({e}).")
 
 
+def _aplicar_update_cli(cfg, info):
+    """Baixa, valida e entrega ao atualizador.bat; depois encerra este processo."""
+    import autoupdate
+    import tempfile
+    log = montar_log(cfg.get("log_nivel", "INFO"))
+    try:
+        tmp = tempfile.mkdtemp(prefix="ctad-upd-")
+        zip_path = os.path.join(tmp, "update.zip")
+        autoupdate.baixar_e_verificar(info, cfg, zip_path, log)
+        bat = autoupdate.extrair_atualizador(zip_path, tmp)
+        outras = autoupdate.outras_copias()
+        matar = False
+        if outras:
+            r = input(f"Há {len(outras)} outra(s) cópia(s) rodando. Fechar e continuar? (s/n): ").strip().lower()
+            matar = r in ("s", "sim")
+        log.info("Aplicando atualização e encerrando…")
+        autoupdate.aplicar_atualizacao(bat, DIR, zip_path, info.get("sha256", ""), matar)
+    except Exception as e:
+        log.error(f"Atualização falhou (nada foi alterado): {e}")
+        pausar_antes_de_sair()
+        sys.exit(1)
+    sys.exit(0)
+
+
 def main():
     ap = argparse.ArgumentParser(description="CTAD Upload Auto")
     ap.add_argument("--scan-once", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--testar-conexao", action="store_true")
     ap.add_argument("--configurar", action="store_true")
+    ap.add_argument("--versao", action="store_true")
+    ap.add_argument("--verificar-update", action="store_true")
+    ap.add_argument("--atualizar", action="store_true")
     ap.add_argument("--gui", action="store_true",
                     help="abre a interface gráfica (não fecha sozinha em erro)")
     ap.add_argument("--monitor", action="store_true",
@@ -537,9 +576,30 @@ def main():
         configurar()
         return
 
+    if args.versao:
+        print(f"CTAD Upload Auto v{APP_VERSAO}")
+        return
+
     cfg = carregar_config()
     if args.pasta:
         cfg["pasta"] = os.path.abspath(args.pasta)
+
+    if args.verificar_update or args.atualizar:
+        import autoupdate
+        info = autoupdate.checar(cfg, APP_VERSAO)
+        if not info:
+            print(f"Já está na mais nova (v{APP_VERSAO}).")
+            return
+        print(f"Nova versão disponível: v{info['versao']} (atual v{APP_VERSAO}).")
+        if info.get("notas"):
+            print(f"Novidades: {info['notas']}")
+        if not args.atualizar:
+            return
+        if input("Baixar e atualizar agora? (s/n): ").strip().lower() not in ("s", "sim"):
+            print("Cancelado.")
+            return
+        _aplicar_update_cli(cfg, info)
+        return
     log = montar_log(cfg.get("log_nivel", "INFO"))
     up = Uploader(cfg, log, dry_run=args.dry_run)
 
