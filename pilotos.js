@@ -577,7 +577,7 @@
                 `🥈 Pódios: ${podios}\n` +
                 `🏁 Corridas: ${participacoes.length}\n` +
                 (melhorVoltaGeral < 999999 ? `⚡ Melhor volta: ${melhorVoltaGeral.toFixed(3)}s\n` : '') +
-                `\n🔗 https://luisrcsb.github.io/ctad/`;
+                `\n🔗 https://krathus-telemetria.web.app/`;
 
             if (navigator.share) {
                 try { await navigator.share({ text: texto }); return; }

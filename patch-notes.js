@@ -289,7 +289,7 @@
             linhas.push('');
             linhas.push('━━━━━━━━━━━━━━━━━━━━');
             linhas.push('🔗 *ACESSE O SISTEMA:*');
-            linhas.push('https://luisrcsb.github.io/ctad/');
+            linhas.push('https://krathus-telemetria.web.app/');
 
             return linhas.join('\n').trim();
         }
@@ -334,7 +334,7 @@
 
             linhas.push('━━━━━━━━━━━━━━━━━━━━');
             linhas.push('🔗 *ACESSE O SISTEMA:*');
-            linhas.push('https://luisrcsb.github.io/ctad/');
+            linhas.push('https://krathus-telemetria.web.app/');
 
             await copiarTextoParaClipboard(linhas.join('\n').trim());
         };
