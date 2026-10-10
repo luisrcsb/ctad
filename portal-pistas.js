@@ -172,6 +172,7 @@
                 window.pistasCache = snap.val() || {};
                 if (typeof window.renderSeletorPista === 'function') window.renderSeletorPista();
                 if (typeof window.aplicarModoPortal === 'function') window.aplicarModoPortal();
+                if (typeof window.renderizarSecaoPistas === 'function') window.renderizarSecaoPistas();
             });
         } catch (e) {}
         try {
@@ -314,23 +315,267 @@
         };
     };
 
-    // ---- Admin portal (superuser cria pista / vincula) ----
-    window.criarPistaPortal = async function (pistaId, nome) {
+    // ---- Gestão de pistas (superuser + admin da pista) ----
+    // Modelo: pistas/{id}/info {nome, ativa}; pistas/{id}/membros/{uid} {nivel: admin|piloto, piloto, desde}.
+    // Um admin pode cuidar de várias pistas; um piloto pode pertencer a várias pistas.
+    // Cadastro é por e-mail: o admin digita o e-mail e o sistema resolve o uid (precisa ter conta).
+
+    function getUsuariosCache() {
+        try { if (typeof usuariosCache !== 'undefined' && usuariosCache) return usuariosCache; } catch (e) {}
+        return {};
+    }
+
+    window.buscarUidPorEmail = function (email) {
+        email = String(email || '').trim().toLowerCase();
+        if (!email) return null;
+        var us = getUsuariosCache();
+        var keys = Object.keys(us || {});
+        for (var i = 0; i < keys.length; i++) {
+            var u = us[keys[i]];
+            if (u && String(u.email || '').trim().toLowerCase() === email) return keys[i];
+        }
+        return null;
+    };
+
+    window.podeGerenciarPista = function (pistaId) {
+        if (window.isSuperuser()) return true;
+        try {
+            var uid = (typeof usuarioAtual !== 'undefined' && usuarioAtual && usuarioAtual.uid) || null;
+            if (!uid || !pistaId) return false;
+            var m = ((window.pistasCache || {})[pistaId] || {}).membros || {};
+            return !!(m[uid] && m[uid].nivel === 'admin');
+        } catch (e) { return false; }
+    };
+
+    // true se o usuário logado administra ao menos 1 pista (vale para abrir o painel).
+    window.ehGestorDeAlgumaPista = function () {
+        if (window.isSuperuser()) return true;
+        try {
+            var ids = Object.keys(window.pistasCache || {});
+            for (var i = 0; i < ids.length; i++) {
+                if (window.podeGerenciarPista(ids[i])) return true;
+            }
+        } catch (e) {}
+        return false;
+    };
+
+    window.adminsDaPista = function (pistaId) {
+        var m = (((window.pistasCache || {})[pistaId] || {}).membros) || {};
+        return Object.keys(m).filter(uid => m[uid] && m[uid].nivel === 'admin');
+    };
+
+    // Cria pista exigindo um administrador (por e-mail, que precisa já ter conta).
+    window.criarPistaCompleta = async function (pistaId, nome, adminEmail) {
         var database = getDb();
         if (!database) throw new Error('Banco não conectado');
+        if (!window.isSuperuser()) throw new Error('Só o superuser cria pistas');
         pistaId = String(pistaId || '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-');
-        if (!pistaId) throw new Error('ID da pista inválido');
+        if (!pistaId) throw new Error('ID da pista inválido (letras, números e -)');
         var snap = await database.ref('pistas/' + pistaId + '/info').once('value');
         if (snap.exists()) throw new Error('Pista já existe');
+        var adminUid = window.buscarUidPorEmail(adminEmail);
+        if (!adminUid) throw new Error('Administrador não encontrado: precisa ter conta no site (' + adminEmail + ')');
         await database.ref('pistas/' + pistaId + '/info').set({ nome: nome || pistaId, ativa: true, criadoEm: Date.now() });
+        await database.ref('pistas/' + pistaId + '/membros/' + adminUid).set({ nivel: 'admin', desde: Date.now() });
+        try { await database.ref('usuariosPilotos/' + adminUid).update({ pistaId: pistaId }); } catch (e) {}
         return pistaId;
     };
 
-    window.vincularUsuarioPista = async function (uid, pistaId, nivel, pilotoKey) {
+    // Adiciona membro por e-mail (admin da pista adiciona pilotos; superuser adiciona admin ou piloto).
+    window.adicionarMembroPistaPorEmail = async function (pistaId, email, nivel, pilotoNome) {
         var database = getDb();
         if (!database) throw new Error('Banco não conectado');
-        await database.ref('pistas/' + pistaId + '/membros/' + uid).set({ nivel: nivel || 'piloto', pilotoKey: pilotoKey || null, desde: Date.now() });
-        await database.ref('usuariosPilotos/' + uid).update({ pistaId: pistaId });
+        if (!window.podeGerenciarPista(pistaId)) throw new Error('Sem permissão nesta pista');
+        nivel = (nivel === 'admin') ? 'admin' : 'piloto';
+        if (nivel === 'admin' && !window.isSuperuser()) throw new Error('Só o superuser nomeia administradores');
+        var uid = window.buscarUidPorEmail(email);
+        if (!uid) throw new Error('Conta não encontrada para este e-mail — a pessoa precisa se cadastrar primeiro');
+        var atual = (((window.pistasCache || {})[pistaId] || {}).membros || {})[uid];
+        await database.ref('pistas/' + pistaId + '/membros/' + uid).set({
+            nivel: nivel,
+            piloto: pilotoNome || (atual && atual.piloto) || null,
+            desde: (atual && atual.desde) || Date.now()
+        });
+        // Espelho best-effort (pode falhar para admin de pista sem poder global — o vínculo principal é pistas/membros)
+        try {
+            var vinc = { pistaId: pistaId };
+            var s = await database.ref('usuariosPilotos/' + uid).once('value');
+            var cur = s.val() || {};
+            var arr = Array.isArray(cur.pistas) ? cur.pistas.slice() : (Array.isArray(cur.pistaIds) ? cur.pistaIds.slice() : []);
+            if (cur.pistaId && arr.indexOf(cur.pistaId) === -1) arr.push(cur.pistaId);
+            if (arr.indexOf(pistaId) === -1) arr.push(pistaId);
+            vinc.pistas = arr;
+            await database.ref('usuariosPilotos/' + uid).update(vinc);
+        } catch (e) {}
+        return uid;
+    };
+
+    window.removerMembroPista = async function (pistaId, uid) {
+        var database = getDb();
+        if (!database) throw new Error('Banco não conectado');
+        if (!window.podeGerenciarPista(pistaId)) throw new Error('Sem permissão nesta pista');
+        var m = (((window.pistasCache || {})[pistaId] || {}).membros || {})[uid];
+        if (m && m.nivel === 'admin') {
+            if (!window.isSuperuser()) throw new Error('Só o superuser remove administradores');
+            var admins = window.adminsDaPista(pistaId).filter(a => a !== uid);
+            if (admins.length === 0) throw new Error('Toda pista precisa de ao menos 1 administrador');
+        }
+        await database.ref('pistas/' + pistaId + '/membros/' + uid).remove();
+    };
+
+    // Migração um-clique (superuser): todos os pilotos/contas atuais vão para Krathus.
+    window.migrarTudoParaKrathus = async function () {
+        var database = getDb();
+        if (!database) throw new Error('Banco não conectado');
+        if (!window.isSuperuser()) throw new Error('Só o superuser executa a migração');
+        var P = window.PISTA_PADRAO || 'krathus';
+        var relatorio = { pista: P, membros: 0, baterias: 0, campeonatos: 0 };
+        await database.ref('pistas/' + P + '/info').update({ nome: window.nomePista(P) || 'Krathus', ativa: true, migradoEm: Date.now() });
+        // 1) Contas -> membros (admin/gestor/superuser viram admin da pista; piloto vira piloto)
+        var us = getUsuariosCache();
+        var multi = {};
+        Object.keys(us || {}).forEach(uid => {
+            var u = us[uid] || {};
+            var nv = String(u.nivel || 'piloto');
+            var membroNv = (nv === 'admin' || nv === 'gestor' || nv === 'superuser') ? 'admin' : 'piloto';
+            multi['pistas/' + P + '/membros/' + uid + '/nivel'] = membroNv;
+            relatorio.membros++;
+        });
+        // 2) Vínculos piloto -> garante Krathus na lista
+        var vincSnap = await database.ref('usuariosPilotos').once('value');
+        var vinc = vincSnap.val() || {};
+        Object.keys(vinc).forEach(uid => {
+            var cur = vinc[uid] || {};
+            var arr = Array.isArray(cur.pistas) ? cur.pistas.slice() : [];
+            if (cur.pistaId && arr.indexOf(cur.pistaId) === -1) arr.push(cur.pistaId);
+            if (arr.indexOf(P) === -1) arr.push(P);
+            multi['usuariosPilotos/' + uid + '/pistas'] = arr;
+            if (!cur.pistaId) multi['usuariosPilotos/' + uid + '/pistaId'] = P;
+        });
+        // 3) Baterias e campeonatos sem pistaId -> Krathus (só o campo, sem reescrever o resto)
+        var batSnap = await database.ref('baterias').once('value');
+        batSnap.forEach(ch => {
+            var v = ch.val() || {};
+            if (!v.pistaId) { multi['baterias/' + ch.key + '/pistaId'] = P; relatorio.baterias++; }
+        });
+        var campSnap = await database.ref('campeonatos').once('value');
+        campSnap.forEach(ch => {
+            var v = ch.val() || {};
+            if (!v.pistaId) { multi['campeonatos/' + ch.key + '/pistaId'] = P; relatorio.campeonatos++; }
+        });
+        await database.ref().update(multi);
+        return relatorio;
+    };
+
+    // ---- Render da seção Gestão de Pistas (admin) ----
+    window.renderizarSecaoPistas = function () {
+        var host = document.getElementById('pistas-gerais-corpo');
+        if (!host) return;
+        var podeTudo = window.isSuperuser();
+        var pistas = window.pistasCache || {};
+        var ids = Object.keys(pistas).sort();
+        // Pista padrão sempre listada mesmo antes da migração
+        var P = window.PISTA_PADRAO || 'krathus';
+        if (ids.indexOf(P) === -1) ids.unshift(P);
+        var us = getUsuariosCache();
+        function nomeConta(uid) {
+            var u = us[uid] || {};
+            return (u.email || uid) + '';
+        }
+        var html = '';
+        if (podeTudo) {
+            html += `<div class="config-panel" style="background:var(--bg-card);border:1px solid var(--border-card);border-radius:8px;padding:12px;">
+                <div class="config-panel-title" style="color:var(--accent-gold);border-bottom:none;padding-bottom:0;">🚀 Migração inicial</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin:4px 0;">Direciona todos os pilotos e contas atuais para a pista <strong>Krathus</strong> (membros, vínculos e carimbo de baterias/campeonatos). Rode uma vez.</div>
+                <button class="btn-action-primary" style="background:#2ec4b6;color:#000;font-weight:700;" onclick="executarMigracaoKrathus()">Migrar tudo para Krathus</button>
+            </div>
+            <div class="config-panel" style="background:var(--bg-card);border:1px solid var(--border-card);border-radius:8px;padding:12px;">
+                <div class="config-panel-title" style="color:var(--accent-gold);border-bottom:none;padding-bottom:0;">➕ Criar nova pista (exige administrador)</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+                    <input type="text" id="input-nova-pista-id" class="config-input" placeholder="ID (ex: interlagos)" style="flex:1;min-width:120px;">
+                    <input type="text" id="input-nova-pista-nome" class="config-input" placeholder="Nome (ex: Interlagos Kart)" style="flex:2;min-width:160px;">
+                    <input type="email" id="input-nova-pista-admin" class="config-input" placeholder="E-mail do administrador" style="flex:2;min-width:180px;">
+                    <button class="btn-action-primary" style="background:#2ec4b6;color:#000;font-weight:700;" onclick="executarCriarPista()">Criar</button>
+                </div>
+            </div>`;
+        }
+        if (!ids.length) {
+            html += `<div style="color:var(--text-muted);">Nenhuma pista ainda.</div>`;
+        }
+        html += ids.map(pid => {
+            var info = (pistas[pid] || {}).info || {};
+            var membros = ((pistas[pid] || {}).membros) || {};
+            var uids = Object.keys(membros);
+            var admins = uids.filter(u => membros[u] && membros[u].nivel === 'admin');
+            var gerencia = window.podeGerenciarPista(pid);
+            var linhas = uids.length ? uids.map(uid => {
+                var m = membros[uid] || {};
+                return `<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 0;border-bottom:1px dashed var(--border-card);">
+                    <span style="font-size:0.78rem;">${m.nivel === 'admin' ? '🛡️' : '🏎️'} <strong>${escapeHtmlPortal(nomeConta(uid))}</strong>${m.piloto ? ` <span style="color:var(--text-muted);">(${escapeHtmlPortal(m.piloto)})</span>` : ''} <span style="font-size:0.65rem;color:var(--text-muted);">${m.nivel}</span></span>
+                    ${gerencia ? `<button class="btn-text-action" style="color:var(--accent-red);font-size:0.7rem;" onclick="executarRemoverMembro('${pid}','${uid}')">Remover</button>` : ''}
+                </div>`;
+            }).join('') : `<div style="font-size:0.75rem;color:var(--text-muted);">Sem membros.</div>`;
+            var semAdmin = admins.length === 0
+                ? `<div style="font-size:0.72rem;color:var(--accent-red);font-weight:700;">⚠️ Sem administrador — nomeie um abaixo.</div>` : '';
+            var formAdd = gerencia ? `
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                    <input type="email" id="add-membro-email-${pid}" class="config-input" placeholder="E-mail do piloto" style="flex:2;min-width:160px;font-size:0.75rem;">
+                    <input type="text" id="add-membro-piloto-${pid}" class="config-input" placeholder="Nome do piloto (opcional)" style="flex:1;min-width:140px;font-size:0.75rem;">
+                    ${podeTudo ? `<select id="add-membro-nivel-${pid}" class="config-input" style="font-size:0.75rem;"><option value="piloto">piloto</option><option value="admin">admin</option></select>` : ''}
+                    <button class="btn-action-primary" style="padding:5px 12px;font-size:0.75rem;" onclick="executarAdicionarMembro('${pid}')">Adicionar</button>
+                </div>
+                <div style="font-size:0.68rem;color:var(--text-muted);margin-top:2px;">A pessoa precisa já ter conta (e-mail cadastrado). Um piloto pode estar em várias pistas; um admin também.</div>` : '';
+            return `<div class="config-panel" style="background:var(--bg-input);border:1px solid var(--border-card);border-radius:8px;padding:10px 12px;margin-top:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <strong style="color:var(--text-title);">🏁 ${escapeHtmlPortal(info.nome || pid)}</strong>
+                    <span style="font-size:0.68rem;color:var(--text-muted);">${pid} • ${uids.length} membro(s) • ${admins.length} admin(s)</span>
+                </div>
+                ${semAdmin}
+                <div style="margin-top:6px;">${linhas}</div>
+                ${formAdd}
+            </div>`;
+        }).join('');
+        host.innerHTML = html || `<div style="color:var(--text-muted);">Nenhuma pista.</div>`;
+    };
+
+    window.executarMigracaoKrathus = async function () {
+        if (!confirm('Migrar TODOS os pilotos e contas atuais para a pista Krathus?')) return;
+        try {
+            var r = await window.migrarTudoParaKrathus();
+            alert(`Migração concluída!\n• ${r.membros} membro(s)\n• ${r.baterias} bateria(s) carimbada(s)\n• ${r.campeonatos} campeonato(s) carimbado(s)`);
+            window.renderizarSecaoPistas();
+        } catch (e) { alert('Falha na migração: ' + e.message); }
+    };
+
+    window.executarCriarPista = async function () {
+        var pid = document.getElementById('input-nova-pista-id')?.value || '';
+        var nome = document.getElementById('input-nova-pista-nome')?.value || '';
+        var admin = document.getElementById('input-nova-pista-admin')?.value || '';
+        try {
+            await window.criarPistaCompleta(pid, nome, admin);
+            alert('Pista criada com administrador!');
+            window.renderizarSecaoPistas();
+        } catch (e) { alert('Falha: ' + e.message); }
+    };
+
+    window.executarAdicionarMembro = async function (pistaId) {
+        var email = document.getElementById('add-membro-email-' + pistaId)?.value || '';
+        var piloto = document.getElementById('add-membro-piloto-' + pistaId)?.value || '';
+        var nivelEl = document.getElementById('add-membro-nivel-' + pistaId);
+        var nivel = nivelEl ? nivelEl.value : 'piloto';
+        try {
+            await window.adicionarMembroPistaPorEmail(pistaId, email, nivel, piloto.trim() || null);
+            alert('Membro adicionado à pista!');
+            window.renderizarSecaoPistas();
+        } catch (e) { alert('Falha: ' + e.message); }
+    };
+
+    window.executarRemoverMembro = async function (pistaId, uid) {
+        if (!confirm('Remover este membro da pista?')) return;
+        try {
+            await window.removerMembroPista(pistaId, uid);
+            window.renderizarSecaoPistas();
+        } catch (e) { alert('Falha: ' + e.message); }
     };
 
     window.carimbarPistaId = function (obj) {

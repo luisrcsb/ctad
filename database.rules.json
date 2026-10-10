@@ -45,7 +45,9 @@
     },
     "campeonatos": {
       ".read": true,
-      ".indexOn": ["pistaId"],
+      ".indexOn": [
+        "pistaId"
+      ],
       "$camKey": {
         ".read": true,
         ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
@@ -80,7 +82,7 @@
           ".read": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true || data.child(auth.uid).exists())",
           "$uid": {
             ".read": "auth != null && (auth.uid === $uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true)",
-            ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true)"
+            ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true || (root.child('pistas/' + $pistaId + '/membros/' + auth.uid + '/nivel').val() === 'admin' && ((!data.exists() && newData.child('nivel').val() === 'piloto') || (data.exists() && data.child('nivel').val() === 'piloto' && (!newData.exists() || newData.child('nivel').val() === 'piloto')))))"
           }
         }
       }
@@ -104,7 +106,9 @@
     },
     "baterias": {
       ".read": true,
-      ".indexOn": ["pistaId"],
+      ".indexOn": [
+        "pistaId"
+      ],
       ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
       "$batKey": {
         "fileHash": {
@@ -148,11 +152,21 @@
       ".read": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
       "$logKey": {
         ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
-        "uid": { ".validate": "newData.isString()" },
-        "acao": { ".validate": "newData.isString() && (newData.val() === 'upload' || newData.val() === 'reprocess' || newData.val() === 'delete')" },
-        "bateriaKey": { ".validate": "newData.isString()" },
-        "fileHash": { ".validate": "newData.isString() && newData.val().length === 64" },
-        "timestamp": { ".validate": "newData.isNumber() && newData.val() > 0" }
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "acao": {
+          ".validate": "newData.isString() && (newData.val() === 'upload' || newData.val() === 'reprocess' || newData.val() === 'delete')"
+        },
+        "bateriaKey": {
+          ".validate": "newData.isString()"
+        },
+        "fileHash": {
+          ".validate": "newData.isString() && newData.val().length === 64"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
       }
     },
     "comprasColetivas": {
@@ -178,7 +192,7 @@
       ".read": true,
       "$desafioId": {
         ".read": true,
-        ".write": "auth != null && ((!data.exists() && newData.hasChildren(['desafiante', 'desafiados', 'formato', 'status']) && newData.child('desafiante').val() !== '' && newData.child('status').val() === 'aguardando' && (newData.child('desafianteUid').val() === auth.uid) && newData.child('desafiados').val().length > 0) || (data.exists() && !newData.exists() && (data.child('desafianteUid').val() === auth.uid || data.child('desafiadosUids').val().includes(auth.uid) || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)))",
+        ".write": "auth != null && ((!data.exists() && newData.hasChildren(['desafiante', 'desafiados', 'formato', 'status']) && newData.child('desafiante').val() !== '' && newData.child('status').val() === 'aguardando' && (newData.child('desafianteUid').val() === auth.uid) && newData.child('desafiados').val().length > 0) || (data.exists() && !newData.exists() && (data.child('desafianteUid').val() === auth.uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)))",
         "status": {
           ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
         },
@@ -254,6 +268,13 @@
     "patchNotes": {
       ".read": "auth != null",
       ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+    },
+    "categorias": {
+      ".read": true,
+      "$catId": {
+        ".read": true,
+        ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+      }
     }
   }
 }

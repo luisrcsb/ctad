@@ -138,6 +138,8 @@
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('tags')">🏷️ Tags</button>
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('solicitacoes')">📝 Solicitações <span class="badge-solicitacoes" id="badge-solicitacoes-nav" style="display: none;">0</span></button>
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('contas')">🔗 Contas</button>
+                <button class="zround-tab-btn" onclick="irParaSecaoAdmin('categorias')">🏎️ Categorias</button>
+                <button class="zround-tab-btn" onclick="irParaSecaoAdmin('pistas')">🏁 Pistas</button>
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('recomendados')">🛍️ Recomendados</button>
             </nav>
 
@@ -322,6 +324,22 @@
                     </div>
                 </section>
 
+                <section id="admin-sec-pistas" class="admin-sec" data-admin-modulo="contas" data-admin-acao="aprovar">
+                    <div class="admin-sec-titulo">🏁 Gestão de Pistas</div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Cada pista tem ao menos 1 administrador. Um admin pode cuidar de várias pistas e um piloto pode correr em várias — basta cadastrar o e-mail (a pessoa precisa já ter conta).</p>
+                    <div id="pistas-gerais-corpo" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="color: var(--text-muted);">Carregando...</div>
+                    </div>
+                </section>
+
+                <section id="admin-sec-categorias" class="admin-sec" data-admin-modulo="pilotos" data-admin-acao="gerenciar">
+                    <div class="admin-sec-titulo">🏎️ Categorias de Competição</div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Ex: WLToys 1:28 4x4, Mini-Z. Usadas nos carros dos pilotos e nos campeonatos (com filtro).</p>
+                    <div id="categorias-gerais-corpo" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="color: var(--text-muted);">Carregando...</div>
+                    </div>
+                </section>
+
                 <section id="admin-sec-recomendados" class="admin-sec" data-admin-modulo="produtos" data-admin-acao="editar">
                     <div class="admin-sec-titulo">🛍️ Produtos Recomendados</div>
                     <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
@@ -391,6 +409,9 @@
 
                 <div style="display: flex; flex-direction: column; gap: 6px;">
                     <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Campeonatos Cadastrados</span>
+                    <select id="filtro-categoria-campeonato" class="config-input" style="font-size:0.75rem;" onchange="window.__filtroCategoriaCamp = this.value; renderizarListaCampeonatosModal();">
+                        <option value="">Todas as categorias</option>
+                    </select>
                     <ul id="campeonatos-lista-modal" style="list-style: none; display: flex; flex-direction: column; gap: 6px;">
                         <li>Carregando campeonatos...</li>
                     </ul>
@@ -440,6 +461,12 @@
                                         <label style="font-size: 0.7rem; color: var(--text-muted);">Número Máximo de Pilotos por Chave</label>
                                         <input type="number" id="zround-pilotos-chave" class="config-input" style="width:100%; margin-top:2px;">
                                     </div>
+                                </div>
+                                <div style="margin-top: 6px;">
+                                    <label style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Categoria da Competição</label>
+                                    <select id="zround-categoria" class="config-input" style="width:100%; margin-top:2px;">
+                                        <option value="">Livre / sem categoria</option>
+                                    </select>
                                 </div>
                                 <div style="margin-top: 6px;">
                                     <label style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Tabela de Pontuação (1º ao 10º)</label>
@@ -758,6 +785,7 @@
     <script src="portal-pistas.js"></script>
     <script src="rastreio-auto.js"></script>
     <script src="sobre-ctad.js"></script>
+    <script src="categorias.js"></script>
     <script src="utils.js"></script>
     <script src="graficos.js"></script>
     <script src="pdf-utils.js"></script>
@@ -1051,6 +1079,7 @@
             usuariosCache = snapshot.val() || {};
             if (typeof renderizarPainelContasVinculadas === 'function') renderizarPainelContasVinculadas();
             if (typeof renderizarPainelSolicitacoesCadastro === 'function') renderizarPainelSolicitacoesCadastro();
+            if (typeof window.renderizarSecaoPistas === 'function') window.renderizarSecaoPistas();
         }
 
         function onConvitesDesafioChange(snapshot) {
@@ -1743,6 +1772,9 @@
             let restritoEl = document.getElementById('admin-conteudo-restrito');
 
             if (!hasPerm('campeonatos', 'gerenciar')) {
+                let ehGestorPista = false;
+                try { ehGestorPista = (typeof window.ehGestorDeAlgumaPista === 'function') && window.ehGestorDeAlgumaPista(); } catch (e) {}
+                if (!ehGestorPista) {
                 if (restritoEl) restritoEl.style.display = 'none';
                 bodyEl.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px 12px; text-align: center;">
@@ -1756,6 +1788,7 @@
                     </div>
                 `;
                 return;
+                }
             }
 
             let responsivoAtual = document.body.classList.contains('responsivo-ativo');
@@ -1798,8 +1831,12 @@
         }
 
         // Aplica a visibilidade de cada seção conforme as permissões da sessão atual.
+        // Gestor de pista (sem poder global) enxerga SOMENTE a seção Pistas.
         function aplicarPermissoesAdmin() {
+            let ehGestorPista = false;
+            try { ehGestorPista = (typeof window.ehGestorDeAlgumaPista === 'function') && window.ehGestorDeAlgumaPista(); } catch (e) {}
             document.querySelectorAll('.admin-sec[data-admin-modulo]').forEach(sec => {
+                if (sec.id === 'admin-sec-pistas' && ehGestorPista) { sec.style.display = 'flex'; return; }
                 let mod = sec.getAttribute('data-admin-modulo');
                 let acao = sec.getAttribute('data-admin-acao');
                 sec.style.display = hasPerm(mod, acao) ? 'flex' : 'none';
@@ -1816,6 +1853,8 @@
             if (typeof renderizarPainelProdutosRecomendados === 'function') renderizarPainelProdutosRecomendados();
             if (typeof renderizarPainelSolicitacoesCadastro === 'function') renderizarPainelSolicitacoesCadastro();
             if (typeof renderizarPainelContasVinculadas === 'function') renderizarPainelContasVinculadas();
+            if (typeof window.renderizarSecaoPistas === 'function') window.renderizarSecaoPistas();
+            if (typeof window.renderizarSecaoCategorias === 'function') window.renderizarSecaoCategorias();
         }
 
         // Rola a página de admin até a seção pedida (menu lateral e atalhos).
@@ -1994,7 +2033,7 @@
             try {
                 await db.ref('campeonatos/' + campKey).set({
                     chave: campKey, nome: nomeCamp, status: "Em andamento",
-                    configuracoes: { numeroProvas: 4, pilotosPorChave: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
+                    configuracoes: { numeroProvas: 4, pilotosPorChave: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], categoria: (typeof window !== 'undefined' && window.__filtroCategoriaCamp) ? window.__filtroCategoriaCamp : '' },
                     pilotosInscritos: {}, bateriasBancoSeparado: {}, gridTreinoDados: null
                 });
                 document.getElementById('input-nome-campeonato').value = "";
@@ -2018,6 +2057,16 @@
                 return timeB - timeA;
             });
 
+            try {
+                let selFiltro = document.getElementById('filtro-categoria-campeonato');
+                if (selFiltro && typeof window.opcoesCategoriaHtml === 'function') {
+                    let atual = (typeof window.__filtroCategoriaCamp !== 'undefined') ? window.__filtroCategoriaCamp : '';
+                    selFiltro.innerHTML = '<option value="">Todas as categorias</option>' + window.opcoesCategoriaHtml(atual).replace('<option value="">Livre / sem categoria</option>', '');
+                }
+            } catch (e) {}
+            let filtroCat = (typeof window.__filtroCategoriaCamp !== 'undefined') ? window.__filtroCategoriaCamp : '';
+            if (filtroCat) keys = keys.filter(key => ((campeonatosCache[key] && campeonatosCache[key].configuracoes && campeonatosCache[key].configuracoes.categoria) || '') === filtroCat);
+
             keys.forEach(key => {
                 let camp = campeonatosCache[key];
                 let statusCamp = camp.status || "Em andamento";
@@ -2036,6 +2085,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                         <div>
                             <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-title);">🏆 ${escapeHtml(camp.nome)}</span>
+                            ${(() => { try { let cid = (camp.configuracoes && camp.configuracoes.categoria) || ''; if (!cid) return ''; let nome = (typeof window.nomeCategoria === 'function') ? window.nomeCategoria(cid) : cid; return `<span style="font-size:0.65rem;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;background:rgba(58,134,255,0.15);color:var(--accent-blue);border:1px solid var(--accent-blue);">🏎️ ${escapeHtml(nome)}</span>`; } catch (e) { return ''; } })()}
                             <span style="font-size: 0.7rem; font-weight: 700; padding: 2px 5px; border-radius: 4px; margin-left: 6px; background: ${statusCamp === 'Finalizada' ? 'rgba(46,196,182,0.15); color: var(--accent-green);' : 'rgba(255,183,3,0.15); color: var(--accent-gold);'}">${statusCamp}</span>
                         </div>
                         <div style="display: flex; gap: 5px;">
@@ -2065,6 +2115,7 @@
             document.getElementById('zround-num-provas').value = conf.numeroProvas;
             // "pilotosPorProva" é o nome antigo do campo — mantido como fallback pra campeonatos criados antes dessa atualização.
             document.getElementById('zround-pilotos-chave').value = conf.pilotosPorChave ?? conf.pilotosPorProva ?? 10;
+            try { var selCat = document.getElementById('zround-categoria'); if (selCat) { if (typeof window.opcoesCategoriaHtml === 'function') selCat.innerHTML = window.opcoesCategoriaHtml(conf.categoria || ''); else selCat.value = conf.categoria || ''; } } catch (e) {}
             document.getElementById('zround-inverter-segunda').checked = conf.inverterSegundaBateria;
             document.getElementById('zround-usa-grid-treino').checked = conf.usaGridTreino || false;
             if (conf.pontuacaoTabela) document.getElementById('zround-tabela-pontos-input').value = conf.pontuacaoTabela.join(', ');
@@ -2164,11 +2215,12 @@
             let inverter = document.getElementById('zround-inverter-segunda').checked;
             let usaGridTreino = document.getElementById('zround-usa-grid-treino').checked;
             let pontosArr = document.getElementById('zround-tabela-pontos-input').value.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+            let categoriaCamp = (document.getElementById('zround-categoria')?.value || '').trim();
 
             try {
                 await db.ref(`campeonatos/${campeonatoAtivoKey}/configuracoes`).set({
                     numeroProvas: numProvas, pilotosPorChave: pilotosChave, inverterSegundaBateria: inverter,
-                    usaGridTreino: usaGridTreino, pontuacaoTabela: pontosArr.length > 0 ? pontosArr : [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
+                    usaGridTreino: usaGridTreino, pontuacaoTabela: pontosArr.length > 0 ? pontosArr : [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], categoria: categoriaCamp
                 });
                 alert("Salvo com sucesso!");
                 atualizarInterfacePainelZRound();
@@ -3591,6 +3643,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                             <div style="background: var(--bg-input); padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
                                 <div style="display: flex; flex-direction: column; gap: 2px;">
                                     <strong style="color: var(--text-title); font-size: 0.82rem;">🏆 ${escapeHtml(camp.nome)}</strong>
+                                     ${(() => { try { let cid = (camp.configuracoes && camp.configuracoes.categoria) || ''; if (!cid) return ''; let nome = (typeof window.nomeCategoria === 'function') ? window.nomeCategoria(cid) : cid; return `<span style="font-size:0.62rem;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:5px;background:rgba(58,134,255,0.15);color:var(--accent-blue);">🏎️ ${escapeHtml(nome)}</span>`; } catch (e) { return ''; } })()}
                                     <div style="font-size: 0.68rem; color: ${isEncerrado ? 'var(--accent-green)' : 'var(--accent-gold)'}; font-weight: 600;">${status}</div>
                                     ${infoExtraHtml}
                                 </div>

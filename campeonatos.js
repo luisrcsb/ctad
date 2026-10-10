@@ -103,6 +103,7 @@
         var ugt = document.getElementById('zround-usa-grid-treino');
         if (ugt) ugt.checked = conf.usaGridTreino || false;
         if (conf.pontuacaoTabela) set('zround-tabela-pontos-input', conf.pontuacaoTabela.join(', '));
+        try { var selCat = document.getElementById('zround-categoria'); if (selCat) { if (typeof window.opcoesCategoriaHtml === 'function') selCat.innerHTML = window.opcoesCategoriaHtml(conf.categoria || ''); else selCat.value = conf.categoria || ''; } } catch (e) {}
         var tit = document.getElementById('zround-camp-titulo-ativo');
         if (tit) tit.innerText = 'Configurando: ' + (camp.nome || '--');
     };
@@ -233,7 +234,8 @@
             inverterSegundaBateria: !!(document.getElementById('zround-inverter-segunda') || {}).checked,
             usaGridTreino: !!(document.getElementById('zround-usa-grid-treino') || {}).checked,
             pontuacaoTabela: String((document.getElementById('zround-tabela-pontos-input') || {}).value || '')
-                .split(',').map(function (s) { return parseInt(s.trim(), 10); }).filter(function (n) { return !isNaN(n); })
+                .split(',').map(function (s) { return parseInt(s.trim(), 10); }).filter(function (n) { return !isNaN(n); }),
+            categoria: String((document.getElementById('zround-categoria') || {}).value || '').trim()
         };
     }
 
@@ -270,7 +272,7 @@
             var el = document.getElementById(id);
             if (el) el.addEventListener('input', campQueueAutosave);
         });
-        ['zround-inverter-segunda', 'zround-usa-grid-treino'].forEach(function (id) {
+        ['zround-inverter-segunda', 'zround-usa-grid-treino', 'zround-categoria'].forEach(function (id) {
             var el = document.getElementById(id);
             if (el) el.addEventListener('change', campQueueAutosave);
         });

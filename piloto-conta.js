@@ -125,6 +125,11 @@
                 let pend = (typeof contarSolicitacoesPendentes === 'function') ? contarSolicitacoesPendentes() : 0;
                 let badge = pend > 0 ? ` <span class="badge-solicitacoes" style="margin-left:2px;">${pend}</span>` : '';
                 botoes.push(`<button class="btn-admin-trigger" onclick="fecharModalMinhaConta(); abrirModalAdmin()">🔐 Administração${badge}</button>`);
+            } else {
+                // Gestor de pista (sem poder global) tambem entra no painel: ve so a secao Pistas.
+                var ehGestor = false;
+                try { ehGestor = (typeof window.ehGestorDeAlgumaPista === 'function') && window.ehGestorDeAlgumaPista(); } catch (e) {}
+                if (ehGestor) botoes.push('<button class="btn-admin-trigger" onclick="fecharModalMinhaConta(); abrirModalAdmin(); irParaSecaoAdmin(' + String.fromCharCode(39) + 'pistas' + String.fromCharCode(39) + ')">\uD83C\uDFC1 Minhas Pistas</button>');
             }
             return `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; margin-bottom:14px;">${botoes.join('')}</div>`;
         }

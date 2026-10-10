@@ -220,7 +220,7 @@
                     <div class="config-panel-title">3. Gestão de Carros</div>
                     <div style="display: flex; flex-direction: column; gap: 6px; background: var(--bg-card); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-top: 2px;">
                         <input type="text" id="input-carro-modelo" class="config-input" placeholder="Modelo (Ex: WLtoys K989)">
-                        <input type="text" id="input-carro-categoria" class="config-input" placeholder="Categoria (Ex: 1/28 4x4)">
+                        <input type="text" id="input-carro-categoria" class="config-input" placeholder="Categoria (Ex: WLToys 1:28 4x4)" list="datalist-categorias-carro">
                         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                             <input type="file" id="input-carro-foto" accept="image/*" style="background: var(--bg-body); padding: 4px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); font-size: 0.75rem; flex: 1;">
                             <button class="btn-action-primary" style="background: #2ec4b6; color: #000; font-weight: 700; padding: 5px 10px; font-size: 0.75rem;" onclick="adicionarCarroPiloto('${escJs(nomePiloto)}')">+ Carro</button>

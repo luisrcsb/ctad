@@ -20,6 +20,7 @@
             <p><strong>Membro (com conta):</strong> o sistema filtra automaticamente para <em>a sua pista</em> e libera tudo: gráficos, laudo, tabela completa, dossiê, campeonatos, desafios e compras. O banner do topo mostra <em>🏁 {sua pista} (minha pista)</em>.</p>
             <p><strong>Como virar membro:</strong> clique em <strong>👤 Minha Conta</strong> → cadastre-se → o administrador vincula sua conta a um piloto da base → acesso liberado. Dá para acompanhar o status (<em>em análise / aprovada</em>) na própria Minha Conta.</p>
             <p><strong>Login:</strong> digite e-mail e senha e aperte <strong>Enter</strong> (ou clique em Entrar). Vale para login, cadastro e “Esqueci minha senha”.</p>
+            <p><strong>WhatsApp:</strong> barra 💬 Entrar no grupo da pista no topo (quando o admin cadastra o link); botões 📤 espalhados pelo site compartilham pódio, dossiê, desafios e compras.</p>
             <p><strong>WhatsApp:</strong> barra <em>💬 Entrar no grupo da pista</em> no topo (quando o admin cadastra o link); botões 📤 espalhados pelo site compartilham pódio, dossiê, desafios e compras (abre o app, senão copia o texto, senão abre o wa.me).</p>`
         },
         {
@@ -40,6 +41,7 @@
         {
             icone: '🏆', titulo: '5. Campeonatos (Championship Manager)',
             corpo: `
+            <p><strong>Categoria:</strong> cada campeonato tem uma categoria (ex: WLToys 1:28 4x4, Mini-Z), cadastrada pelo admin em 🏎️ Categorias; dá para filtrar a lista por categoria e o selo aparece no dashboard.</p>
             <p><strong>Para pilotos:</strong> veja campeonatos em andamento no card do dashboard, clique em <em>Participar</em>, escolha seu piloto e inscreva-se. Dá para ver regras, inscritos e compartilhar o convite no WhatsApp.</p>
             <p><strong>Para admins (as 5 abas):</strong> 1) <em>Geral & Configs</em> — nome, nº de provas, pilotos por chave, pontos do 1º ao 10º, grid por treino; 2) <em>Pilotos</em> — inscreve do banco geral ou cadastra manual; 3) <em>Provas</em> — sessão de treino para grid (3 melhores voltas consecutivas), importa do banco principal ou sobe prova separada; 4) <em>Grids</em> — gera largadas, com opção de inverter a bateria seguinte; 5) <em>Classificação</em> — tabela geral de pontos + finalizar campeonato (vira <em>Finalizada</em> com pódio 🏅).</p>`
         },
