@@ -112,6 +112,7 @@
       ],
       ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
       "$batKey": {
+        ".validate": "!newData.exists() || newData.hasChildren(['fileHash', 'parserVersion', 'fileSize', 'uploadedBy', 'uploadedAt'])",
         "fileHash": {
           ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
           ".validate": "newData.isString() && newData.val().length === 64"
