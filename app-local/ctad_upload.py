@@ -342,7 +342,7 @@ class Uploader:
                     break
                 except (ErroAuth, ErroBanco, ValueError, OSError) as e:
                     espera = min(2 ** tentativa, 30)
-                    self.log.warning(f"Tentativa {tentativa}/{self.cfg['tentativas']} {rel}: {e} (retry em {esper}s)")
+                    self.log.warning(f"Tentativa {tentativa}/{self.cfg['tentativas']} {rel}: {e} (retry em {espera}s)")
                     time.sleep(espera)
             with self.lock:
                 self.estado[rel] = {"size": st.st_size, "mtime": st.st_mtime,

@@ -1,6 +1,6 @@
 @echo off
 REM CTAD Upload Auto — gera o executavel e publica em downloads/
-set VERSAO=1.1.1
+set VERSAO=1.1.2
 cd /d "%~dp0"
 echo [1/4] Instalando dependencias...
 call python -m pip install -r requirements.txt pyinstaller
@@ -14,8 +14,9 @@ if not exist "dist\CTAD-Upload-Auto.exe" (
 echo [3/4] Publicando em downloads/ ...
 if not exist "..\downloads" mkdir "..\downloads"
 copy /y "config.json" "..\downloads\CTAD-Upload-Auto-config-modelo.json"
+copy /y "LEIA-ME.txt" "..\downloads\LEIA-ME-CTAD-Upload-Auto.txt"
 echo [4/4] Compactando v%VERSAO% (.zip — o Hosting proibe .exe puro) ...
-powershell -NoProfile -Command "Compress-Archive -Path 'dist\CTAD-Upload-Auto.exe','..\downloads\CTAD-Upload-Auto-config-modelo.json' -DestinationPath '..\downloads\CTAD-Upload-Auto-v%VERSAO%.zip' -Force"
+powershell -NoProfile -Command "Compress-Archive -Path 'dist\CTAD-Upload-Auto.exe','..\downloads\CTAD-Upload-Auto-config-modelo.json','LEIA-ME.txt' -DestinationPath '..\downloads\CTAD-Upload-Auto-v%VERSAO%.zip' -Force"
 echo.
 echo Pronto! CTAD\downloads\CTAD-Upload-Auto-v%VERSAO%.zip — faca deploy (firebase deploy) para liberar no site.
 pause
