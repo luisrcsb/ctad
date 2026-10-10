@@ -4,7 +4,7 @@
   },
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "downloads/*.exe"],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "downloads/*.exe", "app-local/dist/**", "app-local/build/**", "**/*.bat"],
     "cleanUrls": true,
     "headers": [
       {
