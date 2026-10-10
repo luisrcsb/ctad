@@ -14,3 +14,5 @@ app-local/*.spec
 app-local/__pycache__/
 app-local/.estado.json
 app-local/upload-auto.log
+# Executavel: distribuido via .zip (plano Spark proibe .exe no Hosting)
+downloads/*.exe
