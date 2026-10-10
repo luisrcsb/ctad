@@ -575,7 +575,7 @@ window.abrirModalDesafiarPiloto = function() {
     }
     atualizarHistoricoConfronto();
     let formatosHtml = Object.entries(FORMATOS_DESAFIO).map(([key, f]) => `
-        <div class="formato-opcao" data-formato="${key}" style="border:1px solid var(--border-card); border-radius:8px; padding:10px; cursor:pointer; background:var(--bg-input); transition:border-color 0.2s;">
+        <div class="formato-opcao" data-formato="${key}" style="border:1px solid var(--border-card); border-radius:8px; padding:10px; cursor:pointer; background:var(--bg-input); transition:border-color 0.2s;" onclick="selecionarFormato('${key}')">
             <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:1.2rem;">${f.icone}</span>
                 <strong style="font-size:0.82rem; color:var(--text-title);">${f.nome}</strong>
@@ -596,6 +596,8 @@ window.abrirModalDesafiarPiloto = function() {
     `).join('');
     let formatosContainer = document.getElementById('convite-formatos');
     if (formatosContainer) formatosContainer.innerHTML = formatosHtml;
+    // Seleciona 'duelo' por padrão ao abrir o modal
+    selecionarFormato('duelo');
     let btnEnviar = document.getElementById('btn-enviar-convite');
     if (btnEnviar) {
         btnEnviar.onclick = function() {
