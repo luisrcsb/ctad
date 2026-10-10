@@ -921,7 +921,7 @@
                     </div>
 
                     <div class="config-panel">
-                        <div class="config-panel-title">7. Histórico de Rastreio</div>
+                        <div class="config-panel-title">7. Histórico de Movimentação</div>
                         <div style="margin: 4px 0 8px;">
                             <label style="font-size: 0.7rem; color: var(--text-muted);">Data/hora do evento (opcional — deixe vazio para usar "agora"):</label>
                             <input type="datetime-local" id="det-rastreio-data-${compraGerenciandoKey}" class="config-input" style="font-size: 0.78rem; margin-top: 2px;">
