@@ -426,18 +426,14 @@ def iniciar_temporeal(up, pasta, log):
             except OSError:
                 pass
 
-        def ao_criar(e):
-            self._tocou(e.src_path)
+        def on_created(self, event):
+            self._tocou(event.src_path)
 
-        def ao_modificar(e):
-            self._tocou(e.src_path)
+        def on_modified(self, event):
+            self._tocou(event.src_path)
 
-        def ao_mover(e):
-            self._tocou(getattr(e, "dest_path", e.src_path))
-
-        H.on_created = ao_criar
-        H.on_modified = ao_modificar
-        H.on_moved = ao_mover
+        def on_moved(self, event):
+            self._tocou(getattr(event, "dest_path", event.src_path))
 
     try:
         obs = Observer()
