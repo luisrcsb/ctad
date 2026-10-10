@@ -79,7 +79,7 @@
                 return;
             }
 
-            if (pilotoVinculadoAoUsuario) {
+if (pilotoVinculadoAoUsuario) {
                 let elo = (typeof pilotosMetadadosCache !== 'undefined' && pilotosMetadadosCache)
                     ? (pilotosMetadadosCache[String(pilotoVinculadoAoUsuario).replace(/[.#$\/\[\]]/g, '_')]?.elo || 1000)
                     : 1000;
@@ -93,9 +93,8 @@
                     </div>
                     ${renderizarAcoesRapidasMinhaConta()}
                     ${renderizarSecoesMembroMinhaConta()}
-                    ${renderizarSecaoTodasComprasMinhaConta()}
                     ${renderizarSecaoAcessibilidadeMinhaConta()}`;
-                return;
+            return;
             }
 
             let statusSol = (typeof minhaSolicitacaoCache !== 'undefined' && minhaSolicitacaoCache) ? minhaSolicitacaoCache.status : null;
