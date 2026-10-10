@@ -54,6 +54,41 @@ def main():
         assert kind == "novo", kind
         assert rel == os.path.join("treino", "novo.html"), rel
         print(f"TEMPO-REAL-OK: detectou {rel} como {kind}")
+
+        # Cenário do bug v1.1.3: falha anterior com digest IDÊNTICO tem que
+        # voltar como nova-tentativa (antes era engolido pelo skip de hash).
+        import hashlib
+        with open(alvo, "rb") as f:
+            digest2 = hashlib.sha256(f.read()).hexdigest()
+        st2 = os.stat(alvo)
+        up.estado[rel] = {"size": st2.st_size, "mtime": st2.st_mtime,
+                          "sha256": digest2, "status": "falha"}
+        up.chamadas.clear()
+
+        class Ev:
+            src_path = alvo
+
+        # Recupera o handler registrado no observer e dispara on_modified
+        handler = None
+        try:
+            for _emitter, handlers in obs._handlers.items():
+                for hand in handlers:
+                    handler = hand
+                    break
+        except Exception:
+            handler = None
+        assert handler is not None, "sem handler registrado"
+        try:
+            handler.deb.clear()  # ignora o debounce da detecção anterior
+        except AttributeError:
+            pass
+        handler.on_modified(Ev())
+        prazo = time.time() + 20
+        while time.time() < prazo and not up.chamadas:
+            time.sleep(0.5)
+        assert up.chamadas, "falha com mesmo digest NÃO voltou (bug persiste)"
+        assert up.chamadas[0][4] == "nova-tentativa", up.chamadas[0][4]
+        print("RETRY-FALHA-OK: falha com mesmo digest volta como nova-tentativa")
     finally:
         obs.stop()
         obs.join()

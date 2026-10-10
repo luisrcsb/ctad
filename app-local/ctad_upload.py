@@ -74,6 +74,33 @@ CONFIG_MODELO = {
     "tentativas": 4,
     "timeout_segundos": 60,
     "log_nivel": "INFO",
+    "update_url": "https://krathus-telemetria.web.app/downloads/versao.json",
+    "auto_iniciar_monitor": False,
+    "iniciar_com_windows": False,
+}
+
+#: Versão única do app (GUI, --versao e autoupdate usam esta).
+APP_VERSAO = "1.2.0"
+
+#: Modelo gravado automaticamente no primeiro uso da interface gráfica.
+CONFIG_MODELO = {
+    "firebase": {
+        "apiKey": "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",
+        "databaseURL": "https://krathus-telemetria-default-rtdb.firebaseio.com",
+        "storageBucket": "krathus-telemetria.firebasestorage.app",
+    },
+    "email": "",
+    "password": "",
+    "pasta": "C:\\telemetria",
+    "intervalo_segundos": 15,
+    "tempo_real": True,
+    "extensoes": [".pdf", ".html", ".htm"],
+    "pistaId": "krathus",
+    "mover_para_enviados": True,
+    "apagar_remoto": False,
+    "tentativas": 4,
+    "timeout_segundos": 60,
+    "log_nivel": "INFO",
 }
 
 #: Marcado via --no-pause (agendador). Sem ele, erro fatal pausa antes de sair.
@@ -110,6 +137,8 @@ def carregar_config():
     cfg.setdefault("apagar_remoto", False)
     cfg.setdefault("atualizar_auto", True)
     cfg.setdefault("update_url", "https://krathus-telemetria.web.app/downloads/versao.json")
+    cfg.setdefault("auto_iniciar_monitor", False)
+    cfg.setdefault("iniciar_com_windows", False)
     return cfg
 
 
@@ -548,6 +577,12 @@ def main():
                     help="abre a interface gráfica (não fecha sozinha em erro)")
     ap.add_argument("--monitor", action="store_true",
                     help="monitor contínuo em console (padrão em tarefa agendada)")
+    ap.add_argument("--auto-iniciar", action="store_true",
+                    help="inicia o monitor automaticamente ao abrir (GUI)")
+    ap.add_argument("--instalar-startup", action="store_true",
+                    help="adiciona o app à inicialização do Windows")
+    ap.add_argument("--remover-startup", action="store_true",
+                    help="remove o app da inicialização do Windows")
     ap.add_argument("--no-pause", action="store_true",
                     help="não pausa antes de sair em erro (uso em agendador)")
     ap.add_argument("--pasta", default=None)
@@ -556,11 +591,14 @@ def main():
     global SEM_PAUSA
     SEM_PAUSA = args.no_pause
 
-    if args.gui or (not (args.scan_once or args.dry_run or args.testar_conexao
-                          or args.configurar or args.monitor)
-                    and sys.stdin.isatty()):
-        # Duplo clique / uso manual -> interface gráfica (nunca fecha sozinha).
-        # Tarefa agendada (sem console) cai no monitor em console como antes.
+    # --instalar-startup / --remover-startup: gerencia atalho na inicializacao do Windows
+    if args.instalar_startup or args.remover_startup:
+        gerenciar_startup(args.instalar_startup)
+        return
+
+    # Modo GUI: duplo clique ou --gui (interface gráfica, nunca fecha sozinha em erro)
+    if args.gui and not (args.scan_once or args.dry_run or args.testar_conexao
+                          or args.configurar or args.monitor):
         import gui
         if not os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH, "w", encoding="utf-8") as f:
@@ -569,17 +607,55 @@ def main():
         cfg = carregar_config()
         if args.pasta:
             cfg["pasta"] = os.path.abspath(args.pasta)
+        # Auto-iniciar monitor se configurado
+        if cfg.get("auto_iniciar_monitor"):
+            cfg["_auto_start_monitor"] = True
         gui.executar_gui(cfg, CONFIG_PATH)
         return
 
+    # --auto-iniciar: inicia monitor automaticamente (sem GUI)
+    if args.auto_iniciar:
+        cfg = carregar_config()
+        if args.pasta:
+            cfg["pasta"] = os.path.abspath(args.pasta)
+        if cfg.get("auto_iniciar_monitor"):
+            cfg["_auto_start_monitor"] = True
+        log = montar_log(cfg.get("log_nivel", "INFO"))
+        up = Uploader(cfg, log, dry_run=args.dry_run)
+        if not args.dry_run:
+            try:
+                info = up.cli.testar_conexao()
+                log.info(f"Autenticado como {cfg['email']} (nivel {info['nivel']}).")
+            except Exception as e:
+                log.error(f"Falha de autenticacao: {e}")
+                pausar_antes_de_sair()
+                sys.exit(1)
+        log.info(f"Pasta: {cfg['pasta']} | pista: {cfg.get('pistaId')}" + (" | DRY-RUN" if args.dry_run else ""))
+        up.ciclo()
+        obs = iniciar_temporeal(up, cfg["pasta"], log) if cfg.get("tempo_real") else None
+        try:
+            while True:
+                time.sleep(cfg["intervalo_segundos"])
+                up.ciclo()
+        except KeyboardInterrupt:
+            log.info("Encerrado pelo usuario.")
+        finally:
+            if obs:
+                obs.stop()
+                obs.join()
+        return
+
+    # --configurar: assistente de configuracao no console
     if args.configurar:
         configurar()
         return
 
+    # --versao: mostra versão e sai
     if args.versao:
         print(f"CTAD Upload Auto v{APP_VERSAO}")
         return
 
+    # Demais comandos CLI (scan-once, dry-run, testar-conexao, update, etc.)
     cfg = carregar_config()
     if args.pasta:
         cfg["pasta"] = os.path.abspath(args.pasta)
@@ -600,6 +676,7 @@ def main():
             return
         _aplicar_update_cli(cfg, info)
         return
+
     log = montar_log(cfg.get("log_nivel", "INFO"))
     up = Uploader(cfg, log, dry_run=args.dry_run)
 
@@ -612,8 +689,12 @@ def main():
             sys.exit(1)
         return
 
-    log.info(f"Pasta: {cfg['pasta']} | pista: {cfg.get('pistaId')}"
-             + (" | DRY-RUN" if args.dry_run else ""))
+    if args.scan_once:
+        up.ciclo()
+        return
+
+    # Monitor contínuo (padrão para tarefa agendada / console)
+    log.info(f"Pasta: {cfg['pasta']} | pista: {cfg.get('pistaId')}" + (" | DRY-RUN" if args.dry_run else ""))
     if not args.dry_run:
         try:
             info = up.cli.testar_conexao()
@@ -640,6 +721,35 @@ def main():
             obs.stop()
             obs.join()
 
+
+# ----- Gerenciamento de inicialização do Windows -----
+def gerenciar_startup(instalar: bool):
+    """Adiciona ou remove o app da inicialização do Windows."""
+    import winreg
+    exe_path = os.path.abspath(sys.executable)
+    if congelado():
+        # No modo congelado, o executável já é o .exe final
+        pass
+    else:
+        # No modo script, usamos python.exe com o script
+        exe_path = f'"{sys.executable}" "{os.path.abspath(__file__)}" --monitor --no-pause'
+
+    key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    app_name = "CTAD-Upload-Auto"
+
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS) as key:
+            if instalar:
+                winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, exe_path)
+                print(f"[OK] Adicionado à inicialização do Windows: {exe_path}")
+            else:
+                try:
+                    winreg.DeleteValue(key, app_name)
+                    print(f"[OK] Removido da inicialização do Windows.")
+                except FileNotFoundError:
+                    print(f"[INFO] Não estava na inicialização.")
+    except Exception as e:
+        print(f"[ERRO] Falha ao gerenciar inicialização: {e}")
 
 if __name__ == "__main__":
     try:

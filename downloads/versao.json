@@ -1,0 +1,7 @@
+{
+  "versao": "1.2.1",
+  "zip": "downloads/CTAD-Upload-Auto-v1.2.1.zip",
+  "sha256": "3F821C2939DCDFB4B1AAC2E6A3DAB2CF5FDF4EF09DDBC0265EA621366BF3A15A",
+  "notas": "Autoatualizacao com confirmacao + retry de falhas reprocessa",
+  "obrigatoria": false
+}
