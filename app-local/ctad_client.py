@@ -113,7 +113,12 @@ class CtadClient:
             q["auth"] = self.id_token
             r = self.s.get(f"{self.db}/{caminho}.json", params=q, timeout=self.timeout)
         if r.status_code != 200:
-            raise ErroBanco(f"Leitura {caminho} -> HTTP {r.status_code}")
+            corpo = ""
+            try:
+                corpo = (r.json().get("error", "") if "application/json" in r.headers.get("Content-Type", "") else r.text[:200]) or ""
+            except ValueError:
+                corpo = r.text[:200]
+            raise ErroBanco(f"Leitura {caminho} -> HTTP {r.status_code} {corpo}")
         return r.json()
 
     def rtdb_put(self, caminho, dados):

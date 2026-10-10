@@ -107,7 +107,8 @@
     "baterias": {
       ".read": true,
       ".indexOn": [
-        "pistaId"
+        "pistaId",
+        "fileHash"
       ],
       ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
       "$batKey": {

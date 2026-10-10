@@ -16,3 +16,5 @@ app-local/.estado.json
 app-local/upload-auto.log
 # Executavel: distribuido via .zip (plano Spark proibe .exe no Hosting)
 downloads/*.exe
+# Pasta local de teste do usuario (nao versionar)
+/Telemetria/

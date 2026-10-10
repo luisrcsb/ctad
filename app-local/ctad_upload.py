@@ -256,8 +256,11 @@ class Uploader:
                 reg = self.estado.get(rel)
                 if reg and reg.get("status") == "removido_local":
                     reg = None
-                if reg and reg.get("size") == st.st_size and reg.get("mtime") == st.st_mtime:
+                if (reg and reg.get("size") == st.st_size and reg.get("mtime") == st.st_mtime
+                        and reg.get("status") != "falha"):
                     continue
+                if reg and reg.get("status") == "falha":
+                    self.log.info(f"Tentando de novo (falhou antes): {rel}")
                 if not arquivo_estavel(abs_path):
                     self.log.info(f"Ainda mudando, fica p/ o proximo ciclo: {rel}")
                     continue

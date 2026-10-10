@@ -1,6 +1,6 @@
 @echo off
 REM CTAD Upload Auto — gera o executavel e publica em downloads/
-set VERSAO=1.1.2
+set VERSAO=1.1.3
 cd /d "%~dp0"
 echo [1/4] Instalando dependencias...
 call python -m pip install -r requirements.txt pyinstaller

@@ -1,4 +1,4 @@
-CTAD Upload Auto v1.1.2 — LEIA-ME
+CTAD Upload Auto v1.1.3 — LEIA-ME
 ===============================
 Aplicativo local do CTAD (Central de Telemetria e Análise de Desempenho).
 Vigia a pasta da pista e todas as subpastas (treino, qualify, bateria...),
@@ -57,4 +57,4 @@ baterias sozinho para o banco — sem precisar deixar o navegador aberto.
 8. AJUDA
 Passo a passo ilustrado no site: Administração > Downloads.
 Manuais sempre atualizados no site: botão 📖 Manual.
-Versão deste documento: v1.1.2.
+Versão deste documento: v1.1.3.
