@@ -100,6 +100,32 @@
 
             let aliasesPiloto = Object.keys(mesclagensCache).filter(alias => mesclagensCache[alias] === nomePiloto);
 
+            // Todos os nomes disponíveis na base para mesclar neste piloto:
+            // telemetria + cadastros + contas vinculadas, menos ele mesmo, menos aliases
+            // que já apontam para ele, com selo em quem já está mesclado em outro piloto.
+            let todosNomes = new Set();
+            try {
+                (typeof obterTodosDadosConsolidados === 'function' ? obterTodosDadosConsolidados() : [])
+                    .forEach(d => { if (d && d.pilotoOriginal) todosNomes.add(String(d.pilotoOriginal).trim()); });
+            } catch (e) {}
+            try { Object.keys(pilotosMetadadosCache || {}).forEach(k => { if (k && k.trim()) todosNomes.add(k.trim()); }); } catch (e) {}
+            try { Object.values(usuariosPilotosCache || {}).forEach(v => { if (v && v.piloto) todosNomes.add(String(v.piloto).trim()); }); } catch (e) {}
+            let nomesDisponiveisHtml = Array.from(todosNomes)
+                .filter(n => n && n !== nomePiloto && !(mesclagensCache[n.replace(/[.#$\/\[\]]/g, '_')] === nomePiloto))
+                .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+                .map(n => {
+                    let safe = n.replace(/[.#$\/\[\]]/g, '_');
+                    let destino = mesclagensCache[safe];
+                    let jaMesclado = !!destino;
+                    return `
+                    <div class="nome-alias-item" data-nome="${escapeHtml(n)}" style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border-card);">
+                        <span style="font-size: 0.8rem; color: var(--text-title); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(n)}${jaMesclado ? ` <span style="font-size:0.65rem;color:var(--text-muted);">(em ${escapeHtml(destino)})</span>` : ''}</span>
+                        ${jaMesclado
+                            ? `<span style="font-size:0.65rem;color:var(--text-muted);">mesclado</span>`
+                            : `<button class="btn-text-action" onclick="adicionarAliasNomePronto('${escJs(nomePiloto)}', '${escJs(n)}')">Mesclar</button>`}
+                    </div>`;
+                }).join('') || `<div style="font-size: 0.78rem; color: var(--text-muted);">Nenhum outro nome na base.</div>`;
+
             let dadosBaseHistorico = obterTodosDadosConsolidados();
             let qtdSessoesPiloto = dadosBaseHistorico.filter(d => d.piloto === nomePiloto && d.laps && d.laps.length > 0).length;
             let temHistoricoCorridas = qtdSessoesPiloto > 0;
@@ -182,6 +208,11 @@
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
                         ${aliasHtml}
+                    </div>
+                    <div style="font-size:0.72rem; color:var(--text-muted); margin-top:8px;">Todos os nomes disponíveis na base — clique para mesclar neste piloto:</div>
+                    <input type="text" id="input-busca-nome-alias" class="config-input" placeholder="🔎 Buscar nome..." style="margin-top:4px; font-size:0.78rem;" oninput="filtrarNomesDisponiveisAlias()">
+                    <div id="lista-nomes-disponiveis-alias" style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px; max-height: 220px; overflow-y: auto;">
+                        ${nomesDisponiveisHtml}
                     </div>
                 </div>
 
@@ -301,6 +332,26 @@
                 renderizarCorpoConfigurarPiloto();
                 atualizarDashboard();
             } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        // Mescla um nome da lista de disponíveis (sem digitar) + filtro da busca.
+        window.adicionarAliasNomePronto = async function(nomePiloto, nomeOrigem) {
+            if (!exigirAcessoAdmin('pilotos', 'editar')) return;
+            if (!db || !nomeOrigem || !nomeOrigem.trim()) return;
+            let aliasKey = nomeOrigem.trim().replace(/[.#$\/\[\]]/g, "_");
+            try {
+                await db.ref(`mesclagensPilotos/${aliasKey}`).set(nomePiloto);
+                renderizarCorpoConfigurarPiloto();
+                atualizarDashboard();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.filtrarNomesDisponiveisAlias = function() {
+            let busca = (document.getElementById('input-busca-nome-alias')?.value || '').trim().toLowerCase();
+            document.querySelectorAll('#lista-nomes-disponiveis-alias .nome-alias-item').forEach(el => {
+                let nome = (el.getAttribute('data-nome') || '').toLowerCase();
+                el.style.display = (!busca || nome.includes(busca)) ? '' : 'none';
+            });
         };
 
         window.adicionarCarroPiloto = async function(nomePiloto) {

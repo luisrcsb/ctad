@@ -45,6 +45,7 @@
     },
     "campeonatos": {
       ".read": true,
+      ".indexOn": ["pistaId"],
       "$camKey": {
         ".read": true,
         ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
@@ -67,8 +68,43 @@
         }
       }
     },
+    "pistas": {
+      ".read": true,
+      "$pistaId": {
+        ".read": true,
+        "info": {
+          ".read": true,
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true)"
+        },
+        "membros": {
+          ".read": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true || data.child(auth.uid).exists())",
+          "$uid": {
+            ".read": "auth != null && (auth.uid === $uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true)",
+            ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true)"
+          }
+        }
+      }
+    },
+    "publicResumo": {
+      ".read": true,
+      "baterias": {
+        ".read": true,
+        "$batKey": {
+          ".read": true,
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+        }
+      },
+      "campeonatos": {
+        ".read": true,
+        "$camKey": {
+          ".read": true,
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+        }
+      }
+    },
     "baterias": {
       ".read": true,
+      ".indexOn": ["pistaId"],
       ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
       "$batKey": {
         "fileHash": {

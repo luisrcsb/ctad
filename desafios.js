@@ -78,17 +78,77 @@ function uidDoPilotoDesafio(nome) {
     return uid || null;
 }
 
+function nomeCanonicoDesafio(nome) {
+    if (!nome) return '';
+    let n = String(nome).trim();
+    try {
+        let safe = n.replace(/[.#$\/\[\]]/g, '_');
+        let mesc = (typeof mesclagensCache !== 'undefined' && mesclagensCache) || {};
+        if (mesc[safe] && mesc[safe] !== n) return String(mesc[safe]).trim();
+    } catch (e) {}
+    return n;
+}
+
 function listarPilotosDesafiaveis() {
-    let nomesSet = new Set();
-    Object.keys(pilotosMetadadosCache || {}).forEach(k => {
-        let m = pilotosMetadadosCache[k];
-        nomesSet.add((m && m.apelido) || k);
+    // Mapa apelido (minúsculo) -> nome original da base: "guga" -> "Gustavo".
+    // Assim apelido e original colapsam numa entrada só (exibe "Gustavo (Guga)").
+    let apelidoParaOriginal = {};
+    try {
+        Object.keys(pilotosMetadadosCache || {}).forEach(k => {
+            let m = pilotosMetadadosCache[k];
+            if (m && m.apelido && String(m.apelido).trim() && String(m.apelido).trim() !== k) {
+                apelidoParaOriginal[String(m.apelido).trim().toLowerCase()] = k;
+            }
+        });
+    } catch (e) {}
+    function paraOriginal(n) {
+        let key = String(n).trim().toLowerCase();
+        return apelidoParaOriginal[key] || String(n).trim();
+    }
+    let brutos = new Set();
+    Object.keys(pilotosMetadadosCache || {}).forEach(k => { if (k && k.trim()) brutos.add(k.trim()); });
+    (typeof obterTodosDadosConsolidados === 'function' ? obterTodosDadosConsolidados() : []).forEach(d => { if (d && d.piloto) brutos.add(String(d.piloto).trim()); });
+    Object.values(usuariosPilotosCache || {}).forEach(v => { if (v && v.piloto) brutos.add(String(v.piloto).trim()); });
+    // Colapsa apelidos no original + aliases mesclados no canônico (Guga->Gustavo, edgard->Edgard...)
+    let canonicos = new Set();
+    brutos.forEach(n => {
+        if (!n || !String(n).trim()) return;
+        let c = nomeCanonicoDesafio(paraOriginal(n));
+        // Se o próprio usuário está vinculado por apelido, exclui também
+        if (c && c !== pilotoVinculadoAoUsuario && paraOriginal(pilotoVinculadoAoUsuario || '') !== c) canonicos.add(c);
     });
-    (typeof obterTodosDadosConsolidados === 'function' ? obterTodosDadosConsolidados() : []).forEach(d => nomesSet.add(d.piloto));
-    Object.values(usuariosPilotosCache || {}).forEach(v => { if (v && v.piloto) nomesSet.add(v.piloto); });
-    return Array.from(nomesSet)
-        .filter(n => n && n.trim() && n !== pilotoVinculadoAoUsuario)
-        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    return Array.from(canonicos)
+        .sort((a, b) => {
+            // Quem tem conta primeiro (pode responder), depois A–Z
+            let ca = uidDoPilotoDesafio(a) ? 0 : 1, cb = uidDoPilotoDesafio(b) ? 0 : 1;
+            if (ca !== cb) return ca - cb;
+            return a.localeCompare(b, 'pt-BR');
+        });
+}
+
+// Rótulo de exibição: "Gustavo (Guga)" quando há apelido diferente do original.
+function rotuloPilotoDesafio(nome) {
+    try {
+        let m = (pilotosMetadadosCache || {})[nome];
+        if (m && m.apelido && String(m.apelido).trim() && String(m.apelido).trim() !== nome) {
+            return `${nome} (${String(m.apelido).trim()})`;
+        }
+    } catch (e) {}
+    return nome;
+}
+
+function filtrarListaConviteDesafio() {
+    let busca = (document.getElementById('convite-busca-piloto')?.value || '').trim().toLowerCase();
+    let soComConta = !!document.getElementById('convite-so-com-conta')?.checked;
+    document.querySelectorAll('#convite-pilotos-lista .convite-item').forEach(label => {
+        let nome = (label.getAttribute('data-nome') || '').toLowerCase();
+        let temConta = label.getAttribute('data-conta') === '1';
+        let ok = (!busca || nome.includes(busca)) && (!soComConta || temConta);
+        label.style.display = ok ? '' : 'none';
+    });
+    let visiveis = Array.from(document.querySelectorAll('#convite-pilotos-lista .convite-item')).filter(el => el.style.display !== 'none').length;
+    let vazio = document.getElementById('convite-lista-vazia');
+    if (vazio) vazio.style.display = visiveis ? 'none' : '';
 }
 
 function jaDesafiaAtivoCom(nomeAlvo) {
@@ -450,6 +510,7 @@ function renderizarLeaderboardElo() {
                         '<div style="font-size:0.78rem; color:var(--text-title); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(perdedores.join(', ')) + '</div>' +
                         '<div style="font-size:0.68rem; color:var(--accent-red); font-weight:700;">Perdeu</div>' +
                     '</div>' +
+                    '<button class="btn" style="background:rgba(37,211,102,0.15); color:#25D366; border:1px solid #25D366; padding:3px 8px; font-size:0.7rem; flex-shrink:0;" title="Compartilhar no WhatsApp" onclick="compartilharDesafio(\'' + String(id).replace(/\\/g, '\\\\').replace(/\'/g, "\\'") + '\')">📤</button>' +
                 '</div>' +
             '</div>' +
         '</div>';
@@ -486,12 +547,19 @@ window.abrirModalDesafiarPiloto = function() {
     if (pilotos.length === 0) {
         lista.innerHTML = `<div style="color:var(--text-muted); font-size:0.78rem;">Nenhum outro piloto encontrado na base ainda.</div>`;
     } else {
-        lista.innerHTML = pilotos.map(nome => {
+        lista.innerHTML = `
+            <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+                <input type="text" id="convite-busca-piloto" class="config-input" placeholder="🔎 Buscar piloto..." style="flex:1;min-width:140px;font-size:0.78rem;" oninput="filtrarListaConviteDesafio()">
+                <label class="checkbox-item" style="font-size:0.72rem;white-space:nowrap;"><input type="checkbox" id="convite-so-com-conta" onchange="filtrarListaConviteDesafio()"> Só com conta</label>
+            </div>
+            <div id="convite-lista-vazia" style="display:none;color:var(--text-muted);font-size:0.78rem;">Nenhum piloto com esse filtro.</div>` +
+        pilotos.map(nome => {
             let temConta = !!uidDoPilotoDesafio(nome);
+            let rotulo = (typeof rotuloPilotoDesafio === 'function') ? rotuloPilotoDesafio(nome) : nome;
             return `
-                <label class="checkbox-item" style="display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--border-card); border-radius:8px; background:var(--bg-input); cursor:pointer;">
+                <label class="checkbox-item convite-item" data-nome="${escapeHtml(nome + ' ' + rotulo)}" data-conta="${temConta ? '1' : '0'}" style="display:flex; align-items:center; gap:8px; padding:6px 8px; border:1px solid var(--border-card); border-radius:8px; background:var(--bg-input); cursor:pointer;">
                     <input type="checkbox" class="convite-check" value="${escapeHtml(nome)}" style="width:16px; height:16px; accent-color:var(--accent-red);" onchange="atualizarHistoricoConfronto()">
-                    <span style="flex:1; font-size:0.82rem; color:var(--text-title);">${escapeHtml(nome)}</span>
+                    <span style="flex:1; font-size:0.82rem; color:var(--text-title);">${escapeHtml(rotulo)}</span>
                     ${temConta
                         ? `<span style="font-size:0.62rem; color:var(--accent-green); font-weight:700;">COM CONTA</span>`
                         : `<span style="font-size:0.62rem; color:var(--text-muted);">sem conta — não pode responder ainda</span>`}
@@ -862,16 +930,46 @@ function renderizarSecaoDesafiosMinhaConta() {
     `;
 }
 
-function compartilharDesafio(id) {
-    let d = desafiosCache[id];
+window.compartilharDesafio = function(id) {
+    let d = (typeof desafiosCache !== 'undefined' && desafiosCache) ? desafiosCache[id] : null;
     if (!d) return;
-    let texto = '⚔️ Desafio CTAD: ' + d.desafiante + ' vs ' + d.desafiados.join(', ') + ' - Formato: ' + (FORMATOS_DESAFIO[d.formato]?.nome || d.formato);
-    if (navigator.share) {
-        navigator.share({ title: 'Desafio CTAD', text: texto, url: window.location.href });
-    } else {
-        navigator.clipboard.writeText(texto + ' ' + window.location.href).then(() => alert('Link copiado!'));
+    let formato = (typeof FORMATOS_DESAFIO !== 'undefined' && FORMATOS_DESAFIO[d.formato]) ? FORMATOS_DESAFIO[d.formato] : { nome: d.formato, icone: '⚔️' };
+    let texto = `⚔️ *Desafio CTAD* ${formato.icone || ''}\n${d.desafiante} vs ${(d.desafiados || []).join(', ')}\nFormato: *${formato.nome}*`;
+    if (d.status === 'decidido' && d.vencedor) {
+        texto += `\n\n🏆 Vencedor: *${d.vencedor}*${d.wo ? ' (W.O.)' : ''}`;
+        if (d.eloDepois && typeof d.eloDepois === 'object') {
+            let linhas = Object.keys(d.eloDepois).map(p => `• ${p}: ${d.eloAntes && d.eloAntes[p] !== undefined ? d.eloAntes[p] + ' ➔ ' : ''}${d.eloDepois[p]}`);
+            if (linhas.length) texto += `\n\n📊 ELO:\n${linhas.join('\n')}`;
+        }
+    } else if (d.status === 'aguardando') {
+        texto += `\n\n⏳ Aguardando o primeiro encontro na pista!`;
     }
-}
+    texto += `\n\n🔎 ${window.location.href.split('#')[0]}`;
+    if (typeof compartilharWhatsApp === 'function') compartilharWhatsApp(texto);
+    else if (navigator.share) { try { navigator.share({ title: 'Desafio CTAD', text: texto }); } catch (e) {} }
+    else if (navigator.clipboard) navigator.clipboard.writeText(texto).then(() => alert('Copiado! Cole no WhatsApp.'));
+};
+
+// Monta o texto do convite com os pilotos selecionados e abre o WhatsApp (sem enviar pelo site).
+window.convidarDesafioWhatsApp = function() {
+    if (typeof pilotoVinculadoAoUsuario === 'undefined' || !pilotoVinculadoAoUsuario) {
+        alert('Entre em "Minha Conta" (com cadastro aprovado) pra desafiar outros pilotos.');
+        return;
+    }
+    let selecionados = Array.from(document.querySelectorAll('.convite-check:checked'))
+        .map(cb => cb.value)
+        .filter(n => n && n !== pilotoVinculadoAoUsuario);
+    if (selecionados.length === 0) { alert('Selecione pelo menos um piloto pra desafiar.'); return; }
+    let formatoEl = document.querySelector('.formato-opcao.selected');
+    let formatoKey = formatoEl ? formatoEl.dataset.formato : 'duelo';
+    let formato = (typeof FORMATOS_DESAFIO !== 'undefined' && FORMATOS_DESAFIO[formatoKey]) ? FORMATOS_DESAFIO[formatoKey] : { nome: formatoKey };
+    let mensagem = (document.getElementById('convite-mensagem')?.value || '').trim();
+    let texto = `⚔️ *${pilotoVinculadoAoUsuario} te desafiou!*\n\nAdversário(s): ${selecionados.join(', ')}\nFormato: *${formato.nome}*`;
+    if (mensagem) texto += `\n💬 "${mensagem}"`;
+    texto += `\n\nResponda em Minha Conta:\n🔎 ${window.location.href.split('#')[0]}`;
+    if (typeof compartilharWhatsApp === 'function') compartilharWhatsApp(texto);
+    else window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener,noreferrer');
+};
 
 // ===== Sugestão de Equipes =====
 

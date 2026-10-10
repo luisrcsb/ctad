@@ -63,6 +63,7 @@
         .header { display: flex; flex-direction: column; background: var(--bg-card); padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border-card); gap: 10px; }
         .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; width: 100%; }
         .brand-title h1 { font-size: 1.3rem; color: var(--text-title); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .brand-subtitle { font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.5px; margin-top: 2px; }
         .pista-display-banner { text-align: center; font-size: 0.9rem; color: var(--accent-gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: var(--bg-input); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-card); width: 100%; }
 
         .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }

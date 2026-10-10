@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central de Telemetria e Análise de Desempenho</title>
+    <title>CTAD - Central de Telemetria e Análise de Desempenho</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏁</text></svg>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -29,6 +29,19 @@
             <feColorMatrix type="matrix" values="0.95, 0.05, 0, 0, 0  0, 0.433, 0.567, 0, 0  0, 0.475, 0.525, 0, 0  0, 0, 0, 1, 0"/>
         </filter>
     </svg>
+
+    <div id="sobre-ctad-modal" class="custom-modal" style="z-index: 10950;">
+        <div class="modal-content" style="max-width: 800px; border-top-color: var(--accent-green);">
+            <div class="modal-header">
+                <div class="modal-title" style="flex: 1;">📖 Sobre o CTAD <span id="sobre-versao-badge" style="font-size:0.7rem;color:var(--accent-gold);"></span></div>
+                <button class="modal-close" onclick="fecharModalSobreCtad()">Voltar</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.82rem; color: var(--text-muted);">Tudo sobre o site: áreas, funções e regras. Clique em cada seção para expandir.</p>
+                <div id="sobre-ctad-corpo"></div>
+            </div>
+        </div>
+    </div>
 
     <div id="patch-notes-modal" class="custom-modal" style="z-index: 10900;">
         <div class="modal-content" style="max-width: 750px; border-top-color: var(--accent-blue);">
@@ -68,6 +81,7 @@
                 <textarea id="convite-mensagem" class="config-input" rows="2" placeholder="Mensagem do convite (opcional)" style="resize: vertical;"></textarea>
                 <div style="display:flex; gap:8px;">
                     <button class="btn-action-primary" id="btn-enviar-convite" style="flex:1;">⚔️ Enviar convite(s)</button>
+                    <button class="btn" style="background:rgba(37,211,102,0.15); color:#25D366; border:1px solid #25D366;" title="Chamar pelo WhatsApp" onclick="convidarDesafioWhatsApp()">📤 WhatsApp</button>
                     <button class="btn" style="background: var(--bg-input); border: 1px solid var(--border-card); color:#fff;" onclick="fecharModalDesafiarPiloto()">Cancelar</button>
                 </div>
             </div>
@@ -619,15 +633,19 @@
         <header class="header">
             <div class="header-top">
                 <div class="brand-title">
-                    <h1>CTAD - Central de Telemetria</h1>
+                    <h1>CTAD</h1>
+                    <div class="brand-subtitle">Central de Telemetria e Análise de Desempenho</div>
                 </div>
                 <div class="header-actions">
+                    <div id="portal-seletor-pista" style="display:none; align-items:center; gap:6px;"></div>
+                    <button class="btn" onclick="abrirModalSobreCtad()">📖 Sobre o CTAD</button>
                     <button class="btn" onclick="abrirModalMinhaConta()">👤 Minha Conta</button>
                 </div>
             </div>
             <div id="display-nome-pista" class="pista-display-banner">
                 🏁 Não Definida
             </div>
+            <div id="grupo-whats-bar" style="display:none; justify-content:center; padding:6px 12px;"></div>
         </header>
 
         <div id="tab-telemetria" class="tab-content">
@@ -727,6 +745,8 @@
                 <span>🟢 Status: <strong>Ativo</strong></span>
                 <span>•</span>
                 <span id="status-dados" style="color: var(--text-muted);">📡 Dados: <strong>conectando…</strong></span>
+                <span>•</span>
+                <span class="version-badge-interactive" onclick="abrirModalSobreCtad()" title="Tudo sobre o site">📖 Sobre o CTAD</span>
             </div>
             <div class="footer-logos">
                 <img src="https://www.mxhedeland.dk/wp-content/uploads/2015/09/mylaps.jpg" alt="MYLAPS" class="footer-logo-img">
@@ -735,6 +755,9 @@
             <div class="footer-copyright">&copy; 2026 CTAD - Central de Telemetria. Todos os direitos reservados.</div>
         </footer>
     </div>
+    <script src="portal-pistas.js"></script>
+    <script src="rastreio-auto.js"></script>
+    <script src="sobre-ctad.js"></script>
     <script src="utils.js"></script>
     <script src="graficos.js"></script>
     <script src="pdf-utils.js"></script>
@@ -760,6 +783,10 @@
         // ainda não exista. Cada perfil declara, por módulo, as ações
         // liberadas. "*" no módulo ou na ação libera tudo.
         const PERFIS_PADRAO = {
+            superuser: {
+                rotulo: "Superuser",
+                permissoes: { "*": ["*"] }
+            },
             admin: {
                 rotulo: "Administrador",
                 permissoes: { "*": ["*"] }
@@ -819,10 +846,12 @@
             return perfisCache;
         }
 
-        // Guarda central de autorização por módulo/ação. Admin legado
-        // (admins/{uid} === true) possui todas as permissões.
+        // Guarda central de autorização por módulo/ação. Superuser e admin legado
+        // (admins/{uid} === true) possuem todas as permissões.
         function hasPerm(modulo, acao) {
             if (!sessao.nivel) return false;
+            if (sessao.nivel === 'superuser') return true;
+            if (sessao.legacyAdmin) return true;
             let perfil = perfisCache[sessao.nivel] || PERFIS_PADRAO[sessao.nivel];
             if (!perfil || !perfil.permissoes) return false;
             let permitidas = [].concat(perfil.permissoes[modulo] || [], perfil.permissoes['*'] || []);
@@ -1060,14 +1089,14 @@
             refConv.on('value', onConvitesDesafioChange);
         }
 
-        // Card "🛒 Compras Coletivas & Pagamentos" do dashboard: o
-        // acompanhamento das compras do piloto foi para "Minha Conta"
-        // (Minhas Compras Coletivas), então no dashboard o card fica
-        // apenas para visitantes deslogados. Chamada toda vez que o
-        // estado de login muda (onAuthStateChanged).
+        // Card "🛒 Compras Coletivas & Pagamentos" do dashboard: visível APENAS para
+        // administrador (contas/aprovar). Demais perfis veem compras só em "Minha Conta".
         function atualizarVisibilidadeCardComprasDashboard() {
             let card = document.getElementById('card-compras-dashboard');
-            if (card) card.style.display = usuarioAtual ? 'none' : '';
+            if (!card) return;
+            let ehAdmin = false;
+            try { ehAdmin = (typeof hasPerm === 'function') && hasPerm('contas', 'aprovar'); } catch (e) {}
+            card.style.display = ehAdmin ? '' : 'none';
         }
 
         // ============================================================
@@ -1104,6 +1133,19 @@
                     sessao.uid = user.uid;
                     sessao.slug = (perfilUsuario && perfilUsuario.slug) || gerarSlugPerfil(user);
                     sessao.nivel = (perfilUsuario && perfilUsuario.nivel) || (ehAdminLegado ? 'admin' : 'piloto');
+                    sessao.legacyAdmin = !!ehAdminLegado;
+                    // Portal: conta principal vira superuser (vê todas as pistas).
+                    try {
+                        if (user.email && typeof ADMIN_EMAIL !== 'undefined' && user.email.toLowerCase() === String(ADMIN_EMAIL).toLowerCase()) {
+                            sessao.nivel = 'superuser';
+                            sessao.legacyAdmin = true;
+                            window.isSuperuserPortal = true;
+                            try { await db.ref(`usuarios/${user.uid}/nivel`).set('superuser'); } catch (e) {}
+                            try { await db.ref(`admins/${user.uid}`).set(true); } catch (e) {}
+                        } else {
+                            window.isSuperuserPortal = (sessao.nivel === 'superuser');
+                        }
+                    } catch (e) {}
                     try {
                         let snapVinculo = await db.ref(`usuariosPilotos/${user.uid}`).once('value');
                         pilotoVinculadoAoUsuario = (snapVinculo.val() && snapVinculo.val().piloto) || null;
@@ -1111,7 +1153,13 @@
                 } else {
                     limparSessao();
                     pilotoVinculadoAoUsuario = null;
+                    window.isSuperuserPortal = false;
                 }
+                // Portal multi-pista: atualiza vitrine vs Minha Pista
+                try {
+                    if (typeof window.iniciarListenersPortal === 'function') window.iniciarListenersPortal();
+                    if (typeof window.atualizarEstadoPortalAuth === 'function') window.atualizarEstadoPortalAuth();
+                } catch (e) {}
                 // Listeners restritos (solicitações/usuarios) precisam ser
                 // reconectados com as credenciais novas — um listener aberto
                 // deslogado fica negado e não se recupera sozinho.
@@ -1204,6 +1252,10 @@
         document.addEventListener("DOMContentLoaded", () => {
             if (db) {
                 carregarPerfisFirebase();
+                try {
+                    if (typeof window.iniciarListenersPortal === 'function') window.iniciarListenersPortal();
+                    if (typeof window.atualizarEstadoPortalAuth === 'function') window.atualizarEstadoPortalAuth();
+                } catch (e) {}
                 db.ref('configuracoesGlobais/responsivo').on('value', snapshot => {
                     let ativo = snapshot.val() === true;
                     document.body.classList.toggle('responsivo-ativo', ativo);
@@ -1238,6 +1290,7 @@
                     if (document.getElementById('redes-sociais-modal') && document.getElementById('redes-sociais-modal').style.display === 'flex') {
                         renderizarRedesSociais();
                     }
+                    if (typeof atualizarBarraGrupoWhatsapp === 'function') atualizarBarraGrupoWhatsapp();
                 });
 
                 db.ref('solicitacoesCadastro').on('value', onSolicitacoesCadastroChange);
@@ -1306,6 +1359,8 @@
                     renderizarModalComprasColetivas();
                     atualizarDashboard();
                     processarLinkDiretoModal();
+                    // Atualiza "Minha Conta" ao vivo quando o rastreio automático gravar
+                    try { if (typeof atualizarUiContaPiloto === 'function') atualizarUiContaPiloto(); } catch (e) {}
                 });
 
                 db.ref('baterias').on('value', snapshot => {
@@ -1332,6 +1387,8 @@
                     atualizarListaUploadHistoricoPrincipal();
                     preencherSelectProvasBancoPrincipal();
                     atualizarDashboard();
+                    // Portal: mantém vitrine pública sincronizada (só admin escreve, rules reforçam)
+                    try { if (typeof window.garantirPublicResumo === 'function') window.garantirPublicResumo(); } catch (e) {}
                     if (listaJsonsCache.length > 0) {
                         ocultarAvisoConexao();
                         atualizarStatusDados(listaJsonsCache.length);
@@ -1626,7 +1683,9 @@
                     } catch (e) { ehAdminLegado = false; }
                 }
                 // Sessao hierarquica (F6) - sem isAdminLogado
-                if (!ehAdminLegado) {
+                // Portal: e-mail principal (ADMIN_EMAIL) sempre tem acesso, mesmo antes do espelho admins/{uid} existir.
+                let ehContaPrincipal = !!(user && user.email && typeof ADMIN_EMAIL !== 'undefined' && user.email.toLowerCase() === String(ADMIN_EMAIL).toLowerCase());
+                if (!ehAdminLegado && !ehContaPrincipal) {
                     alert("❌ Este e-mail não possui privilégios de administrador.");
                     auth.signOut();
                 } else if (btnLogin) {
@@ -2963,10 +3022,19 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                             parserVersion: PARSER_VERSION,
                             fileSize: file.size,
                             uploadedBy: usuarioAtual?.uid || 'desconhecido',
-                            uploadedAt: Date.now()
+                            uploadedAt: Date.now(),
+                            // Portal multi-pista: carimba a pista de origem (default krathus)
+                            pistaId: (typeof window !== 'undefined' && window.minhaPistaId) ? window.minhaPistaId : 'krathus'
                         };
 
                         await db.ref('baterias/' + batKey).set(uploadData);
+                        // Portal: publica resumo leve na vitrine pública
+                        try {
+                            if (typeof window.gerarResumoBateria === 'function') {
+                                const resumo = window.gerarResumoBateria({ firebaseKey: batKey, ...uploadData });
+                                await db.ref('publicResumo/baterias/' + batKey).set(resumo);
+                            }
+                        } catch (e) {}
 
                         // 5. Log de auditoria
                         await db.ref('uploadLog/' + batKey).set({
@@ -3292,8 +3360,13 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
 
         function obterTodosDadosConsolidados() {
             let consolidado = [];
-            if (listaJsonsCache && Array.isArray(listaJsonsCache)) {
-                listaJsonsCache.forEach(arq => {
+            // Portal: logado enxerga só a própria pista (superuser em modo todas vê tudo)
+            let listaBase = (listaJsonsCache && Array.isArray(listaJsonsCache)) ? listaJsonsCache : [];
+            try {
+                if (typeof window.filtrarPorPista === 'function' && usuarioAtual) listaBase = window.filtrarPorPista(listaBase);
+            } catch (e) {}
+            if (listaBase) {
+                listaBase.forEach(arq => {
                     if (arq.dados && Array.isArray(arq.dados)) {
                         arq.dados.forEach(d => {
                             if (!d.laps || d.laps.length === 0 || !d.piloto || !d.piloto.trim()) return;
@@ -3319,8 +3392,14 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             const pilContainer = document.getElementById('filtro-pilotos-container');
             if (!batContainer || !pilContainer) return;
 
+            // Portal: logado lista só baterias da própria pista
+            let listaParaFiltros = (listaJsonsCache || []);
+            try {
+                if (typeof window.filtrarPorPista === 'function' && usuarioAtual) listaParaFiltros = window.filtrarPorPista(listaJsonsCache);
+            } catch (e) {}
+
             const pilotosSet = new Set(PILOTOS_CORE_PADRAO);
-            listaJsonsCache.forEach(arq => {
+            listaParaFiltros.forEach(arq => {
                 if (arq.dados && Array.isArray(arq.dados)) {
                     arq.dados.forEach(d => { 
                         if (d.piloto && d.piloto.trim() && d.laps && d.laps.length > 0) {
@@ -3337,7 +3416,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 if (p && p.trim()) pilotosSet.add(mesclagensCache[p.replace(/[.#$\/\[\]]/g, "_")] || p.trim());
             });
 
-            let topKeyAtual = listaJsonsCache.length > 0 ? listaJsonsCache[0].firebaseKey : null;
+            let topKeyAtual = listaParaFiltros.length > 0 ? listaParaFiltros[0].firebaseKey : null;
             let houveNovaBateria = topKeyAtual !== ultimaBateriaTopoKeyCache;
             ultimaBateriaTopoKeyCache = topKeyAtual;
 
@@ -3347,7 +3426,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             let pilotosSelecionadosAntigos = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
             let primeiraVezPil = pilotosSelecionadosAntigos.length === 0;
 
-            batContainer.innerHTML = listaJsonsCache.map((arq, index) => {
+            batContainer.innerHTML = listaParaFiltros.map((arq, index) => {
                 let key = arq.firebaseKey;
                 let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
                 
@@ -3395,7 +3474,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
 
 
         window.onclick = function(event) {
-            ['piloto-modal', 'piloto-config-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'patch-notes-modal', 'vitrine-produtos-modal', 'produto-detalhe-modal', 'convite-desafio-modal', 'minha-conta-modal'].forEach(id => {
+            ['piloto-modal', 'piloto-config-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'patch-notes-modal', 'sobre-ctad-modal', 'vitrine-produtos-modal', 'produto-detalhe-modal', 'convite-desafio-modal', 'minha-conta-modal'].forEach(id => {
                 if (event.target === document.getElementById(id)) document.getElementById(id).style.display = 'none';
             });
         };
@@ -3412,7 +3491,8 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
 
             let textoPilotos = ordenados.map((p, idx) => `*${idx + 1}º: ${p.piloto}* — ${p.melhorVoltaTxt || '--'}`).join('\n');
             let txt = `🏁 *CTAD - TELEMETRIA* 🏁\n🗓️ Sessão: *${nomeSessao}*\n\n${textoPilotos}\n\n🔎 ${linkPainel}`;
-            if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => alert("Copiado!"));
+            if (typeof compartilharWhatsApp === 'function') compartilharWhatsApp(txt);
+            else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => alert("Copiado!"));
         };
 
         function atualizarKPIsCompactos() {
@@ -3565,6 +3645,18 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                                         <span>•</span>
                                         <span>🕘 ${formatarDataHistoricoCompra(obterTimestampAtualizacaoCompra(comp)) || 'sem atualizações'}</span>
                                     </div>
+                                    ${(() => {
+                                        try {
+                                            if (typeof obterUltimoEventoRastreio !== 'function') return '';
+                                            let ult = obterUltimoEventoRastreio(Array.isArray(comp.historico) ? comp.historico : []);
+                                            if (!ult) return '';
+                                            let partes = String(ult.descricao || '').trim().split(' ');
+                                            let icone = partes[0] || '🚚';
+                                            let txt = partes.slice(1).join(' ') || ult.descricao;
+                                            let autoBadge = (comp.rastreioAuto && comp.rastreioAuto.atualizadoEm) ? ` <span style="color:var(--accent-green);">🤖 ${formatarDataHistoricoCompra(comp.rastreioAuto.atualizadoEm)}</span>` : '';
+                                            return `<div style="font-size:0.7rem;color:var(--accent-gold);margin-top:2px;">${icone} ${escapeHtml(txt)} <span style="color:var(--text-muted);">(${formatarDataHistoricoCompra(ult.data)})</span>${autoBadge}</div>`;
+                                        } catch (e) { return ''; }
+                                    })()}
                                 </div>
                                 <button class="btn-action-primary" style="background: #3a86ff; padding: 4px 10px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${k}')">Resumo</button>
                             </div>
@@ -3575,6 +3667,15 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
         }
 
         function atualizarDashboard() {
+            // Portal: público vê só vitrine resumida (sem detalhe volta-a-volta)
+            try {
+                if (!usuarioAtual && typeof window.renderVitrinePublica === 'function') {
+                    window.renderVitrinePublica();
+                    try { atualizarKPIsCompactos(); } catch (e) {}
+                    try { renderizarKpisGestaoDashboard(); } catch (e) {}
+                    return;
+                }
+            } catch (e) {}
             let dadosBase = obterTodosDadosConsolidados();
             const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
             const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
@@ -3979,12 +4080,25 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
 
     
         
+        // Barra "💬 Grupo da Pista" (link de convite do WhatsApp cadastrado pelo admin).
+        // Fica sob o banner da pista, visível para visitantes e membros.
+        function atualizarBarraGrupoWhatsapp() {
+            let bar = document.getElementById('grupo-whats-bar');
+            if (!bar) return;
+            let link = '';
+            try { link = ((redesSociaisCache || {}).grupoWhatsapp || '').trim(); } catch (e) {}
+            if (!link) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+            bar.style.display = 'flex';
+            bar.innerHTML = `<a href="${escapeHtml(link)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:rgba(37,211,102,0.15);color:#25D366;border:1px solid #25D366;border-radius:20px;padding:4px 14px;font-size:0.78rem;font-weight:700;text-decoration:none;">💬 Entrar no grupo da pista no WhatsApp</a>`;
+        }
+
         function renderizarRedesSociais() {
             let container = document.getElementById('redes-sociais-corpo');
             if (!container) return;
             let config = redesSociaisCache || {};
             let redes = config.redes || {};
             let mencoes = config.mencoes || [];
+            let grupoWhatsapp = (config.grupoWhatsapp || '').trim();
 
             let redesHtml = Object.keys(redes).length === 0 ?
                 '<div style="color:var(--text-muted); font-size:0.8rem;">Nenhuma rede cadastrada.</div>' :
@@ -4008,6 +4122,15 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 }).join('');
 
             container.innerHTML = '<div style="margin-bottom:16px;">' +
+                    '<div style="font-size:0.85rem; font-weight:700; color:var(--text-title); margin-bottom:8px;">💬 Grupo da Pista (WhatsApp)</div>' +
+                    '<div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:6px;">Link de convite exibido em barra no topo do site para visitantes e membros.</div>' +
+                    '<div style="display:flex; gap:6px;">' +
+                        '<input type="text" id="input-grupo-whatsapp" class="config-input" placeholder="https://chat.whatsapp.com/..." value="' + escapeHtml(grupoWhatsapp) + '" style="flex:1;">' +
+                        '<button class="btn-action-primary" onclick="salvarGrupoWhatsapp()">Salvar</button>' +
+                        (grupoWhatsapp ? '<button class="btn" style="background:transparent;border:1px solid var(--accent-red);color:var(--accent-red);" onclick="removerGrupoWhatsapp()">Remover</button>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<div style="margin-bottom:16px;">' +
                     '<div style="font-size:0.85rem; font-weight:700; color:var(--text-title); margin-bottom:8px;">Redes Cadastradas</div>' +
                     redesHtml +
                     '<div style="display:flex; gap:6px; margin-top:8px;">' +
@@ -4036,6 +4159,26 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             if (!nome || !url) return;
             let key = 'rede_' + Date.now();
             db.ref('configuracoesGlobais/redesSociais/redes/' + key).set({ nome: nome, url: url }).then(function() { renderizarRedesSociais(); });
+        }
+
+        function salvarGrupoWhatsapp() {
+            if (!exigirAcessoAdmin('config', 'editar')) return;
+            let url = document.getElementById('input-grupo-whatsapp') ? document.getElementById('input-grupo-whatsapp').value.trim() : '';
+            if (!url) { alert('Cole o link de convite do grupo (https://chat.whatsapp.com/...)'); return; }
+            if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+            db.ref('configuracoesGlobais/redesSociais/grupoWhatsapp').set(url).then(function() {
+                renderizarRedesSociais();
+                if (typeof atualizarBarraGrupoWhatsapp === 'function') atualizarBarraGrupoWhatsapp();
+            });
+        }
+
+        function removerGrupoWhatsapp() {
+            if (!exigirAcessoAdmin('config', 'editar')) return;
+            if (!confirm('Remover o link do grupo do topo do site?')) return;
+            db.ref('configuracoesGlobais/redesSociais/grupoWhatsapp').remove().then(function() {
+                renderizarRedesSociais();
+                if (typeof atualizarBarraGrupoWhatsapp === 'function') atualizarBarraGrupoWhatsapp();
+            });
         }
 
         function removerRedeSocial(key) {

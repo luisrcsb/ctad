@@ -21,6 +21,21 @@ export const ALIAS_EDGARD_DJ_DEFAULTS = {
 };
 
 export function setDb(val) { db = val; }
+export const PISTA_PADRAO = "krathus";
+
+export let pistaAtivaId = PISTA_PADRAO;
+export let minhasPistas = [];
+export let modoPortal = "vitrine"; // vitrine | pista | todas
+export function setPistaAtivaId(v) { pistaAtivaId = v || PISTA_PADRAO; }
+export function setMinhasPistas(v) { minhasPistas = v || []; }
+export function setModoPortal(v) { modoPortal = v || "vitrine"; }
+export function refPista(path) {
+    return (db ? db.ref('pistas/' + pistaAtivaId + '/' + path) : null);
+}
+export function getPistaIdDeRegistro(reg) {
+    if (!reg) return PISTA_PADRAO;
+    return reg.pistaId || reg.pista || PISTA_PADRAO;
+}
 export function setListaJsonsCache(val) { listaJsonsCache = val; }
 export function setCampeonatosCache(val) { campeonatosCache = val; }
 export function setComprasColetivasCache(val) { comprasColetivasCache = val; }

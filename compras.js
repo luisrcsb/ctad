@@ -7,18 +7,63 @@
         // Retorna o timestamp de referência pra ordenar as compras: usa a última
         // atualização registrada (status, pagamento, rastreio...) e cai para a
         // data de criação em compras antigas que ainda não têm esse campo.
-        function obterTimestampAtualizacaoCompra(comp) {
-            return Number(comp && comp.ultimaAtualizacao) || Number(comp && comp.criadoEm) || 0;
+        // Último fallback: número embutido na chave (compra_123456789 / cc_123456789).
+        function obterTimestampAtualizacaoCompra(comp, chave) {
+            let ts = Number(comp && comp.ultimaAtualizacao) || Number(comp && comp.criadoEm) || 0;
+            if (!ts && chave) {
+                let m = String(chave).match(/(\d{10,15})\s*$/);
+                if (m) ts = Number(m[1]);
+            }
+            return ts;
         }
 
-        // Ordena uma lista de chaves de comprasColetivasCache da atualização
-        // mais recente para a mais antiga. Usada tanto na Gestão (admin)
-        // quanto na área pública do dashboard, pra manter a mesma ordem nos dois lugares.
+        // Ordena uma lista de chaves de comprasColetivasCache: 📌 fixadas primeiro
+        // (pela posição manual), depois as demais pela atualização mais recente.
+        // Usada na Gestão, dashboard e Minha Conta — mesma ordem em todo lugar.
         function ordenarChavesComprasPorAtualizacao(chaves) {
-            return chaves.slice().sort((a, b) =>
-                obterTimestampAtualizacaoCompra(comprasColetivasCache[b]) - obterTimestampAtualizacaoCompra(comprasColetivasCache[a])
-            );
+            return chaves.slice().sort((a, b) => {
+                let ca = comprasColetivasCache[a], cb = comprasColetivasCache[b];
+                let fa = !!(ca && ca.fixada), fb = !!(cb && cb.fixada);
+                if (fa !== fb) return fa ? -1 : 1;
+                if (fa && fb) return Number(ca.posicao || 0) - Number(cb.posicao || 0);
+                return obterTimestampAtualizacaoCompra(cb, b) - obterTimestampAtualizacaoCompra(ca, a);
+            });
         }
+
+        // Fixa/desafixa compra no topo (admin). Fixadas obedecem à ordem manual (⬆⬇).
+        window.alternarFixarCompra = async function (compraKey) {
+            if (!exigirAcessoAdmin('compras', 'gerenciar')) return;
+            if (!db) return;
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp) return;
+            if (comp.fixada) {
+                await db.ref(`comprasColetivas/${compraKey}`).update({ fixada: false, posicao: null });
+            } else {
+                let fixadas = Object.values(comprasColetivasCache).filter(c => c && c.fixada);
+                let minPos = fixadas.length ? Math.min.apply(null, fixadas.map(c => Number(c.posicao) || 0)) : 0;
+                await db.ref(`comprasColetivas/${compraKey}`).update({ fixada: true, posicao: minPos - 1 });
+            }
+            renderizarModalComprasColetivas();
+        };
+
+        // Move compra fixada para cima/baixo na ordem manual (admin).
+        window.moverCompraFixa = async function (compraKey, dir) {
+            if (!exigirAcessoAdmin('compras', 'gerenciar')) return;
+            if (!db) return;
+            let ordem = ordenarChavesComprasPorAtualizacao(Object.keys(comprasColetivasCache))
+                .filter(k => comprasColetivasCache[k] && comprasColetivasCache[k].fixada);
+            let i = ordem.indexOf(compraKey);
+            let j = i + (dir === 'cima' ? -1 : 1);
+            if (i < 0 || j < 0 || j >= ordem.length) return;
+            let a = ordem[i], b = ordem[j];
+            let pa = Number(comprasColetivasCache[a].posicao) || 0;
+            let pb = Number(comprasColetivasCache[b].posicao) || 0;
+            let updates = {};
+            updates[`comprasColetivas/${a}/posicao`] = pb;
+            updates[`comprasColetivas/${b}/posicao`] = pa;
+            await db.ref().update(updates);
+            renderizarModalComprasColetivas();
+        };
 
         // Registra uma entrada no histórico de uma compra (mudança de status,
         // pagamento confirmado, rastreio atualizado etc). "dataCustom" (timestamp
@@ -44,24 +89,203 @@
         // Monta a linha do tempo visual (estilo rastreador de encomendas) a partir
         // do array de histórico de uma compra. Reaproveitada tanto nos cards da
         // Gestão de Compras quanto no modal de Resumo.
-        function renderizarHistoricoTimelineHtml(historico, limite) {
+        function renderizarHistoricoTimelineHtml(historico, limite, compraKey, opts) {
             if (!historico || historico.length === 0) {
                 return `<div style="font-size: 0.72rem; color: var(--text-muted); padding: 4px 0;">Nenhuma atualização registrada ainda.</div>`;
             }
-            let itens = historico.slice(0, limite || historico.length).map(h => {
+            let compacto = !!(opts && opts.compacto);
+            let podeExcluir = false;
+            try { podeExcluir = !compacto && ((typeof hasPerm === 'function') ? hasPerm('compras', 'gerenciar') : true); } catch (e) { podeExcluir = !compacto; }
+            let lista = historico.slice(0, limite || historico.length);
+            let podeEditar = false;
+            try { podeEditar = !!(compraKey && typeof hasPerm === 'function' && hasPerm('compras', 'gerenciar')); } catch (e) { podeEditar = !!compraKey; }
+            let itens = lista.map((h, i) => {
                 let palavras = (h.descricao || '').trim().split(' ');
                 let icone = palavras[0] || '🔔';
                 let textoSemIcone = palavras.slice(1).join(' ') || h.descricao || '';
+                if (compacto) {
+                    let botoes = podeEditar ? ` <button class="btn-text-action" style="font-size:0.65rem;" onclick="editarEventoHistoricoCompra('${compraKey}', ${i})" title="Editar">✏️</button><button class="btn-text-action" style="color:var(--accent-red);font-size:0.65rem;" onclick="excluirEventoHistoricoCompra('${compraKey}', ${i})" title="Excluir">✖</button>` : '';
+                    return `<div style="font-size:0.72rem;padding:3px 0;border-bottom:1px dashed var(--border-card);">${icone} ${escapeHtml(textoSemIcone)} <span style="color:var(--text-muted);">(${formatarDataHistoricoCompra(h.data)})</span>${botoes}</div>`;
+                }
                 let classeTipo = `tipo-${h.tipo || 'status'}`;
+                let btnDel = (podeExcluir && compraKey) ? `<button class="btn-text-action" style="font-size:0.65rem;" onclick="editarEventoHistoricoCompra('${compraKey}', ${i})" title="Editar evento">✏️</button><button class="btn-text-action" style="color:var(--accent-red);font-size:0.65rem;" onclick="excluirEventoHistoricoCompra('${compraKey}', ${i})" title="Excluir evento">✖</button>` : '';
                 return `
                     <div class="historico-timeline-item">
                         <div class="historico-timeline-icone ${classeTipo}">${icone}</div>
                         <div class="historico-timeline-data">${formatarDataHistoricoCompra(h.data)}</div>
-                        <div class="historico-timeline-texto">${escapeHtml(textoSemIcone)}</div>
+                        <div class="historico-timeline-texto">${escapeHtml(textoSemIcone)} ${btnDel}</div>
                     </div>`;
             }).join('');
-            return `<div class="historico-timeline">${itens}</div>`;
+            let resto = historico.length - lista.length;
+            let maisHtml = (compacto && resto > 0) ? `<div style="font-size:0.68rem;color:var(--text-muted);padding-top:4px;">+${resto} anteriores (ver na gestão)</div>` : '';
+            let barra = compacto ? '' : barraProgressoRastreioHtml(historico);
+            let corpo = compacto ? `<div>${itens}</div>${maisHtml}` : `<div class="historico-timeline">${itens}</div>`;
+            return barra + corpo;
         }
+
+        // ===== RASTREIO 2.0: detecção de transportadora + multi-códigos =====
+        // Detecta a transportadora pelo formato do código e devolve nome + URL de consulta.
+        // Sem API externa: só monta o link correto (Correios, 17track universal, etc).
+        function detectarTransportadora(codigo) {
+            let c = String(codigo || '').trim().toUpperCase();
+            if (/^[A-Z]{2}\d{9}BR$/.test(c)) return { nome: 'Correios', url: 'https://rastreamento.correios.com.br/app/index.php?objetos=' + encodeURIComponent(c) };
+            if (/^BR\d{12,}$/.test(c) || /^SPX[A-Z0-9]+$/.test(c)) return { nome: 'Shopee / SPX', url: 'https://17track.net/pt#nums=' + encodeURIComponent(c) };
+            if (/^\d{12,20}$/.test(c)) return { nome: 'Mercado Livre / Transportadora', url: 'https://17track.net/pt#nums=' + encodeURIComponent(c) };
+            if (/^JAD[A-Z0-9]+$/i.test(c)) return { nome: 'Jadlog', url: 'https://www.jadlog.com.br/siteInstitucional/tracking.jad?cte=' + encodeURIComponent(c) };
+            if (/^[A-Z0-9]{10,40}$/.test(c)) return { nome: 'Rastreio universal', url: 'https://17track.net/pt#nums=' + encodeURIComponent(c) };
+            return { nome: 'Rastreio', url: 'https://17track.net/pt#nums=' + encodeURIComponent(c) };
+        }
+
+        function urlRastreioUniversal(codigo) {
+            return detectarTransportadora(codigo).url;
+        }
+
+        // Compat: campo antigo comp.rastreio (string) + novo comp.rastreios (array).
+        // Códigos reais nunca contêm espaço — textos colados por engano (ex: mensagens
+        // de erro) são descartados para não virarem botão nem consumirem cota da API.
+        function codigoRastreioValido(s) {
+            s = String(s || '').trim();
+            return s && !/\s/.test(s) && s.length <= 50 ? s : null;
+        }
+        function normalizarRastreios(comp) {
+            if (Array.isArray(comp.rastreios) && comp.rastreios.length) {
+                return comp.rastreios.map(codigoRastreioValido).filter(Boolean);
+            }
+            if (comp.rastreio && String(comp.rastreio).trim()) {
+                // Múltiplos códigos separados por vírgula/ponto-e-vírgula (NÃO por espaço,
+                // pois código real nunca tem espaço e texto colado por engano deve cair fora)
+                return String(comp.rastreio).split(/[,;\n]+/).map(codigoRastreioValido).filter(Boolean);
+            }
+            return [];
+        }
+
+        window.copiarCodigoRastreio = function (codigo) {
+            if (!codigo) return;
+            let done = () => { try { alert('Código copiado: ' + codigo); } catch (e) {} };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(codigo).then(done).catch(() => { prompt('Copie o código:', codigo); });
+            else prompt('Copie o código:', codigo);
+        };
+
+        window.abrirRastreioCodigo = function (codigo) {
+            if (!codigo) return;
+            window.open(urlRastreioUniversal(codigo), '_blank');
+        };
+
+        // Modo sem chave: abre o rastreio EMBUTIDO no modal (iframe 17track) + fallbacks.
+        // Teste: clique em "👁️ Ver aqui" em qualquer código — não precisa de chave nem deploy de rules.
+        window.abrirRastreioEmbutido = function (codigo) {
+            if (!codigo) { alert('Sem código de rastreio'); return; }
+            codigo = String(codigo).trim();
+            let overlay = document.getElementById('rastreio-embutido-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'rastreio-embutido-overlay';
+                overlay.style.cssText = 'position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;padding:16px;';
+                overlay.onclick = function (e) { if (e.target === overlay) overlay.style.display = 'none'; };
+                document.body.appendChild(overlay);
+            }
+            const url17 = 'https://t.17track.net#nums=' + encodeURIComponent(codigo);
+            const urlCorreios = 'https://rastreamento.correios.com.br/app/index.php?objetos=' + encodeURIComponent(codigo);
+            overlay.innerHTML = `
+                <div style="background:var(--bg-card,#131b2e);border:1px solid var(--border-card,#223);border-radius:12px;max-width:900px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border-card,#223);flex-wrap:wrap;">
+                        <strong style="color:var(--text-title,#fff);font-size:0.9rem;">📦 ${codigo.replace(/</g,'&lt;')}</strong>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button class="btn" style="padding:4px 10px;font-size:0.72rem;" onclick="copiarCodigoRastreio('${codigo.replace(/'/g,"\\'")}')">📋 Copiar</button>
+                            <button class="btn" style="padding:4px 10px;font-size:0.72rem;" onclick="window.open('${urlCorreios}','_blank')">Correios ↗</button>
+                            <button class="btn" style="padding:4px 10px;font-size:0.72rem;" onclick="window.open('${url17}','_blank')">17track ↗</button>
+                            <button class="btn" style="padding:4px 10px;font-size:0.72rem;" onclick="document.getElementById('rastreio-embutido-overlay').style.display='none'">✖ Fechar</button>
+                        </div>
+                    </div>
+                    <div style="font-size:0.7rem;color:var(--text-muted,#999);padding:6px 14px;">Sem chave: mostrando 17track embutido. Se ficar em branco (bloqueio do provedor), use os botões ↗ acima.</div>
+                    <iframe src="${url17}" style="width:100%;height:60vh;border:0;background:#fff;" loading="lazy" title="Rastreio ${codigo.replace(/"/g,'')}"></iframe>
+                </div>`;
+            overlay.style.display = 'flex';
+        };
+
+        // Etapa atual do rastreio (0=sem info, 1=postado, 2=trânsito, 3=saiu p/ entrega, 4=entregue)
+        function etapaRastreio(historico) {
+            if (!historico || !historico.length) return 0;
+            let ev = historico.find(h => h.tipo === 'rastreio');
+            if (!ev) return 0;
+            let d = String(ev.descricao || '').toLowerCase();
+            if (d.includes('entregue')) return 4;
+            if (d.includes('saiu')) return 3;
+            if (d.includes('trânsito') || d.includes('transito')) return 2;
+            if (d.includes('postado')) return 1;
+            return 2; // evento custom conta como em andamento
+        }
+
+        function barraProgressoRastreioHtml(historico) {
+            let etapa = etapaRastreio(historico);
+            let passos = ['📮 Postado', '🚚 Trânsito', '📦 Saiu p/ entrega', '✅ Entregue'];
+            return `<div style="display:flex;gap:4px;margin:6px 0;flex-wrap:wrap;">` + passos.map((label, i) => {
+                let ativo = etapa >= (i + 1);
+                return `<span style="font-size:0.68rem;padding:3px 8px;border-radius:12px;border:1px solid ${ativo ? 'var(--accent-green)' : 'var(--border-card)'};background:${ativo ? 'rgba(46,196,182,0.15)' : 'transparent'};color:${ativo ? 'var(--accent-green)' : 'var(--text-muted)'};">${label}</span>`;
+            }).join('') + `</div>`;
+        }
+
+        function refrescarTelasCompra(compraKey) {
+            try { if (typeof renderizarModalComprasColetivas === 'function') renderizarModalComprasColetivas(); } catch (e) {}
+            try {
+                let modalResumo = document.getElementById('compra-resumo-modal');
+                if (modalResumo && modalResumo.style.display === 'flex' && compraResumoAtualKey === compraKey && typeof resumirCompraColetiva === 'function') resumirCompraColetiva(compraKey);
+            } catch (e) {}
+        }
+
+        window.excluirEventoHistoricoCompra = async function (compraKey, idx) {
+            if (!exigirAcessoAdmin('compras', 'gerenciar')) return;
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp || !Array.isArray(comp.historico)) return;
+            if (!confirm('Excluir este evento do histórico?')) return;
+            comp.historico.splice(Number(idx), 1);
+            comp.ultimaAtualizacao = Date.now();
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).update({ historico: comp.historico, ultimaAtualizacao: comp.ultimaAtualizacao });
+                refrescarTelasCompra(compraKey);
+            } catch (err) { alert('Erro: ' + err.message); }
+        };
+
+        // Edita texto e data de um evento do histórico (admin). Formato de data: DD/MM/AAAA HH:MM
+        window.editarEventoHistoricoCompra = async function (compraKey, idx) {
+            if (!exigirAcessoAdmin('compras', 'gerenciar')) return;
+            let comp = comprasColetivasCache[compraKey];
+            if (!comp || !Array.isArray(comp.historico) || !comp.historico[Number(idx)]) return;
+            let ev = comp.historico[Number(idx)];
+            let palavras = String(ev.descricao || '').trim().split(' ');
+            let icone = palavras[0] || '🔔';
+            let textoAtual = palavras.slice(1).join(' ') || ev.descricao || '';
+            let novoTexto = prompt('Editar evento:', textoAtual);
+            if (novoTexto === null) return;
+            novoTexto = novoTexto.trim();
+            if (!novoTexto) { alert('Texto vazio — nada alterado.'); return; }
+            let dataAtual = '';
+            try {
+                let d = new Date(Number(ev.data) || ev.data);
+                if (!isNaN(d)) {
+                    let p = (n) => String(n).padStart(2, '0');
+                    dataAtual = `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+                }
+            } catch (e) {}
+            let novaDataStr = prompt('Data/hora (DD/MM/AAAA HH:MM):', dataAtual);
+            let novaData = Number(ev.data) || Date.now();
+            if (novaDataStr !== null && novaDataStr.trim()) {
+                let m = novaDataStr.trim().match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/);
+                if (m) {
+                    let ano = Number(m[3].length === 2 ? '20' + m[3] : m[3]);
+                    let dt = new Date(ano, Number(m[2]) - 1, Number(m[1]), Number(m[4] || 0), Number(m[5] || 0));
+                    if (!isNaN(dt)) novaData = dt.getTime();
+                    else alert('Data inválida — mantida a anterior.');
+                } else alert('Data inválida — mantida a anterior.');
+            }
+            comp.historico[Number(idx)] = { data: novaData, tipo: ev.tipo || 'status', descricao: `${icone} ${novoTexto}` };
+            comp.historico.sort((a, b) => (b.data || 0) - (a.data || 0));
+            comp.ultimaAtualizacao = Date.now();
+            try {
+                await db.ref(`comprasColetivas/${compraKey}`).update({ historico: comp.historico, ultimaAtualizacao: comp.ultimaAtualizacao });
+                refrescarTelasCompra(compraKey);
+            } catch (err) { alert('Erro: ' + err.message); }
+        };
 
         // Retorna a atualização mais recente especificamente do tipo "rastreio"
         // (ex: Postado, Em trânsito), ignorando mudanças de status/pagamento.
@@ -151,10 +375,11 @@
             let compraKey = "compra_" + criadoEm;
             try {
                 await db.ref(`comprasColetivas/${compraKey}`).set({
-                    chave: compraKey, criadoEm: criadoEm, nome: item, precoUnitario: preco, qtdMinima: qtdMin, status: "EM ANDAMENTO / PENDENTE",
+                    chave: compraKey, criadoEm: criadoEm, ultimaAtualizacao: criadoEm, nome: item, precoUnitario: preco, qtdMinima: qtdMin, status: "EM ANDAMENTO / PENDENTE",
                     entregue: false, rastreio: "", financeiro: { subtotal: 0, desconto: 0, frete: 0, imposto: 0, icms: 0, outros: 0 },
                     chavePix: "", itens: [{ imagem: "", descricao: item, link: "", valor: preco, qtd: 1, atribuidoA: "TODOS" }],
-                    participantes: participantesObj
+                    participantes: participantesObj,
+                    historico: [{ data: criadoEm, tipo: 'status', descricao: '🛒 Compra criada' }]
                 });
                 document.getElementById('input-compra-item').value = "";
                 document.getElementById('input-compra-preco').value = "";
@@ -269,7 +494,16 @@
             };
 
             comp.chavePix = document.getElementById('det-chave-pix')?.value.trim() || "";
-            comp.rastreio = document.getElementById('det-rastreio')?.value.trim() || "";
+            // Rastreio 2.0: campo principal + códigos extras (lista)
+            let codigoPrincipal = document.getElementById('det-rastreio')?.value.trim() || "";
+            let extras = [];
+            document.querySelectorAll('.det-rastreio-extra').forEach(el => {
+                let v = (el.value || '').trim();
+                if (v) extras.push(v);
+            });
+            let todosCodigos = [codigoPrincipal, ...extras].filter(Boolean);
+            comp.rastreio = codigoPrincipal;
+            comp.rastreios = todosCodigos;
 
             let novasItens = [];
             document.querySelectorAll('.det-item-row').forEach(row => {
@@ -330,7 +564,8 @@
 
             // Registra no histórico só o que de fato mudou nessa edição.
             if ((comp.rastreio || "") !== rastreioAntigo && comp.rastreio) {
-                registrarHistoricoCompra(comp, 'rastreio', `🔎 Código de rastreio atualizado: ${comp.rastreio}`);
+                let t = detectarTransportadora(comp.rastreio);
+                registrarHistoricoCompra(comp, 'rastreio', `🔎 Código de rastreio atualizado (${t.nome}): ${comp.rastreio}`);
             }
             let pagosNovos = Object.values(novosParticipantes).filter(p => p && p.pago).map(p => p.nome);
             let novosPagamentos = pagosNovos.filter(n => !pagosAntigos.includes(n));
@@ -353,6 +588,7 @@
                 paths[`${base}/financeiro`] = comp.financeiro;
                 paths[`${base}/chavePix`] = comp.chavePix;
                 paths[`${base}/rastreio`] = comp.rastreio;
+                paths[`${base}/rastreios`] = comp.rastreios || [];
                 paths[`${base}/itens`] = comp.itens;
                 paths[`${base}/participantes`] = comp.participantes;
                 paths[`${base}/status`] = comp.status;
@@ -442,8 +678,11 @@
 
             registrarHistoricoCompra(comp, 'rastreio', descricao, dataCustom);
 
+            // Rastreio 2.0: evento "entregue" marca a compra como entregue automaticamente
+            if (evento === 'entregue') comp.entregue = true;
+
             try {
-                await db.ref(`comprasColetivas/${compraKey}`).update({ historico: comp.historico || [], ultimaAtualizacao: comp.ultimaAtualizacao || Date.now() });
+                await db.ref(`comprasColetivas/${compraKey}`).update({ historico: comp.historico || [], ultimaAtualizacao: comp.ultimaAtualizacao || Date.now(), entregue: !!comp.entregue });
                 if (dataInputEl) dataInputEl.value = '';
                 renderizarModalComprasColetivas();
             } catch (err) { alert("Erro: " + err.message); }
@@ -651,10 +890,33 @@
                     </div>
 
                     <div class="config-panel">
-                        <div class="config-panel-title">6. Rastreio</div>
-                        <div style="display: flex; gap: 6px; margin-top: 2px;">
-                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml(comp.rastreio || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem; flex: 1;" oninput="document.getElementById('btn-verificar-rastreio-${escJs(compraGerenciandoKey)}').style.display = this.value.trim() ? 'inline-flex' : 'none';">
-                            <button id="btn-verificar-rastreio-${compraGerenciandoKey}" class="btn" style="background: rgba(58,134,255,0.15); color: #3a86ff; border: 1px solid #3a86ff; padding: 4px 10px; font-size: 0.72rem; white-space: nowrap; ${comp.rastreio ? '' : 'display: none;'}" onclick="window.open('https://rastreamento.correios.com.br/app/index.php?objetos=' + encodeURIComponent(document.getElementById('det-rastreio').value.trim()), '_blank')">🔎 Verificar</button>
+                        <div class="config-panel-title">6. Rastreio 🤖 automático</div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0;">
+                            <button class="btn" style="background:rgba(46,196,182,0.15);color:var(--accent-green);border:1px solid var(--accent-green);padding:4px 10px;font-size:0.72rem;" onclick="atualizarRastreioAgora('${escJs(compraGerenciandoKey)}')">🔄 Atualizar agora (auto)</button>
+                            <button class="btn" style="background:transparent;border:1px solid var(--border-card);padding:4px 10px;font-size:0.72rem;" onclick="abrirConfigRastreioAuto()">⚙️ Chave API</button>
+                            <span style="font-size:0.68rem;color:var(--text-muted);">${(typeof window !== 'undefined' && window.RastreioAuto && window.RastreioAuto.temChave()) ? ('✅ auto ativo (' + window.RastreioAuto.getProvider() + ') neste navegador') : '⚠️ sem chave — links 17track/Correios abaixo (ilimitado, sem auto)'}</span>
+                        </div>
+                        ${(() => {
+                            let auto = comp.rastreioAuto;
+                            if (!auto || !auto.atualizadoEm) return '<div style="font-size:0.68rem;color:var(--text-muted);">Nenhuma consulta automática ainda. Clique em “Atualizar agora”.</div>';
+                            let res = (auto.resultados || []).map(r => r.ok
+                                ? `✅ ${escapeHtml(r.codigo)}: ${escapeHtml((r.evento && r.evento.descricao) || 'ok')}`
+                                : `❌ ${escapeHtml(r.codigo)}: ${escapeHtml(r.erro || 'falha')}`).join('<br>');
+                            return `<div style="font-size:0.7rem;background:var(--bg-body);border:1px solid var(--border-card);border-radius:6px;padding:6px 8px;">🤖 Última consulta automática: ${formatarDataHistoricoCompra(auto.atualizadoEm)}<br>${res}</div>`;
+                        })()}
+                        <div style="display: flex; gap: 6px; margin-top: 8px; align-items:center; flex-wrap:wrap;">
+                            <span style="font-size:0.7rem;color:var(--text-muted);">Manual:</span>
+                        <div style="display: flex; gap: 6px; margin-top: 2px; align-items:center; flex-wrap:wrap;">
+                            <input type="text" id="det-rastreio" class="config-input" value="${escapeHtml((normalizarRastreios(comp)[0]) || '')}" placeholder="Código de Rastreio (Ex: NN374569092BR)" style="font-size: 0.78rem; flex: 1; min-width:180px;" oninput="try{let c=this.value.trim();let b=document.getElementById('btn-verificar-rastreio-${escJs(compraGerenciandoKey)}');if(b)b.style.display=c?'inline-flex':'none';let tag=document.getElementById('tag-transportadora-${escJs(compraGerenciandoKey)}');if(tag&&window._ctadTransp!==undefined){}}catch(e){}">
+                            <button class="btn" style="background:rgba(46,196,182,0.15);color:var(--accent-green);border:1px solid var(--accent-green);padding:4px 10px;font-size:0.72rem;" onclick="copiarCodigoRastreio(document.getElementById('det-rastreio').value.trim())">📋 Copiar</button>
+                            <button class="btn" style="background:rgba(46,196,182,0.12);color:var(--accent-green);border:1px dashed var(--accent-green);padding:4px 10px;font-size:0.72rem;" onclick="abrirRastreioEmbutido(document.getElementById('det-rastreio').value.trim())">👁️ Ver aqui</button>
+                            <button id="btn-verificar-rastreio-${compraGerenciandoKey}" class="btn" style="background: rgba(58,134,255,0.15); color: #3a86ff; border: 1px solid #3a86ff; padding: 4px 10px; font-size: 0.72rem; white-space: nowrap; ${(normalizarRastreios(comp)[0]) ? '' : 'display: none;'}" onclick="abrirRastreioCodigo(document.getElementById('det-rastreio').value.trim())">🔎 Rastrear</button>
+                        </div>
+                        <div id="lista-rastreios-extras" style="display:flex;flex-direction:column;gap:4px;margin-top:6px;">
+                            ${(normalizarRastreios(comp).slice(1)).map(c => `<div style="display:flex;gap:6px;"><input type="text" class="config-input det-rastreio-extra" value="${escapeHtml(c)}" style="font-size:0.78rem;flex:1;"><button class="btn" style="padding:4px 8px;font-size:0.7rem;" onclick="abrirRastreioCodigo('${escapeHtml(c)}')">🔎</button><button class="btn" style="padding:4px 8px;font-size:0.7rem;" onclick="copiarCodigoRastreio('${escapeHtml(c)}')">📋</button></div>`).join('')}
+                        </div>
+                        <button class="btn" style="background:transparent;border:1px dashed var(--border-card);padding:3px 8px;font-size:0.7rem;margin-top:6px;" onclick="let host=document.getElementById('lista-rastreios-extras');let d=document.createElement('div');d.style.cssText='display:flex;gap:6px;';d.innerHTML='<input type=text class=&quot;config-input det-rastreio-extra&quot; placeholder=&quot;Código extra&quot; style=&quot;font-size:0.78rem;flex:1;&quot;>';host.appendChild(d);">➕ Adicionar outro código</button>
+                        <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">Detectamos a transportadora automaticamente (Correios, Shopee/SPX, Jadlog, Mercado Livre ou universal via 17track). Salve a compra para registrar no histórico.</div>
                         </div>
                     </div>
 
@@ -730,16 +992,18 @@
 
                 let ultimaAtualizacaoTs = obterTimestampAtualizacaoCompra(comp);
                 let historico = Array.isArray(comp.historico) ? comp.historico : [];
-                let historicoItensHtml = renderizarHistoricoTimelineHtml(historico, 8);
+                let historicoItensHtml = renderizarHistoricoTimelineHtml(historico, 8, k);
 
                 return `
                     <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-left: 5px solid ${finalizada ? 'var(--accent-green)' : (quitada ? 'var(--accent-blue)' : 'var(--accent-gold)')}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <span style="font-size: 0.95rem; font-weight: 700; color: var(--text-title);">🛒 ${escapeHtml(comp.nome || comp.chave)}</span>
+                                <span style="font-size: 0.95rem; font-weight: 700; color: var(--text-title);">${comp.fixada ? '📌 ' : ''}🛒 ${escapeHtml(comp.nome || comp.chave)}</span>
                                 <span style="font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${badgeColor}">${statusExibicao}</span>
                             </div>
                             <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                                <button class="btn" style="background: transparent; color: var(--accent-gold); border: 1px solid var(--accent-gold); padding: 4px 8px; font-size: 0.75rem;" onclick="alternarFixarCompra('${escJs(k)}')" title="${comp.fixada ? 'Soltar (volta à ordem por atualização)' : 'Fixar no topo'}">${comp.fixada ? '📌 Fixada' : '📍 Fixar'}</button>
+                                ${comp.fixada ? `<button class="btn" style="background: transparent; color: var(--text-main); border: 1px solid var(--border-card); padding: 4px 8px; font-size: 0.75rem;" onclick="moverCompraFixa('${escJs(k)}', 'cima')" title="Subir">⬆️</button><button class="btn" style="background: transparent; color: var(--text-main); border: 1px solid var(--border-card); padding: 4px 8px; font-size: 0.75rem;" onclick="moverCompraFixa('${escJs(k)}', 'baixo')" title="Descer">⬇️</button>` : ''}
                                 <button class="btn" style="background: rgba(46,196,182,0.15); color: var(--accent-green); border: 1px solid var(--accent-green); padding: 4px 8px; font-size: 0.75rem;" onclick="alternarEntregueCompra('${escJs(k)}')">${entregue ? '✅ Entregue' : '📦 Marcar Entregue'}</button>
                                 <button class="btn" style="background: rgba(114,9,183,0.25); color: #e0aaff; border: 1px solid #7209b7; padding: 4px 8px; font-size: 0.75rem;" onclick="resumirCompraColetiva('${escJs(k)}')">📊 Resumo</button>
                                 <button class="btn" style="background: rgba(37,211,102,0.15); color: #25D366; border: 1px solid #25D366; padding: 4px 8px; font-size: 0.75rem;" onclick="compartilharResumoCompra('${escJs(k)}')">📤</button>
@@ -752,11 +1016,27 @@
                         </div>
                         ${(() => {
                             let ultimoRastreio = obterUltimoEventoRastreio(historico);
-                            if (!ultimoRastreio) return '';
-                            let partes = (ultimoRastreio.descricao || '').trim().split(' ');
-                            let icone = partes[0] || '🚚';
-                            let textoSemIcone = partes.slice(1).join(' ') || ultimoRastreio.descricao;
-                            return `<div style="font-size: 0.7rem; color: var(--accent-gold);">${icone} Rastreio: ${escapeHtml(textoSemIcone)} <span style="color: var(--text-muted);">(${formatarDataHistoricoCompra(ultimoRastreio.data)})</span></div>`;
+                            let cods = normalizarRastreios(comp);
+                            let codHtml = cods.length ? cods.map(c => {
+                                let t = detectarTransportadora(c);
+                                let safe = String(c).replace(/'/g, "\\'");
+                                return `<span style="display:inline-flex;gap:4px;align-items:center;background:var(--bg-body);border:1px solid var(--border-card);border-radius:6px;padding:2px 6px;"><button class="btn-text-action" style="font-size:0.68rem;" onclick="abrirRastreioEmbutido('${safe}')" title="${escapeHtml(t.nome)} — ver aqui sem chave">👁️ ${escapeHtml(c)}</button><button class="btn-text-action" style="font-size:0.65rem;color:var(--text-muted);" onclick="abrirRastreioCodigo('${safe}')" title="Abrir em nova aba">↗</button></span>`;
+                            }).join(' ') : '';
+                            let evHtml = '';
+                            if (ultimoRastreio) {
+                                let partes = (ultimoRastreio.descricao || '').trim().split(' ');
+                                let icone = partes[0] || '🚚';
+                                let textoSemIcone = partes.slice(1).join(' ') || ultimoRastreio.descricao;
+                                evHtml = `<div style="font-size: 0.7rem; color: var(--accent-gold);">${icone} Rastreio: ${escapeHtml(textoSemIcone)} <span style="color: var(--text-muted);">(${formatarDataHistoricoCompra(ultimoRastreio.data)})</span></div>`;
+                            }
+                            if (!codHtml && !evHtml) return '';
+                            let autoBadge = '';
+                            try {
+                                if (comp.rastreioAuto && comp.rastreioAuto.atualizadoEm) {
+                                    autoBadge = `<div style="font-size:0.65rem;color:var(--accent-green);">🤖 auto: ${formatarDataHistoricoCompra(comp.rastreioAuto.atualizadoEm)}</div>`;
+                                }
+                            } catch (e) {}
+                            return `<div style="display:flex;flex-direction:column;gap:4px;">${codHtml ? `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">${codHtml}</div>` : ''}${evHtml}${autoBadge}${barraProgressoRastreioHtml(historico)}</div>`;
                         })()}
                         <div id="historico-compra-${k}" style="display: none; background: var(--bg-body); border-radius: 6px; padding: 10px 14px; max-height: 260px; overflow-y: auto;">
                             ${historicoItensHtml}
@@ -799,6 +1079,20 @@
             participantes.forEach(p => {
                 linhas.push(`${p.pago ? '✅' : '❌'} ${p.nome} — R$ ${(p.valorDevido || 0).toFixed(2)} ${p.pago ? '(Pago)' : '(Pendente)'}`);
             });
+            // Rastreio 2.0: inclui códigos + links no compartilhamento
+            try {
+                let cods = (typeof normalizarRastreios === 'function') ? normalizarRastreios(comp) : [];
+                if (cods.length) {
+                    linhas.push('');
+                    linhas.push('📦 *Rastreio:*');
+                    cods.forEach(c => {
+                        let u = (typeof urlRastreioUniversal === 'function') ? urlRastreioUniversal(c) : '';
+                        linhas.push(`• ${c}${u ? ' — ' + u : ''}`);
+                    });
+                }
+                let ult = (typeof obterUltimoEventoRastreio === 'function') ? obterUltimoEventoRastreio(comp.historico) : null;
+                if (ult && ult.descricao) linhas.push(`Último evento: ${ult.descricao}`);
+            } catch (e) {}
             linhas.push('');
             linhas.push(`🔗 https://luisrcsb.github.io/ctad/#compra=${compraKey}`);
             const texto = linhas.join('\n');
@@ -877,6 +1171,24 @@
                     }
                 }
 
+                // Avisos automáticos de pagamento abaixo do nome (sem digitar nada):
+                // pago -> data da confirmação (do histórico); pendente -> cobrança + falta de Pix.
+                let avisosHtml = (() => {
+                    try {
+                        let hist = Array.isArray(comp.historico) ? comp.historico : [];
+                        if (p.pago) {
+                            let ev = hist.find(h => h && h.tipo === 'pagamento' && String(h.descricao || '').toLowerCase().includes(String(p.nome).trim().toLowerCase()));
+                            let quando = ev ? ` em ${formatarDataHistoricoCompra(ev.data)}` : '';
+                            return `<div style="font-size:0.7rem;color:var(--accent-green);margin-top:2px;">✅ Pagamento confirmado${quando}</div>`;
+                        }
+                        let semPix = !(p.pixPersonalizado && p.pixPersonalizado.trim()) && !chavePixBase;
+                        let cobranca = `⏳ Aguardando pagamento de <strong>R$ ${(p.valorDevido || 0).toFixed(2)}</strong>`;
+                        let pixAviso = semPix ? `<div style="font-size:0.68rem;color:var(--accent-gold);">⚠️ Pix não configurado — procure o administrador</div>` : '';
+                        let compradorTag = p.comprador ? `<div style="font-size:0.68rem;color:var(--text-muted);">🛒 Responsável pela compra</div>` : '';
+                        return `<div style="font-size:0.7rem;color:var(--accent-red);margin-top:2px;">${cobranca}</div>${pixAviso}${compradorTag}`;
+                    } catch (e) { return ''; }
+                })();
+
                 return `
                     <div style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 4px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -887,14 +1199,42 @@
                                 ${togglePagoHtml}
                             </div>
                         </div>
+                        ${avisosHtml}
                         ${pixBoxHtml}
                     </div>
                 `;
             }).join('') || `<div style="text-align: center; color: var(--text-muted);">Nenhum participante.</div>`;
 
-            let historicoHtml = renderizarHistoricoTimelineHtml(comp.historico, 20);
+            let historicoHtml = renderizarHistoricoTimelineHtml(comp.historico, 5, compraResumoAtualKey, { compacto: true });
+
+            // Faixa de rastreio no Resumo: códigos + último evento + selo da consulta automática
+            let rastreioResumoHtml = (() => {
+                try {
+                    let cods = (typeof normalizarRastreios === 'function') ? normalizarRastreios(comp) : [];
+                    let ult = (typeof obterUltimoEventoRastreio === 'function') ? obterUltimoEventoRastreio(Array.isArray(comp.historico) ? comp.historico : []) : null;
+                    if (!cods.length && !ult) return '';
+                    let codBtns = cods.map(c => {
+                        return `<span style="display:inline-flex;align-items:center;background:var(--bg-body);border:1px solid var(--border-card);border-radius:6px;padding:2px 8px;font-size:0.72rem;">📦 ${escapeHtml(c)}</span>`;
+                    }).join(' ');
+                    let evTxt = '';
+                    if (ult) {
+                        let partes = String(ult.descricao || '').trim().split(' ');
+                        let icone = partes[0] || '🚚';
+                        let txt = partes.slice(1).join(' ') || ult.descricao;
+                        evTxt = `<div style="font-size:0.72rem;color:var(--accent-gold);margin-top:4px;">${icone} ${escapeHtml(txt)} <span style="color:var(--text-muted);">(${formatarDataHistoricoCompra(ult.data)})</span></div>`;
+                    }
+                    let autoTxt = (comp.rastreioAuto && comp.rastreioAuto.atualizadoEm)
+                        ? `<div style="font-size:0.68rem;color:var(--accent-green);margin-top:2px;">🤖 Última consulta automática: ${formatarDataHistoricoCompra(comp.rastreioAuto.atualizadoEm)}</div>` : '';
+                    return `<div style="background:var(--bg-input);border:1px solid var(--border-card);border-radius:6px;padding:8px 10px;margin-bottom:4px;">
+                        <div class="config-panel-title" style="font-size:0.78rem;">📦 Rastreio</div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">${codBtns || '<span style="font-size:0.72rem;color:var(--text-muted);">Sem código cadastrado</span>'}</div>
+                        ${evTxt}${autoTxt}
+                    </div>`;
+                } catch (e) { return ''; }
+            })();
 
             modalCorpoEl.innerHTML = `
+                ${rastreioResumoHtml}
                 <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 6px; max-height: 55vh; overflow-y: auto; padding-right: 4px;">
                         <div class="config-panel-title" style="font-size: 0.78rem;">💰 Financeiro</div>

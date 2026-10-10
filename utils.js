@@ -71,6 +71,39 @@
     if (typeof window.sanitizeId !== 'function') window.sanitizeId = sanitizeId;
 
     /* ---------------------------------------------------------------
+       Kit WhatsApp (grátis, sem API nem servidor)
+       - compartilharWhatsApp(texto): tenta share nativo do celular, senão
+         copia pro clipboard, senão abre wa.me. Preserva emojis (wa.me direto
+         costuma corrompê-los, por isso é o último recurso). */
+    async function compartilharWhatsApp(texto) {
+        texto = String(texto === null || texto === undefined ? '' : texto);
+        if (!texto) return;
+        try {
+            if (typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ text: texto });
+                return;
+            }
+        } catch (err) {
+            if (err && err.name === 'AbortError') return;
+        }
+        try {
+            if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(texto);
+                alert('Texto copiado! Cole (Ctrl+V) na conversa do WhatsApp.');
+                return;
+            }
+        } catch (err) { /* cai pro wa.me */ }
+        try {
+            window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener,noreferrer');
+        } catch (e) {
+            try { prompt('Copie o texto:', texto); } catch (e2) {}
+        }
+    }
+
+    window.Utils.compartilharWhatsApp = compartilharWhatsApp;
+    if (typeof window.compartilharWhatsApp !== 'function') window.compartilharWhatsApp = compartilharWhatsApp;
+
+    /* ---------------------------------------------------------------
        Error boundary unificado (Fase 5)
        - Utils.toast(msg, type): aviso não-bloqueante (error|ok|info).
          Não substitui os alerts de confirmação — só erros de render.

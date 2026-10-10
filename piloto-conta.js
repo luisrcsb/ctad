@@ -38,15 +38,15 @@
                         <div class="config-panel">
                             <div class="config-panel-title">Já tenho conta</div>
                             <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
-                                <input type="email" id="conta-login-email" class="config-input" placeholder="E-mail">
-                                <input type="password" id="conta-login-senha" class="config-input" placeholder="Senha">
+                                <input type="email" id="conta-login-email" class="config-input" placeholder="E-mail" onkeydown="if(event.key==='Enter')fazerLoginPiloto()">
+                                <input type="password" id="conta-login-senha" class="config-input" placeholder="Senha" onkeydown="if(event.key==='Enter')fazerLoginPiloto()">
                                 <button class="btn-action-primary" onclick="fazerLoginPiloto()">Entrar</button>
                                 <div style="display:flex; justify-content:center;">
                                     <button class="btn-text-action" style="font-size:0.74rem;" onclick="alternarFormRecuperarSenha()">Esqueci minha senha</button>
                                 </div>
                                 <div id="conta-recuperar-box" style="display:none; flex-direction:column; gap:6px; border-top:1px dashed var(--border-card); padding-top:8px; margin-top:2px;">
                                     <div style="font-size:0.72rem; color:var(--text-muted);">Informe o e-mail da sua conta: enviamos um link pra você criar uma nova senha.</div>
-                                    <input type="email" id="conta-recuperar-email" class="config-input" placeholder="E-mail cadastrado">
+                                    <input type="email" id="conta-recuperar-email" class="config-input" placeholder="E-mail cadastrado" onkeydown="if(event.key==='Enter')recuperarSenhaPiloto()">
                                     <button class="btn-action-primary" style="background:#2ec4b6; color:#000;" onclick="recuperarSenhaPiloto()">📧 Enviar link de redefinição</button>
                                 </div>
                             </div>
@@ -55,9 +55,9 @@
                             <div class="config-panel-title">Ainda não tenho conta</div>
                             <p style="font-size:0.72rem; color:var(--text-muted); margin:2px 0 6px;">Depois de se cadastrar, o administrador precisa vincular sua conta a um piloto já existente na base antes de você ver seu painel pessoal.</p>
                             <div style="display:flex; flex-direction:column; gap:6px;">
-                                <input type="text" id="conta-cadastro-nome" class="config-input" placeholder="Seu nome (como é conhecido nas corridas)">
-                                <input type="email" id="conta-cadastro-email" class="config-input" placeholder="E-mail">
-                                <input type="password" id="conta-cadastro-senha" class="config-input" placeholder="Crie uma senha (mín. 6 caracteres)">
+                                <input type="text" id="conta-cadastro-nome" class="config-input" placeholder="Seu nome (como é conhecido nas corridas)" onkeydown="if(event.key==='Enter')cadastrarPiloto()">
+                                <input type="email" id="conta-cadastro-email" class="config-input" placeholder="E-mail" onkeydown="if(event.key==='Enter')cadastrarPiloto()">
+                                <input type="password" id="conta-cadastro-senha" class="config-input" placeholder="Crie uma senha (mín. 6 caracteres)" onkeydown="if(event.key==='Enter')cadastrarPiloto()">
                                 <button class="btn-action-primary" style="background:#2ec4b6; color:#000;" onclick="cadastrarPiloto()">Cadastrar</button>
                             </div>
                         </div>
@@ -74,6 +74,7 @@
                     </div>
                     ${renderizarAcoesRapidasMinhaConta()}
                     ${renderizarSecoesMembroMinhaConta()}
+                    ${renderizarSecaoTodasComprasMinhaConta()}
                     ${renderizarSecaoAcessibilidadeMinhaConta()}`;
                 return;
             }
@@ -92,6 +93,7 @@
                     </div>
                     ${renderizarAcoesRapidasMinhaConta()}
                     ${renderizarSecoesMembroMinhaConta()}
+                    ${renderizarSecaoTodasComprasMinhaConta()}
                     ${renderizarSecaoAcessibilidadeMinhaConta()}`;
                 return;
             }
@@ -137,6 +139,49 @@
             return `${secaoCompras}${secaoDesejos}${secaoDesafios}`;
         }
 
+        // ===================== Todas as Compras (Minha Conta) =====================
+        // Lista geral de compras coletivas visível só para contas logadas —
+        // o card do dashboard fica sempre oculto. Somente leitura + Resumo.
+        function renderizarSecaoTodasComprasMinhaConta() {
+            try {
+                if (typeof comprasColetivasCache === 'undefined' || !comprasColetivasCache) return '';
+                if (typeof ordenarChavesComprasPorAtualizacao !== 'function') return '';
+                let keys = ordenarChavesComprasPorAtualizacao(Object.keys(comprasColetivasCache));
+                if (!keys.length) return '';
+                let linhas = keys.map(k => {
+                    let comp = comprasColetivasCache[k];
+                    if (!comp) return '';
+                    let status = comp.status || (comp.entregue ? 'ENTREGUE' : 'EM ANDAMENTO / PENDENTE');
+                    let rastreioTxt = '';
+                    try {
+                        if (typeof obterUltimoEventoRastreio === 'function') {
+                            let ult = obterUltimoEventoRastreio(Array.isArray(comp.historico) ? comp.historico : []);
+                            if (ult) {
+                                let partes = String(ult.descricao || '').trim().split(' ');
+                                let icone = partes[0] || '🚚';
+                                let txt = partes.slice(1).join(' ') || ult.descricao;
+                                rastreioTxt = `<div style="font-size:0.68rem;color:var(--accent-gold);margin-top:2px;">${icone} ${escapeHtml(txt)}</div>`;
+                            }
+                        }
+                    } catch (e) {}
+                    return `
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; border-bottom:1px dashed var(--border-card);">
+                            <div style="min-width:0;">
+                                <div style="font-size:0.8rem; color:var(--text-title); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${comp.fixada ? '📌 ' : ''}🛒 ${escapeHtml(comp.nome || comp.chave)}</div>
+                                <div style="font-size:0.68rem; color:var(--text-muted); margin-top:2px;">${escapeHtml(status)}</div>
+                                ${rastreioTxt}
+                            </div>
+                            <button class="btn" style="background:var(--bg-body); border:1px solid var(--border-card); color:#fff; padding:3px 8px; font-size:0.7rem; flex-shrink:0;" onclick="fecharModalMinhaConta(); resumirCompraColetiva('${escJs(k)}')">Resumo</button>
+                        </div>`;
+                }).join('');
+                return `
+                    <div class="config-panel">
+                        <div class="config-panel-title">🛒 Compras Coletivas</div>
+                        <div style="margin-top:4px;">${linhas}</div>
+                    </div>`;
+            } catch (e) { return ''; }
+        }
+
         // ===================== Minhas Compras Coletivas =====================
         // Lista apenas as compras em que o piloto da conta logada está como
         // participante ativo, mostrando a situação do próprio bolso
@@ -173,11 +218,26 @@
             let linhas = minhas.map(item => {
                 let pago = !!item.part.pago;
                 let valor = Number(item.part.valorDevido) || 0;
+                // Rastreio: último evento + selo da consulta automática (sem chave, só leitura do cache)
+                let rastreioHtml = '';
+                try {
+                    if (typeof obterUltimoEventoRastreio === 'function') {
+                        let ult = obterUltimoEventoRastreio(Array.isArray(item.comp.historico) ? item.comp.historico : []);
+                        if (ult) {
+                            let partes = String(ult.descricao || '').trim().split(' ');
+                            let icone = partes[0] || '🚚';
+                            let txt = partes.slice(1).join(' ') || ult.descricao;
+                            let autoBadge = (item.comp.rastreioAuto && item.comp.rastreioAuto.atualizadoEm && typeof formatarDataHistoricoCompra === 'function') ? ` <span style="color:var(--accent-green);">🤖 ${formatarDataHistoricoCompra(item.comp.rastreioAuto.atualizadoEm)}</span>` : '';
+                            rastreioHtml = `<div style="font-size:0.68rem;color:var(--accent-gold);margin-top:2px;">${icone} ${escapeHtml(txt)}${autoBadge}</div>`;
+                        }
+                    }
+                } catch (e) {}
                 return `
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; border-bottom:1px dashed var(--border-card);">
                         <div style="min-width:0;">
                             <div style="font-size:0.8rem; color:var(--text-title); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🛒 ${escapeHtml(item.comp.nome || item.comp.chave)}</div>
                             <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Sua cota: <strong style="color:var(--accent-gold);">R$ ${valor.toFixed(2)}</strong></div>
+                            ${rastreioHtml}
                         </div>
                         <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                             <span style="font-size:0.72rem; font-weight:700; color:${pago ? 'var(--accent-green)' : 'var(--accent-red)'};">${pago ? 'Pago ✅' : 'Pendente ⏳'}</span>
