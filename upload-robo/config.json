@@ -1,0 +1,10 @@
+{
+  "pasta": "C:\\ZRound\\Relatorios",
+  "intervaloSegundos": 15,
+  "extensoes": [".pdf", ".html", ".htm"],
+  "pistaId": "krathus",
+  "moverParaEnviados": true,
+  "databaseURL": "https://krathus-telemetria-default-rtdb.firebaseio.com",
+  "storageBucket": "krathus-telemetria.firebasestorage.app",
+  "serviceAccountPath": "./serviceAccountKey.json"
+}

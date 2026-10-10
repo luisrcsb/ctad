@@ -30,6 +30,19 @@
         </filter>
     </svg>
 
+    <div id="manuais-modal" class="custom-modal" style="z-index: 10960;">
+        <div class="modal-content" style="max-width: 800px; border-top-color: var(--accent-gold);">
+            <div class="modal-header">
+                <div class="modal-title" style="flex: 1;">📖 Manuais do CTAD</div>
+                <button class="modal-close" onclick="fecharManual()">Voltar</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 0.82rem; color: var(--text-muted);">Sempre atualizados: o conteúdo vem do banco de dados. Clique em cada tópico para expandir.</p>
+                <div id="manuais-corpo"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="sobre-ctad-modal" class="custom-modal" style="z-index: 10950;">
         <div class="modal-content" style="max-width: 800px; border-top-color: var(--accent-green);">
             <div class="modal-header">
@@ -123,7 +136,10 @@
     <div id="admin-fullscreen">
         <div class="admin-header">
             <div class="admin-header-titulo">🔐 Painel de Administração Central</div>
-            <button class="btn-action-danger" onclick="fecharModalAdmin()">← Voltar ao Painel</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-action-primary" onclick="irParaGaleriaAdmin()">🏠 Galeria</button>
+                <button class="btn-action-danger" onclick="fecharModalAdmin()">← Voltar ao Painel</button>
+            </div>
         </div>
 
         <div id="admin-modal-body"></div>
@@ -132,6 +148,7 @@
             <nav class="admin-nav zround-tabs-header">
                 <button class="zround-tab-btn active" onclick="irParaSecaoAdmin('pista')">🏁 Pista / Telão</button>
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('upload')">📤 Uploads</button>
+                <button class="zround-tab-btn" onclick="irParaSecaoAdmin('downloads')">💾 Downloads</button>
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('campeonato')">🏆 Campeonato</button>
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('pilotos')">👤 Pilotos</button>
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('compras')">🛒 Compras</button>
@@ -141,9 +158,12 @@
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('categorias')">🏎️ Categorias</button>
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('pistas')">🏁 Pistas</button>
                 <button class="zround-tab-btn" onclick="irParaSecaoAdmin('recomendados')">🛍️ Recomendados</button>
+                <button class="zround-tab-btn" onclick="irParaSecaoAdmin('manuais')">📖 Manuais</button>
             </nav>
 
             <div id="admin-alerta-solicitacoes" class="admin-alerta-solicitacoes" style="display: none;" onclick="irParaSecaoAdmin('solicitacoes')"></div>
+
+            <div id="admin-galeria" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px;"></div>
 
             <div class="admin-secoes">
 
@@ -257,6 +277,24 @@
                     </div>
                 </section>
 
+                <section id="admin-sec-downloads" class="admin-sec" data-admin-modulo="config" data-admin-acao="editar">
+                    <div class="admin-sec-titulo">💾 Downloads — Aplicativo Local de Upload Automático</div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Instale no PC da pista para enviar relatórios do ZRound sozinho (pasta + subpastas, PDF/HTML, sem precisar deixar o navegador aberto). Requer conta de admin/gestor no site.</p>
+                    <div id="downloads-corpo" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="color: var(--text-muted);">Carregando...</div>
+                    </div>
+                    <details style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 10px 12px;">
+                        <summary style="cursor: pointer; font-weight: 700; font-size: 0.82rem; color: var(--text-title);">📋 Passo a passo de instalação e configuração</summary>
+                        <ol style="font-size: 0.78rem; color: var(--text-main); margin: 8px 0 0 18px; display: flex; flex-direction: column; gap: 6px;">
+                            <li>Baixe o <strong>CTAD-Upload-Auto.exe</strong> abaixo e salve numa pasta fixa (ex: <code>C:\CTAD\app</code>).</li>
+                            <li>Na primeira execução ele cria o <code>config.json</code> ao lado do executável. Rode <code>CTAD-Upload-Auto.exe --configurar</code> e informe: e-mail/senha da sua conta do site, pasta vigiada (ex: <code>C:\ZRound</code>), intervalo e pista.</li>
+                            <li>Teste com <code>CTAD-Upload-Auto.exe --testar-conexao</code> e depois <code>--scan-once --dry-run</code> (simula sem enviar).</li>
+                            <li>Deixe rodando (<code>CTAD-Upload-Auto.exe</code>) ou agende no Agendador de Tarefas do Windows no logon para operação 24h.</li>
+                            <li>Acompanhe pelo <code>upload-auto.log</code> na mesma pasta e pelo histórico de Uploads aqui no painel.</li>
+                        </ol>
+                    </details>
+                </section>
+
                 <section id="admin-sec-campeonato" class="admin-sec" data-admin-modulo="campeonatos" data-admin-acao="gerenciar">
                     <div class="admin-sec-titulo">🏆 Championship Manager</div>
                     <div class="config-panel">
@@ -347,6 +385,14 @@
                         só dura até a próxima vez que aquela compra for salva). Frete e imposto são sempre manuais.
                     </p>
                     <div id="produtos-recomendados-corpo" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="color: var(--text-muted);">Carregando...</div>
+                    </div>
+                </section>
+
+                <section id="admin-sec-manuais" class="admin-sec" data-admin-modulo="config" data-admin-acao="editar">
+                    <div class="admin-sec-titulo">📖 Manuais Dinâmicos</div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">Os textos exibidos na tela 📖 Manual vêm do banco (<code>manuais/usuario</code> e <code>manuais/admin</code>). Publique aqui e a ajuda atualiza sozinha, sem deploy. <button class="btn-text-action" style="font-size:0.75rem;" onclick="abrirManual('admin')">👁️ Ver como fica</button></p>
+                    <div id="manuais-editor-corpo" style="display: flex; flex-direction: column; gap: 10px;">
                         <div style="color: var(--text-muted);">Carregando...</div>
                     </div>
                 </section>
@@ -665,6 +711,7 @@
                 </div>
                 <div class="header-actions">
                     <div id="portal-seletor-pista" style="display:none; align-items:center; gap:6px;"></div>
+                    <button class="btn" onclick="abrirManual('usuario')">📖 Manual</button>
                     <button class="btn" onclick="abrirModalSobreCtad()">📖 Sobre o CTAD</button>
                     <button class="btn" onclick="abrirModalMinhaConta()">👤 Minha Conta</button>
                 </div>
@@ -773,6 +820,7 @@
                 <span>•</span>
                 <span id="status-dados" style="color: var(--text-muted);">📡 Dados: <strong>conectando…</strong></span>
                 <span>•</span>
+                <span class="version-badge-interactive" onclick="abrirManual('usuario')" title="Manuais de uso (sempre atualizados)">📖 Manual</span>
                 <span class="version-badge-interactive" onclick="abrirModalSobreCtad()" title="Tudo sobre o site">📖 Sobre o CTAD</span>
             </div>
             <div class="footer-logos">
@@ -785,6 +833,7 @@
     <script src="portal-pistas.js"></script>
     <script src="rastreio-auto.js"></script>
     <script src="sobre-ctad.js"></script>
+    <script src="manuais.js"></script>
     <script src="categorias.js"></script>
     <script src="utils.js"></script>
     <script src="graficos.js"></script>
@@ -1679,18 +1728,92 @@
         // O botão "🔐 Administração" vive dentro de "Minha Conta" (renderizado
         // por atualizarUiContaPiloto) e só aparece para contas com o nó
         // admins/{uid} liberado no Firebase.
-        window.abrirModalAdmin = function() {
+        window.abrirModalAdmin = function(mostrarGaleria) {
             let pagina = document.getElementById('admin-fullscreen');
             if (!pagina) return;
             pagina.style.display = 'flex';
             document.body.style.overflow = 'hidden';
             renderizarAdminModal();
+            // O painel abre sempre na vitrine (galeria); uma seção por vez.
+            if (mostrarGaleria !== false) window.__adminVisao = 'galeria';
+            aplicarVisibilidadeSecoes();
         };
 
         window.fecharModalAdmin = function() {
             let pagina = document.getElementById('admin-fullscreen');
             if (pagina) pagina.style.display = 'none';
             document.body.style.overflow = '';
+        };
+
+        // Compat: o hub em modal foi incorporado como galeria inline.
+        window.hubAdminPermitido = function() {
+            try {
+                if (hasPerm('campeonatos', 'gerenciar')) return true;
+                return (typeof window.ehGestorDeAlgumaPista === 'function') && window.ehGestorDeAlgumaPista();
+            } catch (e) { return false; }
+        };
+        window.abrirHubAdmin = function() { window.irParaGaleriaAdmin(); };
+        window.fecharHubAdmin = function() {};
+
+        const FERRAMENTAS_ADMIN_HUB = [
+            { id: 'pista', icone: '🏁', titulo: 'Pista / Telão', desc: 'Telão 4K e configurações da pista.', mod: 'campeonatos', acao: 'gerenciar' },
+            { id: 'upload', icone: '📤', titulo: 'Central de Uploads', desc: 'Enviar e gerenciar relatórios PDF/HTML.', mod: 'campeonatos', acao: 'gerenciar' },
+            { id: 'downloads', icone: '💾', titulo: 'Downloads', desc: 'Baixar o app local de upload automático.', mod: 'config', acao: 'editar' },
+            { id: 'campeonato', icone: '🏆', titulo: 'Championship Manager', desc: 'Campeonatos, provas, grids e pontos.', modal: 'campeonatos' },
+            { id: 'pilotos', icone: '👤', titulo: 'Gestão de Pilotos', desc: 'Apelidos, mesclagens e carros.', mod: 'pilotos', acao: 'gerenciar' },
+            { id: 'categorias', icone: '🏎️', titulo: 'Categorias', desc: 'Categorias de competição.', mod: 'pilotos', acao: 'gerenciar' },
+            { id: 'compras', icone: '🛒', titulo: 'Compras Coletivas', desc: 'Cotas, fretes e recibos Pix.', mod: 'compras', acao: 'gerenciar' },
+            { id: 'tags', icone: '🏷️', titulo: 'Tags dos Pilotos', desc: 'Tags automáticas e manuais.', mod: 'tags', acao: 'gerenciar' },
+            { id: 'solicitacoes', icone: '📝', titulo: 'Solicitações de Acesso', desc: 'Aprovar cadastros de pilotos.', mod: 'contas', acao: 'aprovar' },
+            { id: 'contas', icone: '🔗', titulo: 'Contas Vinculadas', desc: 'Vínculos conta ↔ piloto.', mod: 'contas', acao: 'aprovar' },
+            { id: 'pistas', icone: '🏁', titulo: 'Gestão de Pistas', desc: 'Pistas, membros e migração.', mod: 'contas', acao: 'aprovar', gestorOk: true },
+            { id: 'recomendados', icone: '🛍️', titulo: 'Produtos Recomendados', desc: 'Vitrine de produtos.', mod: 'produtos', acao: 'editar' },
+            { id: 'manuais', icone: '📖', titulo: 'Manuais', desc: 'Editar os manuais do usuário e do admin.', mod: 'config', acao: 'editar' }
+        ];
+
+        // Vitrine/galeria de botões: cada cartão tem o nome em destaque e um
+        // pequeno texto explicativo; abre a seção só quando acionado.
+        window.renderizarGaleriaAdmin = function() {
+            let host = document.getElementById('admin-galeria');
+            if (!host) return;
+            let ehGestor = false;
+            try { ehGestor = (typeof window.ehGestorDeAlgumaPista === 'function') && window.ehGestorDeAlgumaPista(); } catch (e) {}
+            host.innerHTML = FERRAMENTAS_ADMIN_HUB.filter(function (f) {
+                if (f.modal) return hasPerm('campeonatos', 'gerenciar');
+                if (f.gestorOk && ehGestor) return true;
+                try { return hasPerm(f.mod, f.acao); } catch (e) { return false; }
+            }).map(function (f) {
+                return '<div class="config-panel" style="cursor:pointer;" onclick="irParaFerramentaAdmin(\'' + f.id + '\')">' +
+                    '<div class="config-panel-title" style="color:var(--accent-gold);font-size:0.9rem;">' + f.icone + ' ' + f.titulo + '</div>' +
+                    '<p style="font-size:0.75rem;color:var(--text-muted);margin:2px 0 0 0;">' + f.desc + '</p></div>';
+            }).join('') || '<div style="color:var(--text-muted);">Sem ferramentas liberadas para seu perfil.</div>';
+        };
+
+        window.irParaFerramentaAdmin = function(tipo) {
+            window.fecharHubAdmin();
+            if (tipo === 'campeonato') {
+                if (typeof abrirModalCampeonatos === 'function') abrirModalCampeonatos();
+                return;
+            }
+            window.abrirModalAdmin(false);
+            irParaSecaoAdmin(tipo);
+        };
+
+        // Seção Downloads: aplicativo local de upload automático.
+        window.APP_LOCAL_VERSAO = '1.0.0';
+        window.renderizarSecaoDownloads = function() {
+            let host = document.getElementById('downloads-corpo');
+            if (!host) return;
+            host.innerHTML =
+                '<div class="config-panel" style="border-color:var(--accent-green);">' +
+                '<div class="config-panel-title" style="color:var(--accent-green);">🖥️ CTAD-Upload-Auto v' + window.APP_LOCAL_VERSAO + ' (Windows 64-bit)</div>' +
+                '<p style="font-size:0.78rem;color:var(--text-muted);margin:0;">Vigia a pasta da pista (e subpastas: treino, qualify, bateria...) e envia baterias novas sozinho para o banco — sem navegador aberto. Autentica com sua conta do site.</p>' +
+                '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">' +
+                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="downloads/CTAD-Upload-Auto.exe" download>⬇️ Baixar executável (.exe)</a>' +
+                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-main);" href="downloads/CTAD-Upload-Auto-config-modelo.json" download>📄 Modelo de config.json</a>' +
+                '</div>' +
+                '<div style="font-size:0.7rem;color:var(--text-muted);">Requisitos: Windows 10/11 64-bit, conta de admin/gestor no site. Se o Storage negar o arquivo original, o conteúdo segue preservado no banco (pdfBase64).</div>' +
+                '</div>';
         };
 
         window.fazerLoginAdmin = async function() {
@@ -1830,22 +1953,66 @@
             atualizarBadgesSolicitacoes();
         }
 
-        // Aplica a visibilidade de cada seção conforme as permissões da sessão atual.
+        // Visão atual do painel: 'galeria' (vitrine de botões) ou o id de uma seção.
+        // O painel NUNCA exibe as seções empilhadas em página corrida.
+        window.__adminVisao = window.__adminVisao || 'galeria';
+
+        // Marca cada seção como permitida/negada (permissão) sem decidir exibição.
         // Gestor de pista (sem poder global) enxerga SOMENTE a seção Pistas.
         function aplicarPermissoesAdmin() {
             let ehGestorPista = false;
             try { ehGestorPista = (typeof window.ehGestorDeAlgumaPista === 'function') && window.ehGestorDeAlgumaPista(); } catch (e) {}
             document.querySelectorAll('.admin-sec[data-admin-modulo]').forEach(sec => {
-                if (sec.id === 'admin-sec-pistas' && ehGestorPista) { sec.style.display = 'flex'; return; }
-                let mod = sec.getAttribute('data-admin-modulo');
-                let acao = sec.getAttribute('data-admin-acao');
-                sec.style.display = hasPerm(mod, acao) ? 'flex' : 'none';
+                let ok = false;
+                if (sec.id === 'admin-sec-pistas' && ehGestorPista) { ok = true; }
+                else {
+                    let mod = sec.getAttribute('data-admin-modulo');
+                    let acao = sec.getAttribute('data-admin-acao');
+                    try { ok = !!hasPerm(mod, acao); } catch (e) { ok = false; }
+                }
+                sec.dataset.permitida = ok ? '1' : '0';
+            });
+            if (typeof window.renderizarGaleriaAdmin === 'function') window.renderizarGaleriaAdmin();
+            aplicarVisibilidadeSecoes();
+        }
+
+        // Galeria OU uma única seção por vez. A navegação por abas continua
+        // valendo como atalho, mas sempre exibindo só a seção escolhida.
+        function aplicarVisibilidadeSecoes() {
+            let visao = window.__adminVisao || 'galeria';
+            let alvo = document.getElementById('admin-sec-' + visao);
+            if (visao !== 'galeria' && (!alvo || alvo.dataset.permitida !== '1')) visao = 'galeria';
+            window.__adminVisao = visao;
+            let gal = document.getElementById('admin-galeria');
+            if (gal) gal.style.display = (visao === 'galeria') ? 'grid' : 'none';
+            let nav = document.querySelector('#admin-fullscreen .admin-nav');
+            if (nav) nav.style.display = (visao === 'galeria') ? 'none' : '';
+            document.querySelectorAll('.admin-secoes .admin-sec').forEach(sec => {
+                let id = sec.id.replace('admin-sec-', '');
+                sec.style.display = (sec.dataset.permitida === '1' && visao === id) ? 'flex' : 'none';
+            });
+            document.querySelectorAll('.admin-nav .zround-tab-btn').forEach(b => {
+                b.classList.toggle('active', (b.getAttribute('onclick') || '').indexOf("'" + visao + "'") !== -1);
             });
         }
+
+        window.irParaGaleriaAdmin = function() {
+            let pagina = document.getElementById('admin-fullscreen');
+            window.__adminVisao = 'galeria';
+            if (pagina && pagina.style.display !== 'flex') {
+                pagina.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                renderizarAdminModal();
+                return;
+            }
+            aplicarVisibilidadeSecoes();
+            if (pagina) pagina.scrollTo({ top: 0 });
+        };
 
         // Renderiza o conteúdo das ferramentas embutidas na página de admin.
         function renderizarConteudoAdmin() {
             prepararTelaoConfig();
+            if (typeof window.renderizarGaleriaAdmin === 'function') window.renderizarGaleriaAdmin();
             if (typeof atualizarListaUploadHistoricoPrincipal === 'function') atualizarListaUploadHistoricoPrincipal();
             if (typeof renderizarGerenciadorPilotos === 'function') renderizarGerenciadorPilotos();
             if (typeof renderizarPainelTagsPilotos === 'function') renderizarPainelTagsPilotos();
@@ -1855,9 +2022,11 @@
             if (typeof renderizarPainelContasVinculadas === 'function') renderizarPainelContasVinculadas();
             if (typeof window.renderizarSecaoPistas === 'function') window.renderizarSecaoPistas();
             if (typeof window.renderizarSecaoCategorias === 'function') window.renderizarSecaoCategorias();
+            if (typeof window.renderizarSecaoDownloads === 'function') window.renderizarSecaoDownloads();
+            if (typeof window.renderizarSecaoManuais === 'function') window.renderizarSecaoManuais();
         }
 
-        // Rola a página de admin até a seção pedida (menu lateral e atalhos).
+        // Abre UMA seção por vez (nunca a página corrida com tudo empilhado).
         function irParaSecaoAdmin(tipo) {
             let pagina = document.getElementById('admin-fullscreen');
             if (!pagina) return;
@@ -1866,11 +2035,9 @@
                 document.body.style.overflow = 'hidden';
                 renderizarAdminModal();
             }
-            let alvo = document.getElementById('admin-sec-' + tipo);
-            if (alvo) pagina.scrollTo({ top: alvo.offsetTop - 70, behavior: 'smooth' });
-            document.querySelectorAll('.admin-nav .zround-tab-btn').forEach(b => {
-                b.classList.toggle('active', (b.getAttribute('onclick') || '').indexOf("'" + tipo + "'") !== -1);
-            });
+            window.__adminVisao = tipo;
+            aplicarVisibilidadeSecoes();
+            pagina.scrollTo({ top: 0 });
         }
 
         window.abrirFerramentaAdmin = function(tipo) {
@@ -2454,6 +2621,10 @@
                 if (!comprasColetivasCache[valor]) return; // espera os dados da compra chegarem
                 linkDiretoJaProcessado = true;
                 resumirCompraColetiva(valor);
+            } else if (chave === 'manual' && valor) {
+                linkDiretoJaProcessado = true;
+                let partes = String(valor).split('/');
+                if (typeof window.abrirManual === 'function') window.abrirManual(partes[0] || 'usuario', partes[1] || null);
             } else if (chave === 'modal' && valor) {
                 linkDiretoJaProcessado = true;
                 const mapaModais = {
@@ -2461,6 +2632,7 @@
                     'campeonatos': 'abrirModalCampeonatos',
                     'pilotos': 'abrirModalPilotos',
                     'patch-notes': 'abrirModalPatchNotes',
+                    'sobre': 'abrirModalSobreCtad',
                     'admin': 'abrirModalAdmin',
                     'tags': 'abrirModalTagsPilotos',
                     'acessibilidade': 'abrirModalAcessibilidade',
@@ -2928,6 +3100,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
 }
 
         // Versão do parser para controle de reprocessamento
+        const PARSER_VERSION = 2; // v2 (atual); v1 = legado
         const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
             const WARN_FILE_SIZE = 10 * 1024 * 1024; // 10MB
             const ALLOWED_TYPES = ['application/pdf', 'text/html', 'text/plain'];
@@ -3526,7 +3699,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
 
 
         window.onclick = function(event) {
-            ['piloto-modal', 'piloto-config-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'patch-notes-modal', 'sobre-ctad-modal', 'vitrine-produtos-modal', 'produto-detalhe-modal', 'convite-desafio-modal', 'minha-conta-modal'].forEach(id => {
+            ['piloto-modal', 'piloto-config-modal', 'compra-resumo-modal', 'participar-campeonato-modal', 'accessibility-modal', 'patch-notes-modal', 'sobre-ctad-modal', 'manuais-modal', 'vitrine-produtos-modal', 'produto-detalhe-modal', 'convite-desafio-modal', 'minha-conta-modal'].forEach(id => {
                 if (event.target === document.getElementById(id)) document.getElementById(id).style.display = 'none';
             });
         };

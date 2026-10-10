@@ -1,3 +1,16 @@
 # Firebase Hosting cache local — não versionar
 .firebase/
 *.log
+# Robo de upload automatico: segredos e estado local — NUNCA versionar
+upload-robo/node_modules/
+upload-robo/serviceAccountKey.json
+upload-robo/.estado.json
+upload-robo/robo.log
+upload-robo/enviados/
+# App local Python: build e estado — nao versionar (o .exe vai p/ downloads/)
+app-local/build/
+app-local/dist/
+app-local/*.spec
+app-local/__pycache__/
+app-local/.estado.json
+app-local/upload-auto.log
