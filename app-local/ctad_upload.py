@@ -52,13 +52,49 @@ from parsers import PARSER_VERSION, parsear_texto, gerar_resumo  # noqa: E402
 
 MAX_ARQUIVO = 25 * 1024 * 1024
 
+#: Modelo gravado automaticamente no primeiro uso da interface gráfica.
+CONFIG_MODELO = {
+    "firebase": {
+        "apiKey": "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",
+        "databaseURL": "https://krathus-telemetria-default-rtdb.firebaseio.com",
+        "storageBucket": "krathus-telemetria.firebasestorage.app",
+    },
+    "email": "",
+    "password": "",
+    "pasta": "C:\\telemetria",
+    "intervalo_segundos": 15,
+    "tempo_real": True,
+    "extensoes": [".pdf", ".html", ".htm"],
+    "pistaId": "krathus",
+    "mover_para_enviados": True,
+    "apagar_remoto": False,
+    "tentativas": 4,
+    "timeout_segundos": 60,
+    "log_nivel": "INFO",
+}
+
+#: Marcado via --no-pause (agendador). Sem ele, erro fatal pausa antes de sair.
+SEM_PAUSA = False
+
+
+def pausar_antes_de_sair():
+    """Evita que a janela feche sozinha antes de dar tempo de ler o erro."""
+    if SEM_PAUSA:
+        return
+    try:
+        if sys.stdin and sys.stdin.isatty():
+            input("Pressione ENTER para fechar...")
+    except (EOFError, KeyboardInterrupt, OSError):
+        pass
+
 
 def carregar_config():
     try:
         with open(CONFIG_PATH, encoding="utf-8-sig") as f:
             cfg = json.load(f)
     except FileNotFoundError:
-        print(f"[app] Nao achei {CONFIG_PATH}. Rode com --configurar.")
+        print(f"[app] Nao achei {CONFIG_PATH}. Rode com --configurar ou --gui.")
+        pausar_antes_de_sair()
         sys.exit(1)
     cfg["email"] = os.environ.get("CTAD_EMAIL", cfg.get("email", ""))
     cfg["password"] = os.environ.get("CTAD_PASS", cfg.get("password", ""))
@@ -470,8 +506,33 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--testar-conexao", action="store_true")
     ap.add_argument("--configurar", action="store_true")
+    ap.add_argument("--gui", action="store_true",
+                    help="abre a interface gráfica (não fecha sozinha em erro)")
+    ap.add_argument("--monitor", action="store_true",
+                    help="monitor contínuo em console (padrão em tarefa agendada)")
+    ap.add_argument("--no-pause", action="store_true",
+                    help="não pausa antes de sair em erro (uso em agendador)")
     ap.add_argument("--pasta", default=None)
     args = ap.parse_args()
+
+    global SEM_PAUSA
+    SEM_PAUSA = args.no_pause
+
+    if args.gui or (not (args.scan_once or args.dry_run or args.testar_conexao
+                          or args.configurar or args.monitor)
+                    and sys.stdin.isatty()):
+        # Duplo clique / uso manual -> interface gráfica (nunca fecha sozinha).
+        # Tarefa agendada (sem console) cai no monitor em console como antes.
+        import gui
+        if not os.path.exists(CONFIG_PATH):
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+                json.dump(CONFIG_MODELO, f, indent=2, ensure_ascii=False)
+            print(f"[app] config.json criado em {CONFIG_PATH}. Complete na interface.")
+        cfg = carregar_config()
+        if args.pasta:
+            cfg["pasta"] = os.path.abspath(args.pasta)
+        gui.executar_gui(cfg, CONFIG_PATH)
+        return
 
     if args.configurar:
         configurar()
@@ -488,6 +549,7 @@ def main():
             print(f"Conexao OK: {up.cli.testar_conexao()}")
         except Exception as e:
             print(f"FALHA: {e}")
+            pausar_antes_de_sair()
             sys.exit(1)
         return
 
@@ -499,6 +561,7 @@ def main():
             log.info(f"Autenticado como {cfg['email']} (nivel {info['nivel']}).")
         except Exception as e:
             log.error(f"Falha de autenticacao: {e}")
+            pausar_antes_de_sair()
             sys.exit(1)
 
     if args.scan_once:
@@ -520,4 +583,17 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("Encerrado pelo usuario.")
+    except SystemExit:
+        raise
+    except Exception as e:
+        # Rede de segurança: erro inesperado também pausa para leitura.
+        try:
+            print(f"ERRO inesperado: {e}")
+        except OSError:
+            pass
+        pausar_antes_de_sair()
+        sys.exit(1)

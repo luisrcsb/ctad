@@ -321,8 +321,8 @@
                     <details style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 10px 12px;">
                         <summary style="cursor: pointer; font-weight: 700; font-size: 0.82rem; color: var(--text-title);">📋 Passo a passo de instalação e configuração</summary>
                         <ol style="font-size: 0.78rem; color: var(--text-main); margin: 8px 0 0 18px; display: flex; flex-direction: column; gap: 6px;">
-                            <li>Baixe o <strong>CTAD-Upload-Auto.exe</strong> abaixo e salve numa pasta fixa (ex: <code>C:\CTAD\app</code>).</li>
-                            <li>Na primeira execução ele cria o <code>config.json</code> ao lado do executável. Rode <code>CTAD-Upload-Auto.exe --configurar</code> e informe: e-mail/senha da sua conta do site, pasta vigiada (ex: <code>C:\ZRound</code>), intervalo e pista.</li>
+                            <li>Baixe o <strong>CTAD-Upload-Auto v1.1.0 (.zip)</strong> abaixo, extraia e salve numa pasta fixa (ex: <code>C:\CTAD\app</code>).</li>
+                            <li>Dê <strong>duplo clique no executável</strong>: abre a <strong>interface gráfica</strong> (configuração, botões e log visível — não fecha sozinha em erro). Preencha e-mail/senha da sua conta do site, escolha a pasta vigiada (ex: <code>C:\ZRound</code>) e clique em 💾 Salvar. (No modo texto: <code>--configurar</code>.)</li>
                             <li>Teste com <code>CTAD-Upload-Auto.exe --testar-conexao</code> e depois <code>--scan-once --dry-run</code> (simula sem enviar).</li>
                             <li>Deixe rodando (<code>CTAD-Upload-Auto.exe</code>) ou agende no Agendador de Tarefas do Windows no logon para operação 24h.</li>
                             <li>Acompanhe pelo <code>upload-auto.log</code> na mesma pasta e pelo histórico de Uploads aqui no painel.</li>
@@ -1836,7 +1836,7 @@
         };
 
         // Seção Downloads: aplicativo local de upload automático.
-        window.APP_LOCAL_VERSAO = '1.0.0';
+        window.APP_LOCAL_VERSAO = '1.1.0';
         window.renderizarSecaoDownloads = function() {
             let host = document.getElementById('downloads-corpo');
             if (!host) return;
@@ -1845,7 +1845,7 @@
                 '<div class="config-panel-title" style="color:var(--accent-green);">🖥️ CTAD-Upload-Auto v' + window.APP_LOCAL_VERSAO + ' (Windows 64-bit)</div>' +
                 '<p style="font-size:0.78rem;color:var(--text-muted);margin:0;">Vigia a pasta da pista (e subpastas: treino, qualify, bateria...) e envia baterias novas sozinho para o banco — sem navegador aberto. Autentica com sua conta do site.</p>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">' +
-                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="downloads/CTAD-Upload-Auto-v1.0.0.zip" download>⬇️ Baixar aplicativo (.zip)</a>' +
+                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="downloads/CTAD-Upload-Auto-v1.1.0.zip" download>⬇️ Baixar aplicativo (.zip)</a>' +
                 '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-main);" href="downloads/CTAD-Upload-Auto-config-modelo.json" download>📄 Modelo de config.json</a>' +
                 '</div>' +
                 '<div style="font-size:0.7rem;color:var(--text-muted);">Requisitos: Windows 10/11 64-bit, conta de admin/gestor no site. Se o Storage negar o arquivo original, o conteúdo segue preservado no banco (pdfBase64).</div>' +

@@ -108,8 +108,8 @@
             {
                 id: 'app-local', icone: '🤖', ordem: 4, titulo: 'App local de upload automático',
                 corpo: `
-                <p>O <strong>CTAD-Upload-Auto.exe</strong> (seção 💾 Downloads) vigia a pasta da pista e subpastas (<em>treino, qualify, bateria…</em>, local ou rede UNC) e envia baterias novas <strong>sem navegador aberto</strong>, com as mesmas regras do upload manual (dedup, resumo público, log).</p>
-                <p><strong>Operação:</strong> <code>--configurar</code> (e-mail/senha de admin/gestor, pasta, pista) → <code>--testar-conexao</code> → <code>--scan-once --dry-run</code> → rodar contínuo ou agendar no logon. Acompanhe por <code>upload-auto.log</code> e pelo histórico de Uploads.</p>
+                <p>O <strong>CTAD-Upload-Auto v1.1.0</strong> (seção 💾 Downloads) vigia a pasta da pista e subpastas (<em>treino, qualify, bateria…</em>, local ou rede UNC) e envia baterias novas <strong>sem navegador aberto</strong>, com as mesmas regras do upload manual (dedup, resumo público, log).</p>
+                <p><strong>Operação:</strong> duplo clique abre a <strong>interface gráfica</strong> (configurar, testar, varrer e monitorar com log visível — nunca fecha sozinha em erro). No modo texto: <code>--configurar</code> (e-mail/senha de admin/gestor, pasta, pista) → <code>--testar-conexao</code> → <code>--scan-once --dry-run</code> → rodar contínuo ou agendar no logon. Acompanhe por <code>upload-auto.log</code> e pelo histórico de Uploads.</p>
                 <p><strong>Regras:</strong> move enviados para <code>enviados/</code>; exclusão local só é registrada (apagar do banco exige <code>apagar_remoto</code> ligado); se o Storage negar, o conteúdo segue no banco (pdfBase64).</p>`
             },
             {
