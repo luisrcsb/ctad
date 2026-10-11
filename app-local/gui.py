@@ -72,6 +72,12 @@ class AppGUI:
         if self.cfg.get("auto_iniciar_monitor") and not self.monitorando:
             self.raiz.after(1000, self._alternar_monitor)
 
+    def _ui(self, fn, *args, **kwargs):
+        """Executa função na thread principal do Tkinter (thread-safe)."""
+        self.raiz.after(0, lambda: fn(*args, **kwargs))
+
+    # ----- construção -----
+
     # ----- construção -----
     def _montar_form(self):
         frm = ttk.LabelFrame(self.raiz, text="Configuração", padding=8)
@@ -185,7 +191,6 @@ class AppGUI:
 
     def _configurar_inicializacao(self):
         """Adiciona ou remove o app da inicialização do Windows."""
-        import subprocess
         import sys
         import os
         
@@ -206,14 +211,14 @@ class AppGUI:
                 key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
                 with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS) as key:
                     winreg.SetValueEx(key, "CTAD-Upload-Auto", 0, winreg.REG_SZ, exe_path)
-                self.var_iniciar_windows.set(True)
-                self._status("Adicionado à inicialização do Windows.")
-                self.log.info("Adicionado à inicialização do Windows.")
-                messagebox.showinfo("Sucesso", "O CTAD será iniciado automaticamente com o Windows.")
+                self._ui(self.var_iniciar_windows.set, True)
+                self._ui(self._status, "Adicionado à inicialização do Windows.")
+                self._ui(self.log.info, "Adicionado à inicialização do Windows.")
+                self._ui(messagebox.showinfo, "Sucesso", "O CTAD será iniciado automaticamente com o Windows.")
             except Exception as e:
-                messagebox.showerror("Erro", f"Falha ao adicionar à inicialização:\n{e}")
-                self.var_iniciar_windows.set(False)
-                self.log.error("Falha ao adicionar à inicialização: %s", e)
+                self._ui(messagebox.showerror, "Erro", f"Falha ao adicionar à inicialização:\n{e}")
+                self._ui(self.var_iniciar_windows.set, False)
+                self._ui(self.log.error, "Falha ao adicionar à inicialização: %s", e)
         else:
             # Remover da inicialização
             try:
@@ -221,17 +226,17 @@ class AppGUI:
                 key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
                 with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_ALL_ACCESS) as key:
                     winreg.DeleteValue(key, "CTAD-Upload-Auto")
-                self.var_iniciar_windows.set(False)
-                self._status("Removido da inicialização do Windows.")
-                self.log.info("Removido da inicialização do Windows.")
-                messagebox.showinfo("Sucesso", "O CTAD não será mais iniciado com o Windows.")
+                self._ui(self.var_iniciar_windows.set, False)
+                self._ui(self._status, "Removido da inicialização do Windows.")
+                self._ui(self.log.info, "Removido da inicialização do Windows.")
+                self._ui(messagebox.showinfo, "Sucesso", "O CTAD não será mais iniciado com o Windows.")
             except FileNotFoundError:
-                self.var_iniciar_windows.set(False)
-                self._status("Não estava na inicialização.")
+                self._ui(self.var_iniciar_windows.set, False)
+                self._ui(self._status, "Não estava na inicialização.")
             except Exception as e:
-                messagebox.showerror("Erro", f"Falha ao remover da inicialização:\n{e}")
-                self.var_iniciar_windows.set(True)
-                self.log.error("Falha ao remover da inicialização: %s", e)
+                self._ui(messagebox.showerror, "Erro", f"Falha ao remover da inicialização:\n{e}")
+                self._ui(self.var_iniciar_windows.set, True)
+                self._ui(self.log.error, "Falha ao remover da inicialização: %s", e)
 
     def _salvar(self):
         cfg = self._ler_form()
@@ -254,17 +259,17 @@ class AppGUI:
         try:
             from ctad_client import CtadClient
             info = CtadClient(cfg).testar_conexao()
-            self.log.info("Conexão OK: %s", info)
-            self._status(f"Conectado! Nível: {info.get('nivel')}")
+            self._ui(self.log.info, "Conexão OK: %s", info)
+            self._ui(self._status, f"Conectado! Nível: {info.get('nivel')}")
         except Exception as e:  # fica visível no log; a janela continua aberta
-            self.log.error("FALHA na conexão: %s", e)
-            self._status("Falha na conexão — veja o log acima.")
+            self._ui(self.log.error, "FALHA na conexão: %s", e)
+            self._ui(self._status, "Falha na conexão — veja o log acima.")
 
     def _scan(self):
         import ctad_upload
         cfg = self._ler_form()
         if not os.path.isdir(cfg["pasta"]):
-            messagebox.showwarning("Pasta inválida", "A pasta vigiada não existe:\n" + cfg["pasta"])
+            self._ui(messagebox.showwarning, "Pasta inválida", "A pasta vigiada não existe:\n" + cfg["pasta"])
             return
         threading.Thread(target=self._trab_scan, args=(ctad_upload, dict(cfg)), daemon=True).start()
 
@@ -275,20 +280,20 @@ class AppGUI:
             info = up.cli.testar_conexao()
             log.info("Autenticado como %s (nível %s).", cfg.get("email"), info.get("nivel"))
             up.ciclo()
-            self._status("Varredura concluída — veja o resultado no log.")
+            self._ui(self._status, "Varredura concluída — veja o resultado no log.")
         except Exception as e:
-            self.log.error("FALHA na varredura: %s", e)
-            self._status("Varredura falhou — veja o erro no log acima.")
+            self._ui(self.log.error, "FALHA na varredura: %s", e)
+            self._ui(self._status, "Varredura falhou — veja o erro no log acima.")
 
     def _alternar_monitor(self):
         if self.monitorando:
             self.parar.set()
-            self._status("Parando monitor…")
+            self._ui(self._status, "Parando monitor…")
             return
         import ctad_upload
         cfg = self._ler_form()
         if not os.path.isdir(cfg["pasta"]):
-            messagebox.showwarning("Pasta inválida", "A pasta vigiada não existe:\n" + cfg["pasta"])
+            self._ui(messagebox.showwarning, "Pasta inválida", "A pasta vigiada não existe:\n" + cfg["pasta"])
             return
         self.parar.clear()
         self.thread_monitor = threading.Thread(
@@ -305,8 +310,8 @@ class AppGUI:
             self.uploader = up
             obs = ctad_upload.iniciar_temporeal(up, cfg["pasta"], log) if cfg.get("tempo_real") else None
             self.monitorando = True
-            self.btn_monitor.configure(text="⏸ Parar monitor")
-            self._status(f"Monitorando {cfg['pasta']} a cada {cfg['intervalo_segundos']}s…")
+            self._ui(self.btn_monitor.configure, text="⏸ Parar monitor")
+            self._ui(self._status, f"Monitorando {cfg['pasta']} a cada {cfg['intervalo_segundos']}s…")
             up.ciclo()
             while not self.parar.wait(cfg["intervalo_segundos"]):
                 up.ciclo()
@@ -314,19 +319,16 @@ class AppGUI:
                 obs.stop()
                 obs.join()
         except Exception as e:
-            self.log.error("FALHA no monitor: %s", e)
-            self._status("Monitor falhou — veja o erro no log acima.")
+            self._ui(self.log.error, "FALHA no monitor: %s", e)
+            self._ui(self._status, "Monitor falhou — veja o erro no log acima.")
         finally:
             self.monitorando = False
-            try:
-                self.btn_monitor.configure(text="▶ Iniciar monitor")
-            except Exception:
-                pass
+            self._ui(self.btn_monitor.configure, text="▶ Iniciar monitor")
             if not self.parar.is_set():
                 pass
             else:
-                self._status("Monitor parado.")
-                self.log.info("Monitor parado pelo usuário.")
+                self._ui(self._status, "Monitor parado.")
+                self._ui(self.log.info, "Monitor parado pelo usuário.")
 
     def _fechar(self):
         self.parar.set()
@@ -349,12 +351,12 @@ class AppGUI:
             import autoupdate
             info = autoupdate.checar(dict(self.cfg), APP_VERSAO)
         except Exception as e:
-            self.log.error("Falha ao verificar atualização: %s", e)
+            self._ui(self.log.error, "Falha ao verificar atualização: %s", e)
             return
         if not info:
             if manual:
-                self.log.info("Já está na mais nova (v%s).", APP_VERSAO)
-                self._status(f"Na mais nova (v{APP_VERSAO}).")
+                self._ui(self.log.info, "Já está na mais nova (v%s).", APP_VERSAO)
+                self._ui(self._status, f"Na mais nova (v{APP_VERSAO}).")
             return
         self.update_info = info
         self.raiz.after(0, self._perguntar_update)
@@ -372,11 +374,15 @@ class AppGUI:
             texto += (f"\nHá {len(outras)} outra(s) cópia(s) rodando — "
                       "serão fechadas se você confirmar.")
         texto += "\nBaixar e atualizar agora?"
+        self._ui(lambda: self._confirmar_atualizacao(info, texto))
+
+    def _confirmar_atualizacao(self, info, texto):
+        import autoupdate
         if not messagebox.askyesno("Atualização disponível", texto):
             self.log.info("Atualização adiada pelo usuário.")
             return
         threading.Thread(target=self._trab_atualizar,
-                         args=(info, bool(outras)), daemon=True).start()
+                         args=(info, bool(outras_copias)), daemon=True).start()
 
     def _trab_atualizar(self, info, matar_outras):
         import tempfile
@@ -386,8 +392,8 @@ class AppGUI:
             zip_path = os.path.join(tmp, "update.zip")
             autoupdate.baixar_e_verificar(info, dict(self.cfg), zip_path, self.log)
             bat = autoupdate.extrair_atualizador(zip_path, tmp)
-            self.log.info("Aplicando atualização e encerrando…")
-            self._status("Atualizando — o app vai fechar e reabrir sozinho.")
+            self._ui(self.log.info, "Aplicando atualização e encerrando…")
+            self._ui(self._status, "Atualizando — o app vai fechar e reabrir sozinho.")
             # Pasta da instalação = onde está o config em uso
             install_dir = os.path.dirname(os.path.abspath(self.caminho_config))
             autoupdate.aplicar_atualizacao(bat, install_dir, zip_path,
@@ -395,8 +401,8 @@ class AppGUI:
             self.parar.set()
             self.raiz.after(500, self._sair_para_update)
         except Exception as e:  # nada foi alterado; janela continua aberta
-            self.log.error("Atualização falhou (nada foi alterado): %s", e)
-            self._status("Atualização falhou — veja o erro no log acima.")
+            self._ui(self.log.error, "Atualização falhou (nada foi alterado): %s", e)
+            self._ui(self._status, "Atualização falhou — veja o erro no log acima.")
 
     def _sair_para_update(self):
         try:
