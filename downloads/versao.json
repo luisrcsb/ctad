@@ -1,7 +1,7 @@
 {
-  "versao": "1.2.1",
-  "zip": "downloads/CTAD-Upload-Auto-v1.2.1.zip",
-  "sha256": "3F821C2939DCDFB4B1AAC2E6A3DAB2CF5FDF4EF09DDBC0265EA621366BF3A15A",
-  "notas": "Autoatualizacao com confirmacao + retry de falhas reprocessa",
+  "versao": "1.2.3",
+  "zip": "downloads/CTAD-Upload-Auto-v1.2.3.zip",
+  "sha256": "80569AA790C8D70E3C9D0AC113EAE1A452DA31A9D53674743EC6701591A5BB8F",
+  "notas": "Thread-safety GUI (_ui helper), auto-update improvements (timeout, logging), fix retry typo, auto-start monitor, Windows startup, LEIA-ME in zip, unified version 1.2.3",
   "obrigatoria": false
 }
