@@ -48,6 +48,13 @@ class AppGUI:
         raiz.geometry("720x560")
         raiz.minsize(620, 480)
 
+        # Configurar estilo para Checkbuttons
+        style = ttk.Style()
+        style.configure("Config.TCheckbutton", 
+                       background="#1a1a1a",
+                       foreground="#e8e8e8",
+                       font=("Segoe UI", 9))
+
         self._montar_form()
         self._montar_botoes()
         self._montar_log()
@@ -106,12 +113,12 @@ class AppGUI:
 
         ttk.Label(frm, text="Iniciar monitor ao abrir:").grid(row=3, column=0, sticky="w", pady=4)
         self.var_auto_iniciar = tk.BooleanVar(value=self.cfg.get("auto_iniciar_monitor", False))
-        ttk.Checkbutton(frm, variable=self.var_auto_iniciar, style="config-input").grid(row=3, column=1, sticky="w", padx=4)
+        ttk.Checkbutton(frm, variable=self.var_auto_iniciar, style="Config.TCheckbutton").grid(row=3, column=1, sticky="w", padx=4)
 
         ttk.Label(frm, text="Iniciar com Windows:").grid(row=4, column=0, sticky="w", pady=4)
         self.var_iniciar_windows = tk.BooleanVar(value=self.cfg.get("iniciar_com_windows", False))
-        ttk.Checkbutton(frm, variable=self.var_iniciar_windows, style="config-input").grid(row=4, column=1, sticky="w", padx=4)
-        ttk.Button(frm, text="🔧 Configurar Inicialização", command=self._configurar_inicializacao, style="config-input").grid(row=4, column=2, padx=4)
+        ttk.Checkbutton(frm, variable=self.var_iniciar_windows, style="Config.TCheckbutton").grid(row=4, column=1, sticky="w", padx=4)
+        ttk.Button(frm, text="🔧 Configurar Inicialização", command=self._configurar_inicializacao).grid(row=4, column=2, padx=4)
 
         frm.columnconfigure(1, weight=1)
 
@@ -249,6 +256,11 @@ class AppGUI:
             messagebox.showerror("Erro ao salvar", str(e))
             self.log.error("Falha ao salvar config: %s", e)
 
+    def _procurar_pasta(self):
+        escolhida = filedialog.askdirectory(title="Escolha a pasta vigiada (ex: relatórios do ZRound)")
+        if escolhida:
+            self.var_pasta.set(os.path.normpath(escolhida))
+
     def _testar(self):
         import ctad_upload
         cfg = self._ler_form()
@@ -374,15 +386,15 @@ class AppGUI:
             texto += (f"\nHá {len(outras)} outra(s) cópia(s) rodando — "
                       "serão fechadas se você confirmar.")
         texto += "\nBaixar e atualizar agora?"
-        self._ui(lambda: self._confirmar_atualizacao(info, texto))
+        self._ui(lambda: self._confirmar_atualizacao(info, texto, outras))
 
-    def _confirmar_atualizacao(self, info, texto):
+    def _confirmar_atualizacao(self, info, texto, outras):
         import autoupdate
         if not messagebox.askyesno("Atualização disponível", texto):
             self.log.info("Atualização adiada pelo usuário.")
             return
         threading.Thread(target=self._trab_atualizar,
-                         args=(info, bool(outras_copias)), daemon=True).start()
+                         args=(info, bool(outras)), daemon=True).start()
 
     def _trab_atualizar(self, info, matar_outras):
         import tempfile

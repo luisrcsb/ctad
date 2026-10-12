@@ -1860,18 +1860,24 @@
         };
 
         // Seção Downloads: aplicativo local de upload automático.
-        window.APP_LOCAL_VERSAO = '1.2.2';
+        window.APP_LOCAL_VERSAO = '1.2.3';
         window.renderizarSecaoDownloads = function() {
             let host = document.getElementById('downloads-corpo');
             if (!host) return;
+
+            let shaInst = '467D67855711DA89CB056EB1B1DBD9C90CB36E1597F46A08795AD594532259CF';
+            let shaZip = 'B142389164D64D1B0AEA5413ACDE77770304E82B1AEB004228B786BFA78B3227';
             host.innerHTML =
                 '<div class="config-panel" style="border-color:var(--accent-green);">' +
                 '<div class="config-panel-title" style="color:var(--accent-green);">🖥️ CTAD-Upload-Auto v' + window.APP_LOCAL_VERSAO + ' (Windows 64-bit)</div>' +
                 '<p style="font-size:0.78rem;color:var(--text-muted);margin:0;">Vigia a pasta da pista (e subpastas: treino, qualify, bateria...) e envia baterias novas sozinho para o banco — sem navegador aberto. Autentica com sua conta do site.</p>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">' +
-                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="downloads/CTAD-Upload-Auto-v1.2.3.zip" download>⬇️ Baixar aplicativo (.zip)</a>' +
+                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="downloads/CTAD-Upload-Auto-Setup-1.2.3.zip" download>⬇️ Instalador Windows (.zip com Setup.exe)</a>' +
+                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-main);" href="downloads/CTAD-Upload-Auto-v1.2.3.zip" download>📦 Aplicativo portátil (.zip)</a>' +
                 '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-main);" href="downloads/CTAD-Upload-Auto-config-modelo.json" download>📄 Modelo de config.json</a>' +
                 '</div>' +
+                '<p style="font-size:0.7rem;color:var(--text-muted);margin:6px 0 0;">O <strong>instalador</strong> segue o padrão Windows (assistente, atalhos, entrada em Aplicativos e recursos, desinstalador e atualização entre versões). O <strong>portátil</strong> é o zip: extraia em uma pasta fixa e execute o .exe.</p>' +
+                '<div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">SHA-256 — instalador: <code>' + shaInst + '</code><br>SHA-256 — portátil: <code>' + shaZip + '</code></div>' +
                 '<div style="font-size:0.7rem;color:var(--text-muted);">Requisitos: Windows 10/11 64-bit, conta de admin/gestor no site. Se o Storage negar o arquivo original, o conteúdo segue preservado no banco (pdfBase64).</div>' +
                 '</div>';
         };

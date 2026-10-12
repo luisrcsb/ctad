@@ -4,8 +4,8 @@
     "databaseURL": "https://krathus-telemetria-default-rtdb.firebaseio.com",
     "storageBucket": "krathus-telemetria.firebasestorage.app"
   },
-  "email": "TROQUE-PARA-O-EMAIL-DO-ADMIN",
-  "password": "TROQUE-AQUI",
+  "email": "",
+  "password": "",
   "pasta": "C:\\telemetria",
   "intervalo_segundos": 15,
   "tempo_real": true,
@@ -15,5 +15,9 @@
   "apagar_remoto": false,
   "tentativas": 4,
   "timeout_segundos": 60,
-  "log_nivel": "INFO"
+  "log_nivel": "INFO",
+  "atualizar_auto": true,
+  "update_url": "https://krathus-telemetria.web.app/downloads/versao.json",
+  "auto_iniciar_monitor": false,
+  "iniciar_com_windows": false
 }

@@ -14,9 +14,17 @@ set LOG=%INST%\atualizacao.log
 echo [%date% %time%] Atualizador iniciado >> "%LOG%"
 
 :aguardar
+REM Espera o app original sair (máx 60 tentativas = ~60s)
+set /a WAIT=0
+:aguardar
 tasklist /FI "PID eq %MEUPID%" /FO LIST 2>nul | findstr /R /C:"^PID:  *%MEUPID% *$" >nul
 if not errorlevel 1 (
+  if !WAIT! GEQ 60 (
+    echo [%date% %time%] TIMEOUT: app nao fechou em 60s. Abortando. >> "%LOG%"
+    exit /b 1
+  )
   timeout /t 1 /nobreak >nul
+  set /a WAIT+=1
   goto aguardar
 )
 
@@ -33,11 +41,13 @@ if "%KILL%"=="1" (
   timeout /t 2 /nobreak >nul
 )
 
+echo [%date% %time%] Verificando hash SHA256... >> "%LOG%"
 for /f %%h in ('powershell -NoProfile -Command "(Get-FileHash -Algorithm SHA256 ''%ZIP%'').Hash"') do set GOT=%%h
 if /i not "%GOT%"=="%SHA%" (
   echo [%date% %time%] FALHA: hash nao confere. Nada foi alterado. >> "%LOG%"
   exit /b 1
 )
+echo [%date% %time%] Hash SHA256 OK. >> "%LOG%"
 
 if exist "%INST%\%EXE%.bak" del "%INST%\%EXE%.bak" >nul 2>&1
 ren "%INST%\%EXE%" "%EXE%.bak" >nul 2>&1
@@ -45,6 +55,7 @@ if not exist "%INST%\%EXE%.bak" (
   echo [%date% %time%] FALHA: nao consegui guardar backup. Nada foi alterado. >> "%LOG%"
   exit /b 1
 )
+echo [%date% %time%] Backup OK. Extraindo... >> "%LOG%"
 powershell -NoProfile -Command "Expand-Archive -Path '%ZIP%' -DestinationPath '%INST%' -Force"
 if errorlevel 1 (
   echo [%date% %time%] FALHA: extracao falhou, restaurando backup. >> "%LOG%"

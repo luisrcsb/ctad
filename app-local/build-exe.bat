@@ -1,7 +1,8 @@
 @echo off
 REM CTAD Upload Auto — gera o executavel e publica em downloads/
-set VERSAO=1.2.2
+REM A versao sai de ctad_upload.py (APP_VERSAO) — fonte unica.
 cd /d "%~dp0"
+for /f "delims=" %%V in ('python -c "import re; print(re.search(r'APP_VERSAO[^0-9]*([0-9][0-9.]*)', open('ctad_upload.py', encoding='utf-8').read()).group(1))"') do set "VERSAO=%%V"
 echo [1/5] Instalando dependencias...
 call python -m pip install -r requirements.txt pyinstaller
 echo [2/5] Gerando CTAD-Upload-Auto.exe v%VERSAO% (pode demorar alguns minutos)...
@@ -13,13 +14,19 @@ if not exist "dist\CTAD-Upload-Auto.exe" (
 )
 echo [3/5] Publicando em downloads/ ...
 if not exist "..\downloads" mkdir "..\downloads"
+copy /y "dist\CTAD-Upload-Auto.exe" "..\downloads\CTAD-Upload-Auto.exe"
 copy /y "config.json" "..\downloads\CTAD-Upload-Auto-config-modelo.json"
 copy /y "LEIA-ME.txt" "..\downloads\LEIA-ME-CTAD-Upload-Auto.txt"
 copy /y "atualizador.bat" "..\downloads\atualizador.bat"
 echo [4/5] Compactando v%VERSAO% (.zip — o Hosting proibe .exe puro) ...
 powershell -NoProfile -Command "Compress-Archive -Path 'dist\CTAD-Upload-Auto.exe','..\downloads\CTAD-Upload-Auto-config-modelo.json','LEIA-ME.txt','atualizador.bat' -DestinationPath '..\downloads\CTAD-Upload-Auto-v%VERSAO%.zip' -Force"
 echo [5/5] Gerando versao.json (autoatualizacao) ...
-python -c "import json,hashlib; z=r'..\downloads\CTAD-Upload-Auto-v%VERSAO%.zip'; h=hashlib.sha256(open(z,'rb').read()).hexdigest().upper(); json.dump({'versao':'%VERSAO%','zip':'downloads/CTAD-Upload-Auto-v%VERSAO%.zip','sha256':h,'notas':'Autoatualizacao com confirmacao + retry de falhas reprocessa','obrigatoria':False}, open(r'..\downloads\versao.json','w'), indent=2); print('versao.json OK', h[:16])"
+python -c "import json,hashlib; z=r'..\downloads\CTAD-Upload-Auto-v%VERSAO%.zip'; h=hashlib.sha256(open(z,'rb').read()).hexdigest().upper(); json.dump({'versao':'%VERSAO%','zip':'downloads/CTAD-Upload-Auto-v%VERSAO%.zip','sha256':h,'notas':'Versao unificada %VERSAO%: correcao da versao interna (APP_VERSAO), GUI thread-safe, autoupdate com validacao sha256, retry de falhas, auto-start do monitor','obrigatoria':False}, open(r'..\downloads\versao.json','w'), indent=2); print('versao.json OK', h[:16])"
+echo [extra] Sincronizando a secao Downloads do site (hash do portatil)...
+python "publicar_downloads.py"
+if errorlevel 1 (
+  echo AVISO: rode build-installer.bat primeiro para gerar o zip do instalador.
+)
 echo.
 echo Pronto! CTAD\downloads\CTAD-Upload-Auto-v%VERSAO%.zip — faca deploy (firebase deploy) para liberar no site.
 pause

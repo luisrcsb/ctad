@@ -1,0 +1,40 @@
+CTAD Upload Auto - Licença de Uso
+===================================
+
+Copyright (c) 2024-2025 CTAD Team
+
+Este software é fornecido "como está", sem garantia de qualquer tipo,
+expressa ou implícita, incluindo, mas não se limitando a, garantias
+de comercialização, adequação a um propósito específico e não
+violação. Em nenhum caso os autores ou detentores dos direitos
+autorais serão responsáveis por qualquer reivindicação, danos ou
+outras responsabilidades, seja em ação de contrato, delito ou de
+outra forma, decorrentes de, fora de ou em conexão com o software
+ou o uso ou outros negócios no software.
+
+O uso deste software está sujeito aos seguintes termos:
+
+1. O software pode ser usado gratuitamente para fins pessoais e
+   comerciais.
+
+2. A distribuição do software original (sem modificações) é
+   permitida, desde que mantidos os avisos de copyright e esta
+   licença.
+
+3. Modificações no código-fonte são permitidas para uso próprio,
+   mas a distribuição de versões modificadas deve incluir o
+   código-fonte ou indicar claramente as alterações realizadas.
+
+4. O nome "CTAD Upload Auto" e logotipos associados são marcas
+   registradas e não podem ser usados para promover produtos
+   derivados sem autorização prévia por escrito.
+
+5. ESTE SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIA DE QUALQUER
+   TIPO. EM NENHUM CASO OS AUTORES SERÃO RESPONSÁVEIS POR QUAISQUER
+   DANOS DIRETOS, INDIRETOS, INCIDENTAIS, ESPECIAIS, EXEMPLARES
+   OU CONSEQUENTES.
+
+Ao instalar e usar este software, você concorda com os termos acima.
+
+CTAD - Central de Telemetria e Análise de Desempenho
+https://krathus-telemetria.web.app

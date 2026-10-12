@@ -109,14 +109,15 @@
                 id: 'app-local', icone: '🤖', ordem: 4, titulo: 'App local de upload automático',
                 corpo: `
                 <p>O <strong>CTAD-Upload-Auto v1.2.3</strong> (seção 💾 Downloads) vigia a pasta da pista e subpastas (<em>treino, qualify, bateria…</em>, local ou rede UNC) e envia baterias novas <strong>sem navegador aberto</strong>, com as mesmas regras do upload manual (dedup, resumo público, log).</p>
+                <p><strong>Instalação:</strong> <em>instalador Windows</em> (<code>CTAD-Upload-Auto-Setup-1.2.3.zip</code> — padrão Windows: assistente, atalhos, Aplicativos e recursos, desinstalador e atualização entre versões) ou <em>zip portátil</em> (extrair em pasta fixa e rodar o .exe). Os SHA-256 para conferência estão na própria seção.</p>
                 <p><strong>Operação:</strong> duplo clique abre a <strong>interface gráfica</strong> (configurar, testar, varrer e monitorar com log visível — nunca fecha sozinha em erro). No modo texto: <code>--configurar</code> (e-mail/senha de admin/gestor, pasta, pista) → <code>--testar-conexao</code> → <code>--scan-once --dry-run</code> → rodar contínuo ou agendar no logon. Acompanhe por <code>upload-auto.log</code> e pelo histórico de Uploads.</p>
                 <p><strong>Regras:</strong> move enviados para <code>enviados/</code>; exclusão local só é registrada (apagar do banco exige <code>apagar_remoto</code> ligado); se o Storage negar, o conteúdo segue no banco (pdfBase64).</p>`
             },
             {
                 id: 'downloads', icone: '💾', ordem: 5, titulo: 'Área de Downloads',
                 corpo: `
-                <p>Cartão/seção onde administradores baixam o <strong>CTAD-Upload-Auto.exe</strong> e o modelo de <code>config.json</code>, com passo a passo de instalação embutido.</p>
-                <p><strong>Nova versão:</strong> rode <code>app-local/build-exe.bat</code> (gera e publica em <code>downloads/</code>), atualize a versão exibida e faça <code>firebase deploy</code>.</p>`
+                <p>Cartão/seção onde administradores baixam o <strong>instalador Windows</strong> (recomendado) ou o <strong>aplicativo portátil</strong> em <code>.zip</code>, com o modelo de <code>config.json</code> e os SHA-256 para conferência.</p>
+                <p><strong>Nova versão:</strong> atualize <code>APP_VERSAO</code> em <code>ctad_upload.py</code>, rode <code>build-installer.bat</code> (instalador) e <code>build-exe.bat</code> (zip portátil + versao.json), atualize os hashes na seção e faça <code>firebase deploy</code>.</p>`
             },
             {
                 id: 'championship', icone: '🏆', ordem: 6, titulo: 'Championship Manager (5 abas)',

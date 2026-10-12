@@ -1,4 +1,4 @@
-CTAD Upload Auto v1.2.0 — LEIA-ME
+CTAD Upload Auto v1.2.3 — LEIA-ME
 ===============================
 Aplicativo local do CTAD (Central de Telemetria e Análise de Desempenho).
 Vigia a pasta da pista e todas as subpastas (treino, qualify, bateria...),
@@ -11,8 +11,16 @@ baterias sozinho para o banco — sem precisar deixar o navegador aberto.
 - Pasta onde ficam os relatórios (local ou rede, ex: C:\ZRound).
 
 2. INSTALAÇÃO
-- Extraia TODO o conteúdo deste zip para uma pasta fixa, ex: C:\CTAD\app
-- Não rode o programa de dentro do zip nem da pasta Downloads.
+Opção A — Instalador Windows (recomendado):
+  Execute CTAD-Upload-Auto-Setup-x.y.z.exe e siga o assistente. Ele instala
+  em %LocalAppData%\Programs\CTAD\CTAD Upload Auto (não precisa de administrador),
+  cria atalho no Menu Iniciar (e área de trabalho, se escolher), registra o
+  programa em "Aplicativos e recursos" com desinstalador e oferece remover
+  uma instalação antiga, se houver. Também há a opção de iniciar o monitor
+  junto com o Windows.
+Opção B — Zip portátil:
+  Extraia TODO o conteúdo deste zip para uma pasta fixa, ex: C:\CTAD\app
+  e não rode o programa de dentro do zip nem da pasta Downloads.
 
 3. PRIMEIRO USO (interface gráfica — recomendado)
 - Dê duplo clique em CTAD-Upload-Auto.exe (abre a janela; ela NÃO fecha
@@ -60,4 +68,4 @@ Manuais sempre atualizados no site: botão 📖 Manual.
 - Clique em 🔄 Atualização para verificar/baixar versão nova (ou deixe o
   aviso automático ao abrir). O app baixa, valida, fecha o necessário,
   guarda backup (.bak) e reabre sozinho — config e dados preservados.
-Versão deste documento: v1.2.0.
+Versão deste documento: v1.2.3.
