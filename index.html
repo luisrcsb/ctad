@@ -3799,64 +3799,9 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
         };
 
         function atualizarKPIsCompactos() {
-            let dadosBase = obterTodosDadosConsolidados();
             const bateriasSel = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
             const pilotosSel = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
-            const dadosFiltrados = dadosBase.filter(item => bateriasSel.includes(item.bateriaKey) && (pilotosSel.length === 0 || pilotosSel.includes(item.piloto)));
-
-            let kpiMaisVitorioso = "--", kpiMelhorVolta = "--", kpiTotalVoltas = dadosFiltrados.reduce((acc, item) => acc + (item.laps ? item.laps.length : 0), 0), kpiMediaGlobal = "--";
-
-            if (listaJsonsCache.length > 0) {
-                let vencedorContadorGlobal = {};
-                listaJsonsCache.forEach(arq => {
-                    let itensDaBateria = (arq.dados || []).map(d => {
-                        let pReal = d.piloto ? d.piloto.trim() : ""; 
-                        let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
-                        if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
-                        return { ...d, piloto: pReal };
-                    }).filter(d => d.piloto && d.laps && d.laps.length > 0);
-                    let ordenados = ordenarParticipantesBateria(itensDaBateria);
-                    if (ordenados.length > 0) vencedorContadorGlobal[ordenados[0].piloto] = (vencedorContadorGlobal[ordenados[0].piloto] || 0) + 1;
-                });
-
-                let maxV = -1;
-                for (let [p, v] of Object.entries(vencedorContadorGlobal)) { if (v > maxV) { maxV = v; kpiMaisVitorioso = `${p} (${v}v)`; } }
-
-                let melhorVoltaValGeral = 999999, melhorVoltaPiloto = "", melhorVoltaInfoExtra = "";
-                dadosFiltrados.forEach(item => {
-                    if (item.laps) {
-                        item.laps.forEach((l, lIdx) => {
-                            let t = typeof l === 'object' ? l.tempo : l;
-                            if (t && t < melhorVoltaValGeral) { melhorVoltaValGeral = t; melhorVoltaPiloto = item.piloto; melhorVoltaInfoExtra = `V${lIdx + 1}`; }
-                        });
-                    }
-                });
-                if (melhorVoltaValGeral < 999999) {
-                    let vel = (26 / melhorVoltaValGeral) * 3.6 * 28;
-                    kpiMelhorVolta = `${melhorVoltaValGeral.toFixed(3)}s <span style="font-size:0.72rem;">(${vel.toFixed(1)}km/h)</span><div style="font-size:0.68rem; color:var(--accent-green);">${melhorVoltaPiloto} (${melhorVoltaInfoExtra})</div>`;
-                }
-
-                let somaTemposValidos = 0, totalVoltasValidas = 0;
-                dadosFiltrados.forEach(item => {
-                    if (item.laps) {
-                        item.laps.forEach(l => {
-                            let t = typeof l === 'object' ? l.tempo : l;
-                            if (t && !isNaN(t) && t > 0) { somaTemposValidos += t; totalVoltasValidas++; }
-                        });
-                    }
-                });
-                if (totalVoltasValidas > 0) {
-                    let mediaSeg = somaTemposValidos / totalVoltasValidas;
-                    kpiMediaGlobal = `${mediaSeg.toFixed(3)}s <span style="font-size:0.72rem;">(${((26 / mediaSeg) * 3.6 * 28).toFixed(1)}km/h)</span>`;
-                }
-            }
-
-            document.getElementById('kpi-val-vitorias').innerText = kpiMaisVitorioso;
-            document.getElementById('kpi-val-melhor').innerHTML = kpiMelhorVolta;
-            document.getElementById('kpi-val-voltas').innerHTML = `${kpiTotalVoltas}`;
-            document.getElementById('kpi-val-media').innerHTML = kpiMediaGlobal;
-
-            // Também atualiza os KPIs por sessão/bateria
+            // Atualiza apenas os KPIs concatenados por sessão/bateria
             atualizarKPIsPorSessao(bateriasSel, pilotosSel);
         }
 
