@@ -176,12 +176,37 @@ begin
   PastaPage.OnNextButtonClick := @PastaPageValidate;
 end;
 
+// Funcao auxiliar para escapar string para JSON
+function JsonEscape(const S: String): String;
+var
+  i: Integer;
+  c: Char;
+begin
+  Result := '';
+  for i := 1 to Length(S) do
+  begin
+    c := S[i];
+    case c of
+      '"': Result := Result + '\ "';
+      '\': Result := Result + '\\';
+      chr(13): Result := Result + '\r';
+      chr(10): Result := Result + '\n';
+      chr(9): Result := Result + '\t';
+      chr(8): Result := Result + '\b';
+      chr(12): Result := Result + '\f';
+    else
+      Result := Result + c;
+    end;
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   CfgPath, Json, Email, Senha, Pasta: String;
   ResultCode: Integer;
   i: Integer;
   PastaEscaped: String;
+  JsonLines: TArrayOfString;
 begin
   if CurStep = ssPostInstall then
   begin
@@ -203,31 +228,38 @@ begin
     end;
     Pasta := PastaEscaped;
 
-    Json := '{\n' +
-      '  "firebase": {\n' +
-      '    "apiKey": "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",\n' +
-      '    "databaseURL": "https://krathus-telemetria-default-rtdb.firebaseio.com",\n' +
-      '    "storageBucket": "krathus-telemetria.firebasestorage.app"\n' +
-      '  },\n' +
-      '  "email": "' + Email + '",\n' +
-      '  "password": "' + Senha + '",\n' +
-      '  "pasta": "' + Pasta + '",\n' +
-      '  "intervalo_segundos": 15,\n' +
-      '  "tempo_real": true,\n' +
-      '  "extensoes": [".pdf", ".html", ".htm"],\n' +
-      '  "pistaId": "krathus",\n' +
-      '  "mover_para_enviados": true,\n' +
-      '  "apagar_remoto": false,\n' +
-      '  "tentativas": 4,\n' +
-      '  "timeout_segundos": 60,\n' +
-      '  "log_nivel": "INFO",\n' +
-      '  "atualizar_auto": true,\n' +
-      '  "update_url": "https://krathus-telemetria.web.app/downloads/versao.json",\n' +
-      '  "auto_iniciar_monitor": false,\n' +
-      '  "iniciar_com_windows": false\n' +
-      '}';
+    // Escapa valores para JSON valido
+    Email := JsonEscape(Email);
+    Senha := JsonEscape(Senha);
+    Pasta := JsonEscape(Pasta);
 
-    SaveStringToFile(CfgPath, Json, False);
+    // Monta JSON como array de linhas para gravar com UTF-8 sem BOM
+    JsonLines := ['{',
+      '  "firebase": {',
+      '    "apiKey": "AIzaSyDCTkeIa6QsY2zYs8S__HlIwcY-zcuhZCA",',
+      '    "databaseURL": "https://krathus-telemetria-default-rtdb.firebaseio.com",',
+      '    "storageBucket": "krathus-telemetria.firebasestorage.app"',
+      '  },',
+      '  "email": "' + Email + '",',
+      '  "password": "' + Senha + '",',
+      '  "pasta": "' + Pasta + '",',
+      '  "intervalo_segundos": 15,',
+      '  "tempo_real": true,',
+      '  "extensoes": [".pdf", ".html", ".htm"],',
+      '  "pistaId": "krathus",',
+      '  "mover_para_enviados": true,',
+      '  "apagar_remoto": false,',
+      '  "tentativas": 4,',
+      '  "timeout_segundos": 60,',
+      '  "log_nivel": "INFO",',
+      '  "atualizar_auto": true,',
+      '  "update_url": "https://krathus-telemetria.web.app/downloads/versao.json",',
+      '  "auto_iniciar_monitor": false,',
+      '  "iniciar_com_windows": false',
+      '}'];
+
+    // Grava UTF-8 sem BOM
+    SaveStringsToUTF8FileWithoutBOM(CfgPath, JsonLines, False);
 
     // Valida conexao rodando o exe com --testar-conexao (console app)
     if not SkipCredValidation then
