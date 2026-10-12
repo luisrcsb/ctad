@@ -2644,6 +2644,43 @@
             return distribuicao;
         }
 
+        // Ordem canônica das provas de um campeonato: por "id" de cadastro.
+        // Usada em UM só lugar para o grid, a lista de provas e a classificação
+        // não divergirem (o Firebase entrega as chaves em ordem de inserção, que
+        // pode diferir da ordem de cadastro quando provas são importadas em lote).
+        // Desempate por chave (bateriaKey) garante ordem determinística.
+        function ordenarProvasPorId(provasSep) {
+            return Object.keys(provasSep || {}).sort((a, b) => {
+                let pa = provasSep[a] || {}, pb = provasSep[b] || {};
+                let ia = pa.id || 0, ib = pb.id || 0;
+                if (ia !== ib) return ia - ib;
+                return String(a).localeCompare(String(b));
+            });
+        }
+
+        // Aplica a mesclagem de pilotos (alias -> nome real) a um nome bruto.
+        // A classificação já fazia isso; o grid não fazia (dois nomes para o
+        // mesmo piloto). Agora ambos usam a mesma regra.
+        function nomeMesclado(nome) {
+            if (nome === null || nome === undefined) return nome;
+            let chave = String(nome).replace(/[.#$\/\[\]]/g, "_");
+            return (mesclagensCache && mesclagensCache[chave]) ? mesclagensCache[chave] : nome;
+        }
+
+        // Remove vazios e duplicados preservando a ordem (evita o mesmo piloto
+        // aparecer duas vezes na grade depois de mesclado).
+        function nomesUnicosSemVazios(lista) {
+            let vistos = new Set();
+            let saida = [];
+            (lista || []).forEach(function (n) {
+                let nome = (n === null || n === undefined) ? '' : String(n).trim();
+                if (!nome || vistos.has(nome)) return;
+                vistos.add(nome);
+                saida.push(nome);
+            });
+            return saida;
+        }
+
         // Abre um modal específico direto a partir da URL, ex:
         //   #participar=camp_xyz   -> abre a inscrição daquele campeonato
         //   #compra=compra_xyz     -> abre o resumo daquela compra coletiva
@@ -2722,7 +2759,7 @@
 
             let ulProvas = document.getElementById('zround-lista-provas-banco-separado');
             let provasSep = camp.bateriasBancoSeparado || {};
-            let provKeys = Object.keys(provasSep);
+            let provKeys = ordenarProvasPorId(provasSep);
             if (provKeys.length === 0) {
                 ulProvas.innerHTML = `<li>Nenhuma prova registrada.</li>`;
             } else {
@@ -2754,15 +2791,16 @@
 
             let gridBaseInicial = [];
             if (usaGridTreino && camp.gridTreinoDados && camp.gridTreinoDados.length > 0) {
-                gridBaseInicial = camp.gridTreinoDados.map(d => d.piloto);
+                gridBaseInicial = camp.gridTreinoDados.map(d => nomeMesclado(d.piloto));
             } else {
-                let inscritosArr = Object.values(pilotosInscritos).map(p => p.nome);
+                let inscritosArr = Object.values(pilotosInscritos).map(p => nomeMesclado(p.nome));
                 if (inscritosArr.length === 0 && provKeys.length > 0) {
                     let primeiraP = provasSep[provKeys[0]];
-                    if (primeiraP && primeiraP.dados) inscritosArr = primeiraP.dados.filter(d => d.laps && d.laps.length > 0).map(d => d.piloto);
+                    if (primeiraP && primeiraP.dados) inscritosArr = primeiraP.dados.filter(d => d.laps && d.laps.length > 0).map(d => nomeMesclado(d.piloto));
                 }
                 gridBaseInicial = inscritosArr;
             }
+            gridBaseInicial = nomesUnicosSemVazios(gridBaseInicial);
 
             let gridsHtml = '';
             for (let g = 0; g < numProvasPrevistas; g++) {
@@ -2775,7 +2813,7 @@
                     let provaAnteriorKey = provKeys[g - 1];
                     if (provaAnteriorKey && provasSep[provaAnteriorKey] && provasSep[provaAnteriorKey].dados) {
                         let ordenadosAnt = ordenarParticipantesBateria(provasSep[provaAnteriorKey].dados.filter(d => d.laps && d.laps.length > 0));
-                        let ordemAnt = ordenadosAnt.map(d => d.piloto);
+                        let ordemAnt = nomesUnicosSemVazios(ordenadosAnt.map(d => nomeMesclado(d.piloto)));
                         pilotoGridAtual = inverterAtivo ? [...ordemAnt].reverse() : ordemAnt;
                         criterioTexto = inverterAtivo ? "Invertido" : "Direto";
                     } else {
@@ -2843,7 +2881,7 @@
 
             let theadEl = document.getElementById('zround-thead-classificacao');
             let tbodyClass = document.getElementById('zround-tabela-classificacao-geral');
-            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
+            let provasArr = ordenarProvasPorId(provasSep).map(k => provasSep[k]);
             let ranking = calcularClassificacaoBancoSeparado(camp);
 
             let thProvasHtml = provasArr.map((arq, idx) => `<th style="text-align: center;">P${idx + 1}</th>`).join('');
@@ -2867,7 +2905,7 @@
 
         function calcularClassificacaoBancoSeparado(camp) {
             let provasSep = camp.bateriasBancoSeparado || {};
-            let provasArr = Object.values(provasSep).sort((a, b) => (a.id || 0) - (b.id || 0));
+            let provasArr = ordenarProvasPorId(provasSep).map(k => provasSep[k]);
             let conf = camp.configuracoes || {};
             let tabelaPontosArr = conf.pontuacaoTabela || [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
             let pilotoDados = {};
@@ -2879,9 +2917,7 @@
                         let posNum = index + 1;
                         let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
                         if (pts > 0) {
-                            let pNome = d.piloto;
-                            let sKey = pNome.replace(/[.#$\/\[\]]/g, "_");
-                            if (mesclagensCache[sKey]) pNome = mesclagensCache[sKey];
+                            let pNome = nomeMesclado(d.piloto);
 
                             if (!pilotoDados[pNome]) pilotoDados[pNome] = { piloto: pNome, provas: new Array(provasArr.length).fill(0), pontos: 0 };
                             pilotoDados[pNome].provas[provaIndex] = pts;

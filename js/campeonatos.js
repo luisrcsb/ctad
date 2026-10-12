@@ -1,30 +1,78 @@
-import { campeonatosCache, campeonatoAtivoKey, db, SENHA_UNIFICADA } from './state.js';
+import { campeonatosCache, campeonatoAtivoKey, db, SENHA_UNIFICADA, mesclagensCache } from './state.js';
+
+// NOTA: a pasta js/ ainda NÃO está ligada ao index.html (o site carrega os
+// scripts clássicos da raiz: campeonatos.js, pilotos-v2.js, ...). Esta versão
+// modular é mantida em SINCRONIA com a implementação canônica do index.html
+// para não divergir quando a modularização for ativada:
+//   - mesma ordem canônica de provas (por "id" de cadastro);
+//   - mesma recontagem de posição (ordenarParticipantes ~ ordenarParticipantesBateria);
+//   - mesma mesclagem de nomes de piloto (nomeMesclado).
+
+function valorTempo(l) {
+    return (l && typeof l === 'object') ? Number(l.tempo) : Number(l);
+}
+
+// Equivalente a ordenarParticipantesBateria() (index.html): mais voltas,
+// depois menor tempo total, depois melhor volta.
+function ordenarParticipantes(participantes) {
+    if (!participantes || participantes.length === 0) return [];
+    const totalValido = (p) => (p.laps || [])
+        .map(valorTempo)
+        .filter(t => Number.isFinite(t) && t > 0)
+        .reduce((acc, t) => acc + t, 0);
+
+    return [...participantes].sort((a, b) => {
+        const voltasA = (a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+        const voltasB = (b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0).length;
+        if (voltasA !== voltasB) return voltasB - voltasA;
+        const tempoA = totalValido(a);
+        const tempoB = totalValido(b);
+        if (tempoA !== tempoB) return tempoA - tempoB;
+        const melhorA = Math.min(...((a.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+        const melhorB = Math.min(...((b.laps || []).map(valorTempo).filter(t => Number.isFinite(t) && t > 0)), Infinity);
+        return melhorA - melhorB;
+    });
+}
+
+function nomeMesclado(nome) {
+    if (nome === null || nome === undefined) return nome;
+    let chave = String(nome).replace(/[.#$\/\[\]]/g, "_");
+    return (mesclagensCache && mesclagensCache[chave]) ? mesclagensCache[chave] : nome;
+}
 
 export function calcularClassificacaoBancoSeparado(camp) {
     let provasSep = camp.bateriasBancoSeparado || {};
     let conf = camp.configuracoes || {};
     let tabelaPontosArr = conf.pontuacaoTabela || [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
-    let pilotoPontos = {};
 
-    Object.values(provasSep).forEach(arq => {
-        if (arq && arq.dados) {
-            arq.dados.forEach(d => {
-                if (!d.laps || d.laps.length === 0) return;
-                let posNum = parseInt(String(d.pos).replace('º', '').trim(), 10);
-                let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
-                if (pts > 0) {
-                    let pNome = d.piloto;
-                    if (!pilotoPontos[pNome]) pilotoPontos[pNome] = 0;
-                    pilotoPontos[pNome] += pts;
-                }
-            });
-        }
+    let provasArr = Object.keys(provasSep)
+        .sort((a, b) => {
+            let ia = (provasSep[a] && provasSep[a].id) || 0;
+            let ib = (provasSep[b] && provasSep[b].id) || 0;
+            if (ia !== ib) return ia - ib;
+            return String(a).localeCompare(String(b));
+        })
+        .map(k => provasSep[k]);
+
+    let pilotoDados = {};
+    provasArr.forEach((arq, provaIndex) => {
+        if (!arq || !Array.isArray(arq.dados)) return;
+        let ordenadosBateria = ordenarParticipantes(arq.dados.filter(d => d.laps && d.laps.length > 0));
+        ordenadosBateria.forEach((d, index) => {
+            let posNum = index + 1;
+            let pts = (posNum > 0 && posNum <= tabelaPontosArr.length) ? tabelaPontosArr[posNum - 1] : 0;
+            if (pts <= 0) return;
+            let pNome = nomeMesclado(d.piloto);
+            if (!pilotoDados[pNome]) pilotoDados[pNome] = { piloto: pNome, provas: new Array(provasArr.length).fill(0), pontos: 0 };
+            pilotoDados[pNome].provas[provaIndex] = pts;
+        });
     });
 
-    let ranking = [];
-    for (let [piloto, pontos] of Object.entries(pilotoPontos)) {
-        ranking.push({ piloto, pontos });
-    }
+    let ranking = Object.values(pilotoDados).map(p => {
+        while (p.provas.length < provasArr.length) p.provas.push(0);
+        p.pontos = p.provas.reduce((acc, val) => acc + val, 0);
+        return p;
+    });
     ranking.sort((a, b) => b.pontos - a.pontos);
     return ranking;
 }
@@ -70,8 +118,8 @@ export async function criarCampeonatoProtegido() {
     let campKey = "camp_" + nomeCamp.toLowerCase().replace(/[^a-z0-9]/g, "_");
     let novoCamp = {
         chave: campKey, nome: nomeCamp, status: "Em andamento",
-        configuracoes: { numeroProvas: 4, pilotosPorProva: 10, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] },
-        pilotosInscritos: {}, bateriasBancoSeparado: {}
+        configuracoes: { numeroProvas: 4, pilotosPorChave: 10, inverterSegundaBateria: true, usaGridTreino: false, pontuacaoTabela: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], categoria: '' },
+        pilotosInscritos: {}, bateriasBancoSeparado: {}, gridTreinoDados: null
     };
     await db.ref('campeonatos/' + campKey).set(novoCamp);
     document.getElementById('input-nome-campeonato').value = "";
