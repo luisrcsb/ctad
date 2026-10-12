@@ -108,8 +108,8 @@
             {
                 id: 'app-local', icone: '🤖', ordem: 4, titulo: 'App local de upload automático',
                 corpo: `
-                <p>O <strong>CTAD-Upload-Auto v1.2.3</strong> (seção 💾 Downloads) vigia a pasta da pista e subpastas (<em>treino, qualify, bateria…</em>, local ou rede UNC) e envia baterias novas <strong>sem navegador aberto</strong>, com as mesmas regras do upload manual (dedup, resumo público, log).</p>
-                <p><strong>Instalação:</strong> <em>instalador Windows</em> (<code>CTAD-Upload-Auto-Setup-1.2.3.zip</code> — padrão Windows: assistente, atalhos, Aplicativos e recursos, desinstalador e atualização entre versões) ou <em>zip portátil</em> (extrair em pasta fixa e rodar o .exe). Os SHA-256 para conferência estão na própria seção.</p>
+                <p>O <strong>CTAD-Upload-Auto v1.2.4</strong> (seção 💾 Downloads) vigia a pasta da pista e subpastas (<em>treino, qualify, bateria…</em>, local ou rede UNC) e envia baterias novas <strong>sem navegador aberto</strong>, com as mesmas regras do upload manual (dedup, resumo público, log).</p>
+                <p><strong>Instalação:</strong> <em>instalador Windows</em> (<code>CTAD-Upload-Auto-Setup-1.2.4.zip</code> — padrão Windows: assistente, atalhos, Aplicativos e recursos, desinstalador e atualização entre versões) ou <em>zip portátil</em> (extrair em pasta fixa e rodar o .exe). Os SHA-256 para conferência estão na própria seção.</p>
                 <p><strong>Operação:</strong> duplo clique abre a <strong>interface gráfica</strong> (configurar, testar, varrer e monitorar com log visível — nunca fecha sozinha em erro). No modo texto: <code>--configurar</code> (e-mail/senha de admin/gestor, pasta, pista) → <code>--testar-conexao</code> → <code>--scan-once --dry-run</code> → rodar contínuo ou agendar no logon. Acompanhe por <code>upload-auto.log</code> e pelo histórico de Uploads.</p>
                 <p><strong>Regras:</strong> move enviados para <code>enviados/</code>; exclusão local só é registrada (apagar do banco exige <code>apagar_remoto</code> ligado); se o Storage negar, o conteúdo segue no banco (pdfBase64).</p>`
             },

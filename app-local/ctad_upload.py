@@ -53,7 +53,7 @@ from parsers import PARSER_VERSION, parsear_texto, gerar_resumo  # noqa: E402
 MAX_ARQUIVO = 25 * 1024 * 1024
 
 #: Versão única do app (GUI, --versao e autoupdate usam esta).
-APP_VERSAO = "1.2.3"
+APP_VERSAO = "1.2.4"
 
 #: Modelo gravado automaticamente no primeiro uso da interface gráfica.
 CONFIG_MODELO = {

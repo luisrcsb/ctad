@@ -1851,20 +1851,20 @@
         };
 
         // Seção Downloads: aplicativo local de upload automático.
-        window.APP_LOCAL_VERSAO = '1.2.3';
+        window.APP_LOCAL_VERSAO = '1.2.4';
         window.renderizarSecaoDownloads = function() {
             let host = document.getElementById('downloads-corpo');
             if (!host) return;
 
-            let shaInst = 'E2CD93C29F2AF6506821941AFCADB7329D2B7CD2A533203DC2EE9820C6A83773';
-            let shaZip = 'B142389164D64D1B0AEA5413ACDE77770304E82B1AEB004228B786BFA78B3227';
+            let shaInst = '2D092D3D805A916121DFB2EC4214AA2428AA0B2DDEB88E0CAFBC391A7C9A0316';
+            let shaZip = 'DD600A64BFD223CCA6500DD09C8DF88BB57809A5E106E54C547D83209211E4A4';
             host.innerHTML =
                 '<div class="config-panel" style="border-color:var(--accent-green);">' +
                 '<div class="config-panel-title" style="color:var(--accent-green);">🖥️ CTAD-Upload-Auto v' + window.APP_LOCAL_VERSAO + ' (Windows 64-bit)</div>' +
                 '<p style="font-size:0.78rem;color:var(--text-muted);margin:0;">Vigia a pasta da pista (e subpastas: treino, qualify, bateria...) e envia baterias novas sozinho para o banco — sem navegador aberto. Autentica com sua conta do site.</p>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">' +
-                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="downloads/CTAD-Upload-Auto-Setup-1.2.3.zip" download>⬇️ Instalador Windows (.zip com Setup.exe)</a>' +
-                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-main);" href="downloads/CTAD-Upload-Auto-v1.2.3.zip" download>📦 Aplicativo portátil (.zip)</a>' +
+                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="downloads/CTAD-Upload-Auto-Setup-1.2.4.zip" download>⬇️ Instalador Windows (.zip com Setup.exe)</a>' +
+                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-main);" href="downloads/CTAD-Upload-Auto-v1.2.4.zip" download>📦 Aplicativo portátil (.zip)</a>' +
                 '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-main);" href="downloads/CTAD-Upload-Auto-config-modelo.json" download>📄 Modelo de config.json</a>' +
                 '</div>' +
                 '<p style="font-size:0.7rem;color:var(--text-muted);margin:6px 0 0;">O <strong>instalador</strong> segue o padrão Windows (assistente, atalhos, entrada em Aplicativos e recursos, desinstalador e atualização entre versões). O <strong>portátil</strong> é o zip: extraia em uma pasta fixa e execute o .exe.</p>' +
