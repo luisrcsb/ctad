@@ -197,7 +197,7 @@ begin
   begin
     c := S[i];
     case c of
-      '"': Result := Result + '\ "';
+      '"': Result := Result + '\' + '"';
       '\': Result := Result + '\\';
       chr(13): Result := Result + '\r';
       chr(10): Result := Result + '\n';
