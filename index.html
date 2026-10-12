@@ -321,7 +321,7 @@
                     <details style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 10px 12px;">
                         <summary style="cursor: pointer; font-weight: 700; font-size: 0.82rem; color: var(--text-title);">📋 Passo a passo de instalação e configuração</summary>
                         <ol style="font-size: 0.78rem; color: var(--text-main); margin: 8px 0 0 18px; display: flex; flex-direction: column; gap: 6px;">
-                            <li>Baixe o <strong>CTAD-Upload-Auto v1.2.2 (.zip)</strong> abaixo, extraia e salve numa pasta fixa (ex: <code>C:\CTAD\app</code>).</li>
+                            <li>Baixe o <strong>CTAD-Upload-Auto v1.2.3 (.zip)</strong> abaixo, extraia e salve numa pasta fixa (ex: <code>C:\CTAD\app</code>).</li>
                             <li>Dê <strong>duplo clique no executável</strong>: abre a <strong>interface gráfica</strong> (configuração, botões e log visível — não fecha sozinha em erro). Preencha e-mail/senha da sua conta do site, escolha a pasta vigiada (ex: <code>C:\ZRound</code>) e clique em 💾 Salvar. (No modo texto: <code>--configurar</code>.)</li>
                             <li>Teste com <code>CTAD-Upload-Auto.exe --testar-conexao</code> e depois <code>--scan-once --dry-run</code> (simula sem enviar).</li>
                             <li>Deixe rodando (<code>CTAD-Upload-Auto.exe</code>) ou agende no Agendador de Tarefas do Windows no logon para operação 24h.</li>
@@ -812,6 +812,16 @@
                 <div class="kpi-compact-card">
                     <span class="kpi-compact-label">⏱️ Média Global do Grid</span>
                     <span class="kpi-compact-value" id="kpi-val-media">--</span>
+                </div>
+            </section>
+
+            <!-- KPIs por Sessão/Bateria (concatenados) -->
+            <section class="kpi-compact-section" style="margin-top: 8px;">
+                <div class="kpi-compact-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(26,130,215,0.12), rgba(26,130,215,0.04)); border-color: var(--accent-blue);">
+                    <div style="font-weight: 700; color: var(--accent-blue); margin-bottom: 6px; font-size: 0.82rem;">📋 KPIs por Sessão / Bateria (Concatenados)</div>
+                    <div id="kpi-por-sessao-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px;">
+                        <div style="color: var(--text-muted); font-size: 0.75rem; grid-column: 1 / -1; text-align: center; padding: 8px;">Selecione baterias acima para ver KPIs por sessão</div>
+                    </div>
                 </div>
             </section>
 
@@ -3864,6 +3874,98 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             document.getElementById('kpi-val-melhor').innerHTML = kpiMelhorVolta;
             document.getElementById('kpi-val-voltas').innerHTML = `${kpiTotalVoltas}`;
             document.getElementById('kpi-val-media').innerHTML = kpiMediaGlobal;
+
+            // Também atualiza os KPIs por sessão/bateria
+            atualizarKPIsPorSessao(bateriasSel, pilotosSel);
+        }
+
+        // NOVA FUNÇÃO: KPIs por Sessão/Bateria (concatenados)
+        function atualizarKPIsPorSessao(bateriasSel, pilotosSel) {
+            const container = document.getElementById('kpi-por-sessao-container');
+            if (!container) return;
+
+            let dadosBase = obterTodosDadosConsolidados();
+            const dadosFiltrados = dadosBase.filter(item => bateriasSel.includes(item.bateriaKey) && (pilotosSel.length === 0 || pilotosSel.includes(item.piloto)));
+
+            if (bateriasSel.length === 0 || dadosFiltrados.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.75rem; grid-column: 1 / -1; text-align: center; padding: 8px;">Nenhuma bateria selecionada ou sem dados</div>';
+                return;
+            }
+
+            // Agrupa dados por bateriaKey
+            const dadosPorBateria = {};
+            dadosFiltrados.forEach(item => {
+                if (!dadosPorBateria[item.bateriaKey]) dadosPorBateria[item.bateriaKey] = [];
+                dadosPorBateria[item.bateriaKey].push(item);
+            });
+
+            // Para cada bateria selecionada, calcula os 4 KPIs
+            let htmlCards = bateriasSel.map(batKey => {
+                const itens = dadosPorBateria[batKey] || [];
+                if (itens.length === 0) return '';
+
+                // 1. Piloto com Mais Vitórias (nesta bateria: quem ganhou)
+                let vencedor = '--';
+                const itensComVoltas = itens.filter(d => d.laps && d.laps.length > 0);
+                if (itensComVoltas.length > 0) {
+                    let ordenados = ordenarParticipantesBateria(itensComVoltas.map(d => {
+                        let pReal = d.piloto ? d.piloto.trim() : "";
+                        let safeKey = pReal.replace(/[.#$\/\[\]]/g, "_");
+                        if (mesclagensCache[safeKey]) pReal = mesclagensCache[safeKey];
+                        return { ...d, piloto: pReal };
+                    }));
+                    if (ordenados.length > 0) vencedor = ordenados[0].piloto;
+                }
+
+                // 2. Melhor Volta Geral
+                let melhorVoltaVal = 999999, melhorVoltaPiloto = '', melhorVoltaNum = 0;
+                itensComVoltas.forEach(item => {
+                    if (item.laps) {
+                        item.laps.forEach((l, lIdx) => {
+                            let t = typeof l === 'object' ? l.tempo : l;
+                            if (t && t < melhorVoltaVal) { melhorVoltaVal = t; melhorVoltaPiloto = item.piloto; melhorVoltaNum = lIdx + 1; }
+                        });
+                    }
+                });
+                let melhorVoltaHtml = melhorVoltaVal < 999999
+                    ? `${melhorVoltaVal.toFixed(3)}s <span style="font-size:0.65rem;">(${((26 / melhorVoltaVal) * 3.6 * 28).toFixed(1)}km/h)</span><div style="font-size:0.62rem; color:var(--accent-green);">${melhorVoltaPiloto} (V${melhorVoltaNum})</div>`
+                    : '--';
+
+                // 3. Voltas Válidas Analisadas
+                let totalVoltas = 0;
+                itensComVoltas.forEach(item => {
+                    if (item.laps) item.laps.forEach(l => { let t = typeof l === 'object' ? l.tempo : l; if (t && !isNaN(t) && t > 0) totalVoltas++; });
+                });
+
+                // 4. Média Global do Grid (nesta bateria)
+                let somaTempos = 0, voltasValidas = 0;
+                itensComVoltas.forEach(item => {
+                    if (item.laps) item.laps.forEach(l => { let t = typeof l === 'object' ? l.tempo : l; if (t && !isNaN(t) && t > 0) { somaTempos += t; voltasValidas++; } });
+                });
+                let mediaHtml = voltasValidas > 0
+                    ? `${(somaTempos / voltasValidas).toFixed(3)}s <span style="font-size:0.65rem;">(${((26 / (somaTempos / voltasValidas)) * 3.6 * 28).toFixed(1)}km/h)</span>`
+                    : '--';
+
+                // Nome da sessão formatado
+                let sessaoNome = '';
+                let arqRef = listaJsonsCache.find(a => a.bateriaKey === batKey);
+                if (arqRef) sessaoNome = formatarNomeSessao(arqRef.sessao || batKey);
+                else sessaoNome = batKey;
+
+                return `
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 10px;">
+                        <div style="font-weight: 700; color: var(--accent-blue); font-size: 0.75rem; margin-bottom: 6px; border-bottom: 1px solid var(--border-card); padding-bottom: 4px;">${escapeHtml(sessaoNome)}</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 0.68rem;">
+                            <div><span style="color: var(--text-muted);">👑 Vencedor:</span> <span style="color: var(--text-main);">${escapeHtml(vencedor)}</span></div>
+                            <div><span style="color: var(--text-muted);">⚡ Melhor Volta:</span> ${melhorVoltaHtml}</div>
+                            <div><span style="color: var(--text-muted);">📊 Voltas Válidas:</span> <span style="color: var(--text-main); font-weight: 600;">${totalVoltas}</span></div>
+                            <div><span style="color: var(--text-muted);">⏱️ Média Grid:</span> ${mediaHtml}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = htmlCards || '<div style="color: var(--text-muted); font-size: 0.75rem; grid-column: 1 / -1; text-align: center; padding: 8px;">Sem dados nas baterias selecionadas</div>';
         }
 
         function renderizarKpisGestaoDashboard() {
