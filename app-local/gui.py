@@ -103,22 +103,27 @@ class AppGUI:
         ttk.Entry(frm, textvariable=self.var_pasta).grid(row=1, column=1, columnspan=2, sticky="ew", padx=4, pady=4)
         ttk.Button(frm, text="Procurar…", command=self._procurar_pasta).grid(row=1, column=3, pady=4)
 
-        ttk.Label(frm, text="Intervalo (s):").grid(row=2, column=0, sticky="w")
+        ttk.Label(frm, text="ZRound.exe (opcional):").grid(row=2, column=0, sticky="w", pady=4)
+        self.var_zround = tk.StringVar(value=self.cfg.get("zround_exe", ""))
+        ttk.Entry(frm, textvariable=self.var_zround).grid(row=2, column=1, columnspan=2, sticky="ew", padx=4, pady=4)
+        ttk.Button(frm, text="Procurar…", command=self._procurar_zround).grid(row=2, column=3, pady=4)
+
+        ttk.Label(frm, text="Intervalo (s):").grid(row=4, column=0, sticky="w")
         self.var_intervalo = tk.StringVar(value=str(self.cfg.get("intervalo_segundos", 15)))
-        ttk.Entry(frm, textvariable=self.var_intervalo, width=10).grid(row=2, column=1, sticky="w", padx=4)
+        ttk.Entry(frm, textvariable=self.var_intervalo, width=10).grid(row=4, column=1, sticky="w", padx=4)
 
-        ttk.Label(frm, text="Pista:").grid(row=2, column=2, sticky="w")
+        ttk.Label(frm, text="Pista:").grid(row=4, column=2, sticky="w")
         self.var_pista = tk.StringVar(value=self.cfg.get("pistaId", "krathus"))
-        ttk.Entry(frm, textvariable=self.var_pista, width=20).grid(row=2, column=3, sticky="w", padx=4)
+        ttk.Entry(frm, textvariable=self.var_pista, width=20).grid(row=4, column=3, sticky="w", padx=4)
 
-        ttk.Label(frm, text="Iniciar monitor ao abrir:").grid(row=3, column=0, sticky="w", pady=4)
+        ttk.Label(frm, text="Iniciar monitor ao abrir:").grid(row=5, column=0, sticky="w", pady=4)
         self.var_auto_iniciar = tk.BooleanVar(value=self.cfg.get("auto_iniciar_monitor", False))
-        ttk.Checkbutton(frm, variable=self.var_auto_iniciar, style="Config.TCheckbutton").grid(row=3, column=1, sticky="w", padx=4)
+        ttk.Checkbutton(frm, variable=self.var_auto_iniciar, style="Config.TCheckbutton").grid(row=5, column=1, sticky="w", padx=4)
 
-        ttk.Label(frm, text="Iniciar com Windows:").grid(row=4, column=0, sticky="w", pady=4)
+        ttk.Label(frm, text="Iniciar com Windows:").grid(row=6, column=0, sticky="w", pady=4)
         self.var_iniciar_windows = tk.BooleanVar(value=self.cfg.get("iniciar_com_windows", False))
-        ttk.Checkbutton(frm, variable=self.var_iniciar_windows, style="Config.TCheckbutton").grid(row=4, column=1, sticky="w", padx=4)
-        ttk.Button(frm, text="🔧 Configurar Inicialização", command=self._configurar_inicializacao).grid(row=4, column=2, padx=4)
+        ttk.Checkbutton(frm, variable=self.var_iniciar_windows, style="Config.TCheckbutton").grid(row=6, column=1, sticky="w", padx=4)
+        ttk.Button(frm, text="🔧 Configurar Inicialização", command=self._configurar_inicializacao).grid(row=6, column=2, padx=4)
 
         frm.columnconfigure(1, weight=1)
 
@@ -135,6 +140,8 @@ class AppGUI:
         self.btn_monitor.pack(side="left", padx=2)
         self.btn_update = ttk.Button(frm, text="🔄 Atualização", command=lambda: self._checar_update(True))
         self.btn_update.pack(side="left", padx=2)
+        self.btn_zround = ttk.Button(frm, text="🏁 Abrir ZRound", command=self._abrir_zround)
+        self.btn_zround.pack(side="left", padx=2)
 
     def _montar_log(self):
         frm = ttk.LabelFrame(self.raiz, text="Atividade (tudo fica registrado aqui — a janela não fecha sozinha)", padding=8)
@@ -178,6 +185,7 @@ class AppGUI:
             "email": self.var_email.get().strip(),
             "password": self.var_senha.get(),
             "pasta": os.path.abspath(self.var_pasta.get().strip() or self.cfg.get("pasta", "")),
+            "zround_exe": self.var_zround.get().strip(),
             "intervalo_segundos": intervalo,
             "pistaId": (self.var_pista.get().strip() or "krathus").lower(),
             "auto_iniciar_monitor": self.var_auto_iniciar.get(),
@@ -260,6 +268,31 @@ class AppGUI:
         escolhida = filedialog.askdirectory(title="Escolha a pasta vigiada (ex: relatórios do ZRound)")
         if escolhida:
             self.var_pasta.set(os.path.normpath(escolhida))
+
+    def _procurar_zround(self):
+        escolhido = filedialog.askopenfilename(
+            title="Escolha o ZRound.exe",
+            filetypes=[("Executável ZRound", "ZRound.exe"), ("Todos arquivos", "*.exe")]
+        )
+        if escolhido:
+            self.var_zround.set(os.path.normpath(escolhido))
+
+    def _abrir_zround(self):
+        zround_exe = self.var_zround.get().strip() or self.cfg.get("zround_exe", "")
+        if not zround_exe:
+            messagebox.showwarning("ZRound não configurado", "Informe o caminho do ZRound.exe na configuração e salve.")
+            return
+        if not os.path.isfile(zround_exe):
+            messagebox.showerror("Arquivo não encontrado", f"O ZRound.exe não foi encontrado em:\n{zround_exe}")
+            return
+        try:
+            import subprocess
+            subprocess.Popen([zround_exe])
+            self.log.info("ZRound aberto: %s", zround_exe)
+            self._status("ZRound iniciado.")
+        except Exception as e:
+            messagebox.showerror("Erro ao abrir ZRound", str(e))
+            self.log.error("Erro ao abrir ZRound: %s", e)
 
     def _testar(self):
         import ctad_upload

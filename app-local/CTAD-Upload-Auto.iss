@@ -84,11 +84,12 @@ Type: filesandordirs; Name: "{app}"
 
 ; Migracao: se existir a instalacao antiga (NSIS) em Program Files,
 ; oferece remove-la antes de prosseguir (evita ficar com duas copias).
-; Pagina customizada para credenciais + pasta vigiada (ASCII only)
+; Pagina customizada para credenciais + pasta vigiada + ZRound (ASCII only)
 [Code]
 var
   CredPage: TInputQueryWizardPage;
   PastaPage: TInputQueryWizardPage;
+  ZRoundPage: TInputQueryWizardPage;
   SkipCredValidation: Boolean;
 
 function CredPageValidate(Sender: TWizardPage): Boolean;
@@ -174,6 +175,15 @@ begin
     PastaPadrao := 'C:\telemetria';
   PastaPage.Values[0] := PastaPadrao;
   PastaPage.OnNextButtonClick := @PastaPageValidate;
+
+  // Pagina do executavel do ZRound (opcional)
+  ZRoundPage := CreateInputQueryPage(wpSelectDir,
+    'Executavel do ZRound (Opcional)', 'Informe o caminho do ZRound.exe para abrir pelo CTAD.',
+    'Ex: C:\Program Files\ZRound\ZRound.exe. Deixe vazio se nao quiser integrar.');
+
+  ZRoundPage.Add('ZRound.exe:', False);
+  ZRoundPage.Values[0] := '';
+  // Nao valida - e opcional
 end;
 
 // Funcao auxiliar para escapar string para JSON
@@ -202,7 +212,7 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  CfgPath, Json, Email, Senha, Pasta: String;
+  CfgPath, Json, Email, Senha, Pasta, ZRoundExe: String;
   ResultCode: Integer;
   i: Integer;
   PastaEscaped: String;
@@ -215,6 +225,7 @@ begin
     Email := Trim(CredPage.Values[0]);
     Senha := CredPage.Values[1];
     Pasta := Trim(PastaPage.Values[0]);
+    ZRoundExe := Trim(ZRoundPage.Values[0]);
 
     // Cria o JSON completo com as credenciais informadas
     // Converte \ para / (valido no Windows e JSON, evita problemas de escape)
@@ -228,10 +239,21 @@ begin
     end;
     Pasta := PastaEscaped;
 
+    // Converte \ para / no ZRoundExe tbm
+    ZRoundExe := '';
+    for i := 1 to Length(Trim(ZRoundPage.Values[0])) do
+    begin
+      if Trim(ZRoundPage.Values[0])[i] = '\' then
+        ZRoundExe := ZRoundExe + '/'
+      else
+        ZRoundExe := ZRoundExe + Trim(ZRoundPage.Values[0])[i];
+    end;
+
     // Escapa valores para JSON valido
     Email := JsonEscape(Email);
     Senha := JsonEscape(Senha);
     Pasta := JsonEscape(Pasta);
+    ZRoundExe := JsonEscape(ZRoundExe);
 
     // Monta JSON como array de linhas para gravar com UTF-8 sem BOM
     JsonLines := ['{',
@@ -243,6 +265,7 @@ begin
       '  "email": "' + Email + '",',
       '  "password": "' + Senha + '",',
       '  "pasta": "' + Pasta + '",',
+      '  "zround_exe": "' + ZRoundExe + '",',
       '  "intervalo_segundos": 15,',
       '  "tempo_real": true,',
       '  "extensoes": [".pdf", ".html", ".htm"],',

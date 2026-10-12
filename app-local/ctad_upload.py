@@ -65,6 +65,7 @@ CONFIG_MODELO = {
     "email": "",
     "password": "",
     "pasta": "C:\\telemetria",
+    "zround_exe": "",
     "intervalo_segundos": 15,
     "tempo_real": True,
     "extensoes": [".pdf", ".html", ".htm"],
