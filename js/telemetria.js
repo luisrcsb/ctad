@@ -1,5 +1,39 @@
 import { listaJsonsCache, pilotosMetadadosCache, mesclagensCache } from './state.js';
 
+/**
+ * Detecta tipo de sessão pelo conteúdo do relatório ZRound
+ * Retorna: 'corrida' | 'treino' | 'qualify' | 'desconhecido'
+ */
+export function detectarTipoSessao(texto, sessaoNome) {
+    const t = (texto || '').toLowerCase();
+    const nome = (sessaoNome || '').toLowerCase();
+    
+    // Prioridade 1: palavras-chave explícitas no conteúdo
+    if (t.includes('classificatória') || t.includes('classificatoria') || 
+        t.includes('qualifying') || t.includes('qualify') ||
+        t.includes('treino classificatório') || t.includes('treino classificatorio') ||
+        t.includes('sessão classificatória') || t.includes('sessao classificatoria')) {
+        return 'qualify';
+    }
+    if (t.includes('treino livre') || t.includes('treino oficial') || 
+        t.includes('free practice') || t.includes('practice session') ||
+        (t.includes('treino') && !t.includes('corrida') && !t.includes('bateria') && !t.includes('race'))) {
+        return 'treino';
+    }
+    if (t.includes('corrida') || t.includes('bateria') || t.includes('race') || 
+        t.includes('final') || t.includes('main event')) {
+        return 'corrida';
+    }
+    
+    // Prioridade 2: nome do arquivo/sessão
+    if (nome.includes('qualify') || nome.includes('classific') || nome.includes('qualy')) return 'qualify';
+    if (nome.includes('treino') || nome.includes('practice') || nome.includes('warmup') || nome.includes('warm up')) return 'treino';
+    if (nome.includes('corrida') || nome.includes('bateria') || nome.includes('race') || 
+        /\((\d+)\)/.test(nome)) return 'corrida'; // "(1)" = bateria numerada = corrida
+    
+    return 'desconhecido';
+}
+
 export function formatarNomeSessao(sessaoStr) {
     if (!sessaoStr) return "Bateria";
     let match = sessaoStr.match(/(\d{2})[-/](\d{2})[-/](\d{2}).*?\((\d+)\)/);
@@ -59,6 +93,9 @@ export function parsearTextoConvertido(texto, sessaoNome, batKey) {
     let ordemPilotos = [];
     let capturandoResumo = false;
     let capturandoVoltas = false;
+
+    // Detecta tipo de sessão no cabeçalho do relatório
+    let tipoSessao = detectarTipoSessao(texto, sessaoNome);
 
     linhas.forEach(linha => {
         let linhaLimpa = linha.replace(/\|/g, ' ').trim();
@@ -120,6 +157,7 @@ export function parsearTextoConvertido(texto, sessaoNome, batKey) {
     Object.keys(pilotosMap).forEach(pName => {
         let pObj = pilotosMap[pName];
         pObj.laps = (pObj.laps || []).filter(t => t !== undefined && !isNaN(t));
+        pObj.tipoSessao = tipoSessao; // Adiciona tipo de sessão a cada piloto
         if (pObj.laps.length > 0) resultadoFinal.push(pObj);
     });
     return resultadoFinal;

@@ -15,17 +15,7 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
     <link rel="stylesheet" href="style.css">
-    <script>
-        // Site oficial: Firebase Hosting (https://krathus-telemetria.web.app).
-        // Quem abrir pela cópia do GitHub Pages é levado para lá (mantém #links).
-        (function () {
-            try {
-                if (String(window.location.hostname || '').indexOf('github.io') !== -1) {
-                    window.location.replace('https://krathus-telemetria.web.app/' + (window.location.hash || ''));
-                }
-            } catch (e) {}
-        })();
-    </script>
+    
 </head>
 <body>
 
@@ -1347,6 +1337,38 @@
             return timestampData + sequencial;
         }
 
+        /**
+         * Detecta tipo de sessão pelo conteúdo do relatório ZRound
+         * Retorna: 'corrida' | 'treino' | 'qualify' | 'desconhecido'
+         */
+        function detectarTipoSessao(texto, sessaoNome) {
+            const t = (texto || '').toLowerCase();
+            const nome = (sessaoNome || '').toLowerCase();
+
+            if (t.includes('classificatória') || t.includes('classificatoria') ||
+                t.includes('qualifying') || t.includes('qualify') ||
+                t.includes('treino classificatório') || t.includes('treino classificatorio') ||
+                t.includes('sessão classificatória') || t.includes('sessao classificatoria')) {
+                return 'qualify';
+            }
+            if (t.includes('treino livre') || t.includes('treino oficial') ||
+                t.includes('free practice') || t.includes('practice session') ||
+                (t.includes('treino') && !t.includes('corrida') && !t.includes('bateria') && !t.includes('race'))) {
+                return 'treino';
+            }
+            if (t.includes('corrida') || t.includes('bateria') || t.includes('race') ||
+                t.includes('final') || t.includes('main event')) {
+                return 'corrida';
+            }
+
+            if (nome.includes('qualify') || nome.includes('classific') || nome.includes('qualy')) return 'qualify';
+            if (nome.includes('treino') || nome.includes('practice') || nome.includes('warmup') || nome.includes('warm up')) return 'treino';
+            if (nome.includes('corrida') || nome.includes('bateria') || nome.includes('race') ||
+                /\((\d+)\)/.test(nome)) return 'corrida';
+
+            return 'desconhecido';
+        }
+
         function ordenarParticipantesBateria(participantesValidos) {
             if (!participantesValidos || participantesValidos.length === 0) return [];
             const valorTempo = (l) => {
@@ -1870,6 +1892,15 @@
                 '<p style="font-size:0.7rem;color:var(--text-muted);margin:6px 0 0;">O <strong>instalador</strong> segue o padrão Windows (assistente, atalhos, entrada em Aplicativos e recursos, desinstalador e atualização entre versões). O <strong>portátil</strong> é o zip: extraia em uma pasta fixa e execute o .exe.</p>' +
                 '<div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">SHA-256 — instalador: <code>' + shaInst + '</code><br>SHA-256 — portátil: <code>' + shaZip + '</code></div>' +
                 '<div style="font-size:0.7rem;color:var(--text-muted);">Requisitos: Windows 10/11 64-bit, conta de admin/gestor no site. Se o Storage negar o arquivo original, o conteúdo segue preservado no banco (pdfBase64).</div>' +
+                '</div>' +
+                '<div class="config-panel" style="border-color:var(--accent-blue);">' +
+                '<div class="config-panel-title" style="color:var(--accent-blue);">🏁 KChrono v1.0.0 (Windows 64-bit)</div>' +
+                '<p style="font-size:0.78rem;color:var(--text-muted);margin:0;">Cronometragem de precisão para a pista: painel do operador, telão, campeonatos e envio automático ao banco. Substituto do ZRound — conecte o decoder MyLaps e opere pela rede local.</p>' +
+                '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">' +
+                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="downloads/KChrono-v1.0.0.zip" download>⬇️ KChrono portátil (.zip com KChrono.exe)</a>' +
+                '</div>' +
+                '<div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">SHA-256 — portátil: <code>17699C497DE9AE2DCEB4DCA49BC531336BB268BD383A1BD1FC99D799F2586D60</code></div>' +
+                '<div style="font-size:0.7rem;color:var(--text-muted);">Requisitos: Windows 10/11 64-bit. Extraia em uma pasta fixa e execute o KChrono.exe — o navegador abre sozinho no painel.</div>' +
                 '</div>';
         };
 
@@ -2959,23 +2990,24 @@
 function parsearCSV(texto, sessaoNome, batKey) {
     const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     if (linhas.length < 2) return [];
-    
+
     const headers = linhas[0].split(',').map(h => h.trim().toLowerCase());
     const pilotoIdx = headers.findIndex(h => h.includes('piloto') || h.includes('driver') || h.includes('name'));
     const posIdx = headers.findIndex(h => h.includes('pos') || h.includes('rank'));
     const voltasIdx = headers.findIndex(h => h.includes('volta') || h.includes('lap') && !h.includes('best') && !h.includes('sector'));
     const melhorIdx = headers.findIndex(h => h.includes('best') || h.includes('melhor') || h.includes('fastest'));
-    
+
     if (pilotoIdx === -1) return [];
-    
+
+    const tipoSessao = detectarTipoSessao(texto, sessaoNome);
     const resultado = [];
     for (let i = 1; i < linhas.length; i++) {
         const cols = linhas[i].split(',').map(c => c.trim());
         if (cols.length <= pilotoIdx) continue;
-        
+
         const piloto = cols[pilotoIdx];
         if (!piloto) continue;
-        
+
         const pos = posIdx !== -1 && cols[posIdx] ? parseInt(cols[posIdx].replace(/[º°]/g, '')) || (resultado.length + 1) : resultado.length + 1;
         const voltas = voltasIdx !== -1 && cols[voltasIdx] ? parseInt(cols[voltasIdx]) || 0 : 0;
         let melhorVoltaVal = 0;
@@ -2984,7 +3016,7 @@ function parsearCSV(texto, sessaoNome, batKey) {
             const parts = t.split(':');
             melhorVoltaVal = parts.length === 2 ? parseInt(parts[0]) * 60 + parseFloat(parts[1]) : parseFloat(t) || 0;
         }
-        
+
         resultado.push({
             piloto,
             pos: pos + 'º',
@@ -2994,7 +3026,7 @@ function parsearCSV(texto, sessaoNome, batKey) {
             melhorVoltaVal,
             melhorVoltaTxt: melhorVoltaVal ? melhorVoltaVal.toFixed(3).replace('.', ',') + 's' : '00,000s',
             mediaVal: 0, mediaTxt: '00,000s', desvioVal: 0, desvio: '±0,000s',
-            laps: []
+            laps: [], tipoSessao: tipoSessao
         });
     }
     return resultado;
@@ -3004,21 +3036,22 @@ function parsearMyLaps(texto, sessaoNome, batKey) {
     const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     const resultado = [];
     let capturando = false;
-    
+    const tipoSessao = detectarTipoSessao(texto, sessaoNome);
+
     for (const linha of linhas) {
         if (linha.toLowerCase().includes('best lap') || linha.toLowerCase().includes('driver')) {
             capturando = true;
             continue;
         }
         if (!capturando) continue;
-        
+
         const partes = linha.split(/\s{2,}|\t/).filter(Boolean);
         if (partes.length < 3) continue;
-        
+
         let piloto = '';
         let pos = resultado.length + 1;
         let melhorVoltaVal = 0;
-        
+
         for (let i = 0; i < partes.length; i++) {
             const p = partes[i].trim();
             if (/^\d+$/.test(p) && pos === resultado.length + 1) {
@@ -3032,7 +3065,7 @@ function parsearMyLaps(texto, sessaoNome, batKey) {
                 piloto = p;
             }
         }
-        
+
         if (piloto) {
             resultado.push({
                 piloto,
@@ -3043,7 +3076,7 @@ function parsearMyLaps(texto, sessaoNome, batKey) {
                 melhorVoltaVal,
                 melhorVoltaTxt: melhorVoltaVal ? melhorVoltaVal.toFixed(3).replace('.', ',') + 's' : '00,000s',
                 mediaVal: 0, mediaTxt: '00,000s', desvioVal: 0, desvio: '±0,000s',
-                laps: []
+                laps: [], tipoSessao: tipoSessao
             });
         }
     }
@@ -3056,6 +3089,9 @@ function parsearZRound(texto, sessaoNome, batKey) {
     let ordemPilotos = [];
     let capturandoResumo = false;
     let capturandoVoltas = false;
+
+    // Detecta tipo de sessão
+    const tipoSessao = detectarTipoSessao(texto, sessaoNome);
 
     linhas.forEach(linha => {
         let linhaLimpa = linha.replace(/\|/g, ' ').trim();
@@ -3105,7 +3141,7 @@ function parsearZRound(texto, sessaoNome, batKey) {
                     pilotosMap[pilotoNome] = {
                         pos: posDetectada || ((ordemPilotos.length + 1) + 'º'),
                         piloto: pilotoNome, bateriaKey: batKey, sessao: sessaoNome, voltasTotais: 0,
-                        melhorVoltaVal: 0, melhorVoltaTxt: "00,000s", mediaVal: 0, mediaTxt: "00,000s", desvioVal: 0, desvio: "±0,000s", laps: []
+                        melhorVoltaVal: 0, melhorVoltaTxt: "00,000s", mediaVal: 0, mediaTxt: "00,000s", desvioVal: 0, desvio: "±0,000s", laps: [], tipoSessao: tipoSessao
                     };
                     ordemPilotos.push(pilotoNome);
                 }
@@ -3305,6 +3341,9 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                         const historicoOriginal = {};
                         dadosExtraidos.forEach(d => { if (d && d.piloto) historicoOriginal[d.piloto] = d.piloto; });
 
+                        // Determina tipo da sessão (todos pilotos têm o mesmo)
+                        const tipoSessaoDetectado = (dadosExtraidos[0] && dadosExtraidos[0].tipoSessao) || 'desconhecido';
+
                         // 3. Upload com retry + progresso real
                         const storageRef = firebase.storage().ref().child('uploads/' + batKey + '/' + nomeArq);
                         await uploadComRetry(storageRef, file);
@@ -3327,7 +3366,9 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                             uploadedBy: usuarioAtual?.uid || 'desconhecido',
                             uploadedAt: Date.now(),
                             // Portal multi-pista: carimba a pista de origem (default krathus)
-                            pistaId: (typeof window !== 'undefined' && window.minhaPistaId) ? window.minhaPistaId : 'krathus'
+                            pistaId: (typeof window !== 'undefined' && window.minhaPistaId) ? window.minhaPistaId : 'krathus',
+                            // Tipo de sessão detectado: 'corrida' | 'treino' | 'qualify' | 'desconhecido'
+                            tipoSessao: tipoSessaoDetectado
                         };
 
                         await db.ref('baterias/' + batKey).set(uploadData);

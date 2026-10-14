@@ -232,6 +232,34 @@ function detectarFormatoRelatorio(texto) {
   return 'zround';
 }
 
+function detectarTipoSessao(texto, sessaoNome) {
+  const t = (texto || '').toLowerCase();
+  const nome = (sessaoNome || '').toLowerCase();
+
+  if (t.includes('classificatória') || t.includes('classificatoria') ||
+      t.includes('qualifying') || t.includes('qualify') ||
+      t.includes('treino classificatório') || t.includes('treino classificatorio') ||
+      t.includes('sessão classificatória') || t.includes('sessao classificatoria')) {
+    return 'qualify';
+  }
+  if (t.includes('treino livre') || t.includes('treino oficial') ||
+      t.includes('free practice') || t.includes('practice session') ||
+      (t.includes('treino') && !t.includes('corrida') && !t.includes('bateria') && !t.includes('race'))) {
+    return 'treino';
+  }
+  if (t.includes('corrida') || t.includes('bateria') || t.includes('race') ||
+      t.includes('final') || t.includes('main event')) {
+    return 'corrida';
+  }
+
+  if (nome.includes('qualify') || nome.includes('classific') || nome.includes('qualy')) return 'qualify';
+  if (nome.includes('treino') || nome.includes('practice') || nome.includes('warmup') || nome.includes('warm up')) return 'treino';
+  if (nome.includes('corrida') || nome.includes('bateria') || nome.includes('race') ||
+      /\((\d+)\)/.test(nome)) return 'corrida';
+
+  return 'desconhecido';
+}
+
 function parsearCSV(texto, sessaoNome, batKey) {
   const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   if (linhas.length < 2) return [];
@@ -241,6 +269,7 @@ function parsearCSV(texto, sessaoNome, batKey) {
   const voltasIdx = headers.findIndex(h => h.includes('volta') || h.includes('lap') && !h.includes('best') && !h.includes('sector'));
   const melhorIdx = headers.findIndex(h => h.includes('best') || h.includes('melhor') || h.includes('fastest'));
   if (pilotoIdx === -1) return [];
+  const tipoSessao = detectarTipoSessao(texto, sessaoNome);
   const resultado = [];
   for (let i = 1; i < linhas.length; i++) {
     const cols = linhas[i].split(',').map(c => c.trim());
@@ -255,7 +284,7 @@ function parsearCSV(texto, sessaoNome, batKey) {
       const parts = t.split(':');
       melhorVoltaVal = parts.length === 2 ? parseInt(parts[0]) * 60 + parseFloat(parts[1]) : parseFloat(t) || 0;
     }
-    resultado.push({ piloto, pos: pos + 'º', bateriaKey: batKey, sessao: sessaoNome, voltasTotais: voltas, melhorVoltaVal, melhorVoltaTxt: melhorVoltaVal ? melhorVoltaVal.toFixed(3).replace('.', ',') + 's' : '00,000s', mediaVal: 0, mediaTxt: '00,000s', desvioVal: 0, desvio: '±0,000s', laps: [] });
+    resultado.push({ piloto, pos: pos + 'º', bateriaKey: batKey, sessao: sessaoNome, voltasTotais: voltas, melhorVoltaVal, melhorVoltaTxt: melhorVoltaVal ? melhorVoltaVal.toFixed(3).replace('.', ',') + 's' : '00,000s', mediaVal: 0, mediaTxt: '00,000s', desvioVal: 0, desvio: '±0,000s', laps: [], tipoSessao });
   }
   return resultado;
 }
@@ -264,6 +293,7 @@ function parsearMyLaps(texto, sessaoNome, batKey) {
   const linhas = texto.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const resultado = [];
   let capturando = false;
+  const tipoSessao = detectarTipoSessao(texto, sessaoNome);
   for (const linha of linhas) {
     if (linha.toLowerCase().includes('best lap') || linha.toLowerCase().includes('driver')) { capturando = true; continue; }
     if (!capturando) continue;
@@ -283,7 +313,7 @@ function parsearMyLaps(texto, sessaoNome, batKey) {
       } else if (!piloto && p.length > 2 && !/^\d+$/.test(p)) { piloto = p; }
     }
     if (piloto) {
-      resultado.push({ piloto, pos: pos + 'º', bateriaKey: batKey, sessao: sessaoNome, voltasTotais: 0, melhorVoltaVal, melhorVoltaTxt: melhorVoltaVal ? melhorVoltaVal.toFixed(3).replace('.', ',') + 's' : '00,000s', mediaVal: 0, mediaTxt: '00,000s', desvioVal: 0, desvio: '±0,000s', laps: [] });
+      resultado.push({ piloto, pos: pos + 'º', bateriaKey: batKey, sessao: sessaoNome, voltasTotais: 0, melhorVoltaVal, melhorVoltaTxt: melhorVoltaVal ? melhorVoltaVal.toFixed(3).replace('.', ',') + 's' : '00,000s', mediaVal: 0, mediaTxt: '00,000s', desvioVal: 0, desvio: '±0,000s', laps: [], tipoSessao });
     }
   }
   return resultado;
@@ -295,6 +325,7 @@ function parsearZRound(texto, sessaoNome, batKey) {
   const ordemPilotos = [];
   let capturandoResumo = false;
   let capturandoVoltas = false;
+  const tipoSessao = detectarTipoSessao(texto, sessaoNome);
   linhas.forEach(linha => {
     const linhaLimpa = linha.replace(/\|/g, ' ').trim();
     const partes = linhaLimpa.split(/\s+/).filter(Boolean);
@@ -322,7 +353,7 @@ function parsearZRound(texto, sessaoNome, batKey) {
       if (nomePartes.length > 0) {
         const pilotoNome = nomePartes.join(' ').replace(/\s+\d+$/, '').trim();
         if (pilotoNome && !pilotosMap[pilotoNome]) {
-          pilotosMap[pilotoNome] = { pos: posDetectada || ((ordemPilotos.length + 1) + 'º'), piloto: pilotoNome, bateriaKey: batKey, sessao: sessaoNome, voltasTotais: 0, melhorVoltaVal: 0, melhorVoltaTxt: '00,000s', mediaVal: 0, mediaTxt: '00,000s', desvioVal: 0, desvio: '±0,000s', laps: [] };
+          pilotosMap[pilotoNome] = { pos: posDetectada || ((ordemPilotos.length + 1) + 'º'), piloto: pilotoNome, bateriaKey: batKey, sessao: sessaoNome, voltasTotais: 0, melhorVoltaVal: 0, melhorVoltaTxt: '00,000s', mediaVal: 0, mediaTxt: '00,000s', desvioVal: 0, desvio: '±0,000s', laps: [], tipoSessao };
           ordemPilotos.push(pilotoNome);
         }
       }
@@ -363,6 +394,7 @@ function parsearZRound(texto, sessaoNome, batKey) {
     pObj.desvioVal = parseFloat(desvio.toFixed(3));
     pObj.desvio = '±' + desvio.toFixed(3).replace('.', ',') + 's';
     pObj.voltasTotais = pObj.laps.length;
+    // tipoSessao já está no objeto
     resultadoFinal.push(pObj);
   });
   return resultadoFinal;
@@ -428,6 +460,9 @@ async function enviarArquivo(caminho, nome, tamanho) {
   const historicoOriginal = {};
   resultado.forEach(d => { if (d && d.piloto) historicoOriginal[d.piloto] = d.piloto; });
 
+  // Determina tipo da sessão (todos pilotos têm o mesmo)
+  const tipoSessaoDetectado = (resultado[0] && resultado[0].tipoSessao) || 'desconhecido';
+
   const uploadData = {
     bateriaKey: batKey,
     sessao: sessaoNome,
@@ -443,7 +478,9 @@ async function enviarArquivo(caminho, nome, tamanho) {
     fileSize: tamanho,
     uploadedBy: 'robo-auto',
     uploadedAt: Date.now(),
-    pistaId: config.pistaId
+    pistaId: config.pistaId,
+    // Tipo de sessão detectado: 'corrida' | 'treino' | 'qualify' | 'desconhecido'
+    tipoSessao: tipoSessaoDetectado
   };
 
   if (DRY_RUN) {

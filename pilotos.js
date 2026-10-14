@@ -437,6 +437,16 @@
             let tagsAutomaticasGlobais = calcularTagsAutomaticasPilotos();
             let tagsDoPiloto = obterTodasTagsPiloto(nomePiloto, tagsAutomaticasGlobais);
 
+            // Deduplicação robusta: 1) fileHash (arquivo idêntico), 2) data+nº bateria (fallback)
+            const sessoesContadas = new Set();
+            function chaveSessaoUnica(arq) {
+                // 1. Hash do arquivo - pega duplicatas exatas mesmo com nomes diferentes
+                if (arq.fileHash) return 'hash:' + arq.fileHash;
+                // 2. Fallback: data + nº bateria extraído do nome da sessão
+                const sessaoStr = arq.sessao || arq.nomeArquivoOriginal || '';
+                return 'nome:' + extrairPesoOrdenacao(sessaoStr);
+            }
+
             listaJsonsCache.forEach(arq => {
                 let todosBat = (arq.dados || []).map(d => {
                     let pReal = d.piloto ? d.piloto.trim() : "";
@@ -449,9 +459,22 @@
                 let idxPiloto = ordenados.findIndex(o => o.piloto === nomePiloto);
 
                 if (idxPiloto !== -1) {
-                    let pos = idxPiloto + 1;
-                    if (pos === 1) vitorias++;
-                    if (pos <= 3) podios++;
+                    // Só conta vitórias/pódios se for sessão de CORRIDA (ignora treino/qualify)
+                    const tipoSessao = arq.tipoSessao || 'desconhecido';
+                    const isCorrida = tipoSessao === 'corrida';
+                    
+                    const chaveUnica = chaveSessaoUnica(arq);
+                    if (sessoesContadas.has(chaveUnica)) {
+                        // Sessão já contada (duplicada) — ignora para vitórias/pódios,
+                        // mas ainda mostra no histórico para transparência
+                    } else {
+                        sessoesContadas.add(chaveUnica);
+                        if (isCorrida) {
+                            let pos = idxPiloto + 1;
+                            if (pos === 1) vitorias++;
+                            if (pos <= 3) podios++;
+                        }
+                    }
 
                     let pData = ordenados[idxPiloto];
                     let melhorV = pData.melhorVoltaVal || 0;
@@ -555,6 +578,13 @@
             let dadosBase = obterTodosDadosConsolidados();
             let participacoes = dadosBase.filter(d => d.piloto === nomePiloto && d.laps && d.laps.length > 0);
             let vitorias = 0, podios = 0, melhorVoltaGeral = 999999;
+            // Deduplicação: mesma lógica do dossiê (hash > data+nº)
+            const sessoesContadasShare = new Set();
+            function chaveSessaoUnicaShare(arq) {
+                if (arq.fileHash) return 'hash:' + arq.fileHash;
+                const sessaoStr = arq.sessao || arq.nomeArquivoOriginal || '';
+                return 'nome:' + extrairPesoOrdenacao(sessaoStr);
+            }
             listaJsonsCache.forEach(arq => {
                 let todosBat = (arq.dados || []).map(d => {
                     let pReal = d.piloto ? d.piloto.trim() : "";
@@ -565,8 +595,18 @@
                 let ordenados = ordenarParticipantesBateria(todosBat);
                 let idx = ordenados.findIndex(o => o.piloto === nomePiloto);
                 if (idx !== -1) {
-                    if (idx === 0) vitorias++;
-                    if (idx <= 2) podios++;
+                    // Só conta vitórias/pódios se for sessão de CORRIDA
+                    const tipoSessao = arq.tipoSessao || 'desconhecido';
+                    const isCorrida = tipoSessao === 'corrida';
+                    
+                    const chaveUnica = chaveSessaoUnicaShare(arq);
+                    if (!sessoesContadasShare.has(chaveUnica)) {
+                        sessoesContadasShare.add(chaveUnica);
+                        if (isCorrida) {
+                            if (idx === 0) vitorias++;
+                            if (idx <= 2) podios++;
+                        }
+                    }
                     let mv = ordenados[idx].melhorVoltaVal || 0;
                     if (mv > 0 && mv < melhorVoltaGeral) melhorVoltaGeral = mv;
                 }

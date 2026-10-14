@@ -1,20 +1,42 @@
-# Firebase Hosting cache local — não versionar
+# Firebase / Build artifacts
 .firebase/
-*.log
-# Robo de upload automatico: segredos e estado local — NUNCA versionar
+firebase-debug.log
+firestore-debug.log
+
+# Upload robô (Node.js)
 upload-robo/node_modules/
-upload-robo/serviceAccountKey.json
-upload-robo/.estado.json
+upload-robo/package-lock.json
 upload-robo/robo.log
-upload-robo/enviados/
-# App local Python: build e estado — nao versionar (o .exe vai p/ downloads/)
-app-local/build/
-app-local/dist/
-app-local/*.spec
+upload-robo/.estado.json
+upload-robo/config.json
+upload-robo/serviceAccountKey.json
+
+# App local (Python)
 app-local/__pycache__/
-app-local/.estado.json
-app-local/upload-auto.log
-# Executavel: distribuido via .zip (plano Spark proibe .exe no Hosting)
+app-local/*.pyc
+app-local/dist/
+app-local/build/
+app-local/*.spec
+app-local/venv/
+app-local/.venv/
+app-local/*.log
+
+# Downloads pesados
 downloads/*.exe
-# Pasta local de teste do usuario (nao versionar)
-/Telemetria/
+downloads/*.zip
+downloads/*.sha256.txt
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Temp
+*.tmp
+*.temp

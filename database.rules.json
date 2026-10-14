@@ -194,7 +194,7 @@
       ".read": true,
       "$desafioId": {
         ".read": true,
-        ".write": "auth != null && ((!data.exists() && newData.hasChildren(['desafiante', 'desafiados', 'formato', 'status']) && newData.child('desafiante').val() !== '' && newData.child('status').val() === 'aguardando' && (newData.child('desafianteUid').val() === auth.uid) && newData.child('desafiados').val().length > 0) || (data.exists() && !newData.exists() && (data.child('desafianteUid').val() === auth.uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)))",
+        ".write": "auth != null && ((!data.exists() && newData.hasChildren(['desafiante', 'desafiados', 'formato', 'status']) && newData.child('desafiante').val() !== '' && newData.child('status').val() === 'aguardando' && newData.child('desafiados').val().length > 0 && (newData.child('desafianteUid').val() === auth.uid || newData.child('desafiadosUids').hasChild(auth.uid))) || (data.exists() && !newData.exists() && (data.child('desafianteUid').val() === auth.uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)))",
         "status": {
           ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
         },

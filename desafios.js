@@ -757,11 +757,14 @@ window.responderConviteDesafio = async function(conviteId, convKey, novoStatus) 
         });
         if (novoStatus === 'aceito') {
             let desafioId = 'desafio_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            // desafiadosUids como mapa {uid: true} para permitir verificação no Firebase Rules
+            let desafiadosUidsMap = {};
+            Object.values(convite.convidados).forEach(c => { if (c.uid) desafiadosUidsMap[c.uid] = true; });
             await db.ref(`desafios/${desafioId}`).set({
                 desafiante: convite.desafiante,
                 desafianteUid: convite.desafianteUid || null,
                 desafiados: Object.values(convite.convidados).map(c => c.nome),
-                desafiadosUids: Object.values(convite.convidados).map(c => c.uid).filter(u => u),
+                desafiadosUids: desafiadosUidsMap,
                 formato: convite.formato || 'duelo',
                 voandoBaixoX: convite.voandoBaixoX || null,
                 status: 'aguardando',
