@@ -617,7 +617,7 @@
                 `🥈 Pódios: ${podios}\n` +
                 `🏁 Corridas: ${participacoes.length}\n` +
                 (melhorVoltaGeral < 999999 ? `⚡ Melhor volta: ${melhorVoltaGeral.toFixed(3)}s\n` : '') +
-                `\n🔗 https://krathus-telemetria.web.app/`;
+                `\n🔗 ${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}/`;
 
             if (navigator.share) {
                 try { await navigator.share({ text: texto }); return; }

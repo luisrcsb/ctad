@@ -1094,7 +1094,7 @@
                 if (ult && ult.descricao) linhas.push(`Último evento: ${ult.descricao}`);
             } catch (e) {}
             linhas.push('');
-            linhas.push(`🔗 https://krathus-telemetria.web.app/#compra=${compraKey}`);
+            linhas.push(`🔗 ${window.location.origin}${window.location.pathname.replace(/\/[^/]*$/, '')}/#compra=${compraKey}`);
             const texto = linhas.join('\n');
 
             if (navigator.share) {

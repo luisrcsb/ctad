@@ -2193,7 +2193,8 @@
             const usaGridTreino = !!conf.usaGridTreino;
             const inverterSegunda = conf.inverterSegundaBateria === undefined ? true : !!conf.inverterSegundaBateria;
             const nome = camp.nome || 'Campeonato';
-            const texto = `🏁 *${nome}*\n\n📋 *Resumo das regras*\n🏎️ Número de provas: ${numeroProvas || 'Não definido'}\n🏆 Grid a partir do 1º treino: ${usaGridTreino ? 'SIM' : 'NÃO'}\n🔄 Inversão da 2ª bateria: ${inverterSegunda ? 'SIM' : 'NÃO'}\n\n🏎️ *Participe do campeonato!*\nhttps://krathus-telemetria.web.app/#participar=${campeonatoParticiparKey}`;
+            const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
+            const texto = `🏁 *${nome}*\n\n📋 *Resumo das regras*\n🏎️ Número de provas: ${numeroProvas || 'Não definido'}\n🏆 Grid a partir do 1º treino: ${usaGridTreino ? 'SIM' : 'NÃO'}\n🔄 Inversão da 2ª bateria: ${inverterSegunda ? 'SIM' : 'NÃO'}\n\n🏎️ *Participe do campeonato!*\n${baseUrl}/#participar=${campeonatoParticiparKey}`;
 
             // O link direto wa.me?text= costuma corromper emojis (vira "�" ou some
             // o caractere). O compartilhamento nativo do celular e a cópia pro

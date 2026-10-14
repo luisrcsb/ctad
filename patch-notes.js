@@ -289,7 +289,7 @@
             linhas.push('');
             linhas.push('━━━━━━━━━━━━━━━━━━━━');
             linhas.push('🔗 *ACESSE O SISTEMA:*');
-            linhas.push('https://krathus-telemetria.web.app/');
+            linhas.push(window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '') + '/');
 
             return linhas.join('\n').trim();
         }
@@ -334,7 +334,7 @@
 
             linhas.push('━━━━━━━━━━━━━━━━━━━━');
             linhas.push('🔗 *ACESSE O SISTEMA:*');
-            linhas.push('https://krathus-telemetria.web.app/');
+            linhas.push(window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '') + '/');
 
             await copiarTextoParaClipboard(linhas.join('\n').trim());
         };
