@@ -1,7 +1,6 @@
 {
   "versao": "1.2.4",
-  "zip": "downloads/CTAD-Upload-Auto-v1.2.4.zip",
-  "sha256": "BACCB277D907E614BB40911487F360699DA4F468BEA07BF7A286B75D93E5930A",
-  "notas": "Versao unificada 1.2.4: correcao da versao interna (APP_VERSAO), GUI thread-safe, autoupdate com validacao sha256, retry de falhas, auto-start do monitor",
-  "obrigatoria": false
+  "zip": "CTAD-Upload-Auto-Setup-1.2.4.zip",
+  "sha256": "9AF48DC876A44E1F382C21F480A7A4A87D9EB1D3A7EF75F26C376E1A88C8DEE3",
+  "changelog": "Versão 1.2.4\n- Correções de bugs\n- Melhorias na atualização automática\n- Compatibilidade com GitHub Releases"
 }

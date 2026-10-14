@@ -17,7 +17,7 @@
   "timeout_segundos": 60,
   "log_nivel": "INFO",
   "atualizar_auto": true,
-  "update_url": "https://krathus-telemetria.web.app/downloads/versao.json",
+  "update_url": "https://api.github.com/repos/luisrcsb/ctad/releases/latest",
   "auto_iniciar_monitor": false,
   "iniciar_com_windows": false
 }

@@ -15,7 +15,8 @@ import tempfile
 import urllib.request
 import zipfile
 
-URL_PADRAO_VERSAO = "https://krathus-telemetria.web.app/downloads/versao.json"
+# GitHub Releases API (usa redirect automático para o asset mais recente)
+URL_PADRAO_VERSAO = "https://api.github.com/repos/luisrcsb/ctad/releases/latest"
 
 
 def congelado():
@@ -47,15 +48,60 @@ def url_base_update(cfg):
 
 
 def buscar_info(cfg, timeout=20):
-    """Lê o versao.json publicado. Retorna dict ou None (sem rede = silencioso)."""
-    url = url_base_update(cfg) + ("&" if "?" in url_base_update(cfg) else "?") + "t=n"
+    """Lê o versao.json publicado OU GitHub Releases API. Retorna dict ou None."""
+    url = url_base_update(cfg).strip()
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "CTAD-Upload-Auto"})
         with urllib.request.urlopen(req, timeout=timeout) as r:
-            info = json.loads(r.read().decode("utf-8"))
-        if not info.get("versao") or not info.get("zip"):
+            data = json.loads(r.read().decode("utf-8"))
+        
+        # GitHub Releases API format (api.github.com/repos/.../releases/latest)
+        if "api.github.com" in url and "releases" in url:
+            if not data.get("tag_name") or not data.get("assets"):
+                return None
+            # Extrai versão da tag (ex: "v1.2.4" -> "1.2.4")
+            versao = data["tag_name"].lstrip("v")
+            # Procura o zip (instalador ou pacote)
+            zip_asset = None
+            sha256_asset = None
+            for asset in data["assets"]:
+                name = asset["name"].lower()
+                if name.endswith(".zip") and ("setup" in name or "install" in name or "ctad-upload-auto" in name):
+                    zip_asset = asset
+                elif name.endswith(".sha256") or name.endswith(".sha256.txt"):
+                    sha256_asset = asset
+            
+            if not zip_asset:
+                # Fallback: primeiro .zip que não seja apenas source code
+                for asset in data["assets"]:
+                    if asset["name"].lower().endswith(".zip") and "source" not in asset["name"].lower():
+                        zip_asset = asset
+                        break
+            
+            if not zip_asset:
+                return None
+            
+            # Baixa sha256 se existir
+            sha256 = ""
+            if sha256_asset:
+                try:
+                    req_sha = urllib.request.Request(sha256_asset["browser_download_url"], headers={"User-Agent": "CTAD-Upload-Auto"})
+                    with urllib.request.urlopen(req_sha, timeout=timeout) as r:
+                        sha256 = r.read().decode("utf-8").strip().split()[0].upper()
+                except Exception:
+                    pass
+            
+            return {
+                "versao": versao,
+                "zip": zip_asset["browser_download_url"],
+                "sha256": sha256,
+                "changelog": data.get("body", "")
+            }
+        
+        # Formato antigo (versao.json direto)
+        if not data.get("versao") or not data.get("zip"):
             return None
-        return info
+        return data
     except Exception:
         return None
 

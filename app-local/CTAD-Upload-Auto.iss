@@ -15,7 +15,7 @@
 #define MyAppName "CTAD Upload Auto"
 #define MyAppNameVer MyAppName + " " + MyAppVersion
 #define MyAppPublisher "CTAD Team"
-#define MyAppURL "https://krathus-telemetria.web.app"
+#define MyAppURL "https://github.com/luisrcsb/ctad"
 #define MyAppExeName "CTAD-Upload-Auto.exe"
 #define MyAppDirName "CTAD\CTAD Upload Auto"
 
@@ -276,7 +276,7 @@ begin
       '  "timeout_segundos": 60,',
       '  "log_nivel": "INFO",',
       '  "atualizar_auto": true,',
-      '  "update_url": "https://krathus-telemetria.web.app/downloads/versao.json",',
+      '  "update_url": "https://api.github.com/repos/luisrcsb/ctad/releases/latest",',
       '  "auto_iniciar_monitor": false,',
       '  "iniciar_com_windows": false',
       '}'];

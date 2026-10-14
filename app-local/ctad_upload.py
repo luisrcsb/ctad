@@ -75,7 +75,7 @@ CONFIG_MODELO = {
     "tentativas": 4,
     "timeout_segundos": 60,
     "log_nivel": "INFO",
-    "update_url": "https://krathus-telemetria.web.app/downloads/versao.json",
+    "update_url": "https://api.github.com/repos/luisrcsb/ctad/releases/latest",
     "auto_iniciar_monitor": False,
     "iniciar_com_windows": False,
 }
