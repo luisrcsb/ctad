@@ -21,7 +21,7 @@ function calcularElo(eloA, eloB, resultadoA) {
 
 function getEloPiloto(nome) {
     if (typeof pilotosMetadadosCache === 'undefined' || !pilotosMetadadosCache) return ELO_INICIAL;
-    let key = String(nome).replace(/[.#$\/\[\]]/g, '_');
+    let key = String(nome == null ? '' : nome).trim().replace(/[.#$\/\[\]]/g, '_');
     let meta = pilotosMetadadosCache[key];
     if (meta && typeof meta.elo === 'number') return meta.elo;
     return ELO_INICIAL;

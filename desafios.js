@@ -72,9 +72,35 @@ function pilotoKeyDesafio(nome) {
     return String(nome).trim().toLowerCase().replace(/[.#$\/\[\]]/g, '_');
 }
 
+// Chave de IDENTIDADE do piloto (minúsculas): compara nomes variantes
+// ("Raphael" x "raphael"). Acentos diferentes ainda exigem mesclagem.
+function keyIdentidadeDesafio(nome) {
+    return String(nome == null ? '' : nome).trim().toLowerCase().replace(/[.#$\/\[\]]/g, '_');
+}
+
+function mesmoPilotoDesafio(a, b) {
+    let ka = keyIdentidadeDesafio(a);
+    return !!ka && ka === keyIdentidadeDesafio(b);
+}
+
+function listaTemPiloto(lista, nome) {
+    return (lista || []).some(x => mesmoPilotoDesafio(x, nome));
+}
+
+// Chave do nó em pilotosMetadados: o app grava preservando maiúsculas
+// ("DJ Edgard"), então NÃO pode usar a chave minúscula de identidade.
+function chaveMetaDesafio(nome) {
+    return String(nome == null ? '' : nome).trim().replace(/[.#$\/\[\]]/g, '_');
+}
+
+// Procura um piloto na corrida tolerando variantes de nome.
+function acharPilotoCorrida(dadosCorrida, nome) {
+    return (dadosCorrida || []).find(d => mesmoPilotoDesafio(d.piloto, nome)) || null;
+}
+
 function uidDoPilotoDesafio(nome) {
     let vinculos = usuariosPilotosCache || {};
-    let uid = Object.keys(vinculos).find(u => vinculos[u] && vinculos[u].piloto === nome);
+    let uid = Object.keys(vinculos).find(u => vinculos[u] && mesmoPilotoDesafio(vinculos[u].piloto, nome));
     return uid || null;
 }
 
@@ -115,7 +141,7 @@ function listarPilotosDesafiaveis() {
         if (!n || !String(n).trim()) return;
         let c = nomeCanonicoDesafio(paraOriginal(n));
         // Se o próprio usuário está vinculado por apelido, exclui também
-        if (c && c !== pilotoVinculadoAoUsuario && paraOriginal(pilotoVinculadoAoUsuario || '') !== c) canonicos.add(c);
+        if (c && !mesmoPilotoDesafio(c, pilotoVinculadoAoUsuario) && !mesmoPilotoDesafio(paraOriginal(pilotoVinculadoAoUsuario || ''), c)) canonicos.add(c);
     });
     return Array.from(canonicos)
         .sort((a, b) => {
@@ -152,27 +178,29 @@ function filtrarListaConviteDesafio() {
 }
 
 function jaDesafiaAtivoCom(nomeAlvo) {
+    let eu = pilotoVinculadoAoUsuario;
     let emConvite = Object.keys(convitesDesafioCache || {}).some(id => {
         let c = convitesDesafioCache[id];
         if (!c || !c.convidados) return false;
         return Object.values(c.convidados).some(inv =>
             inv && inv.status === 'pendente' &&
-            ((c.desafiante === pilotoVinculadoAoUsuario && inv.nome === nomeAlvo) ||
-             (inv.nome === pilotoVinculadoAoUsuario && c.desafiante === nomeAlvo)));
+            ((mesmoPilotoDesafio(c.desafiante, eu) && mesmoPilotoDesafio(inv.nome, nomeAlvo)) ||
+             (mesmoPilotoDesafio(inv.nome, eu) && mesmoPilotoDesafio(c.desafiante, nomeAlvo))));
     });
     if (emConvite) return true;
+    // Só bloqueia desafio EM ANDAMENTO — depois de decidido, rematch liberado.
     return Object.keys(desafiosCache || {}).some(id => {
         let d = desafiosCache[id];
-        if (!d || (d.status !== 'aguardando' && d.status !== 'decidido')) return false;
-        return (d.desafiante === pilotoVinculadoAoUsuario && d.desafiados.includes(nomeAlvo)) ||
-               (d.desafiados.includes(pilotoVinculadoAoUsuario) && d.desafiante === nomeAlvo);
+        if (!d || d.status !== 'aguardando') return false;
+        return (mesmoPilotoDesafio(d.desafiante, eu) && listaTemPiloto(d.desafiados, nomeAlvo)) ||
+               (listaTemPiloto(d.desafiados, eu) && mesmoPilotoDesafio(d.desafiante, nomeAlvo));
     });
 }
 
 function getImagemCarroCache(nomePiloto) {
     try {
         let meta = (typeof pilotosMetadadosCache !== 'undefined' && pilotosMetadadosCache) || {};
-        let metaKey = pilotoKeyDesafio(nomePiloto);
+        let metaKey = chaveMetaDesafio(nomePiloto);
         let carros = meta[metaKey] && meta[metaKey].carros;
         if (!carros) return null;
         let keys = Object.keys(carros);
@@ -234,12 +262,15 @@ function calcularPosicoesPorVolta(dadosCorrida) {
 
 function contarVoltasLideradas(posicoesPorVolta, piloto) {
     let count = 0;
-    posicoesPorVolta.forEach(pos => { if (pos[piloto] === 1) count++; });
+    posicoesPorVolta.forEach(pos => {
+        let chave = Object.keys(pos).find(k => mesmoPilotoDesafio(k, piloto));
+        if (chave && pos[chave] === 1) count++;
+    });
     return count;
 }
 
 function contarVoltasValidas(dadosCorrida, piloto) {
-    let dado = dadosCorrida.find(d => d.piloto === piloto);
+    let dado = acharPilotoCorrida(dadosCorrida, piloto);
     if (!dado || !dado.laps) return 0;
     return dado.laps.filter(l => {
         let t = l !== undefined && l !== null ? Number(typeof l === 'object' ? l.tempo : l) : null;
@@ -248,8 +279,8 @@ function contarVoltasValidas(dadosCorrida, piloto) {
 }
 
 function maiorSequenciaVoandoBaixo(dadosCorrida, pilotoA, pilotoB, x) {
-    let lapsA = (dadosCorrida.find(d => d.piloto === pilotoA) || {}).laps || [];
-    let lapsB = (dadosCorrida.find(d => d.piloto === pilotoB) || {}).laps || [];
+    let lapsA = (acharPilotoCorrida(dadosCorrida, pilotoA) || {}).laps || [];
+    let lapsB = (acharPilotoCorrida(dadosCorrida, pilotoB) || {}).laps || [];
     let maxVoltas = Math.max(lapsA.length, lapsB.length);
     let maxSeqA = 0, maxSeqB = 0;
     let seqA = 0, seqB = 0;
@@ -285,7 +316,7 @@ function decidirDesafio(desafio, dadosCorrida, batKey) {
     };
     let ordenados = ordenarPorPosicao(dadosCorrida);
     todosPilotos.forEach(p => {
-        let dado = dadosCorrida.find(d => d.piloto === p);
+        let dado = acharPilotoCorrida(dadosCorrida, p);
         resultado.posicoes[p] = dado ? (parseInt(dado.pos) || 999) : 999;
         resultado.voltas[p] = dado ? contarVoltasValidas(dadosCorrida, p) : 0;
     });
@@ -302,8 +333,8 @@ function decidirDesafio(desafio, dadosCorrida, batKey) {
             if (posD < posP) { resultado.vencedor = desafiante; resultado.perdedores = [desafiado]; }
             else if (posP < posD) { resultado.vencedor = desafiado; resultado.perdedores = [desafiante]; }
             else {
-                let melhD = (dadosCorrida.find(d => d.piloto === desafiante) || {}).melhorVoltaVal || Infinity;
-                let melhP = (dadosCorrida.find(d => d.piloto === desafiado) || {}).melhorVoltaVal || Infinity;
+                let melhD = (acharPilotoCorrida(dadosCorrida, desafiante) || {}).melhorVoltaVal || Infinity;
+                let melhP = (acharPilotoCorrida(dadosCorrida, desafiado) || {}).melhorVoltaVal || Infinity;
                 if (melhD <= melhP) { resultado.vencedor = desafiante; resultado.perdedores = [desafiado]; }
                 else { resultado.vencedor = desafiado; resultado.perdedores = [desafiante]; }
             }
@@ -381,39 +412,84 @@ function decidirDesafio(desafio, dadosCorrida, batKey) {
 }
 
 function verificarEncontros() {
+    if (!db) return;
     let corridas = agruparPorCorrida();
-    let batKeys = Object.keys(corridas).sort().reverse();
+    let batKeys = Object.keys(corridas).sort().reverse(); // mais recente primeiro
     Object.keys(desafiosCache || {}).forEach(id => {
         let d = desafiosCache[id];
-        if (!d || d.status !== 'aguardando') return;
-        if (d.decididoEm) return;
+        if (!d || d.status !== 'aguardando' || d.decididoEm) return;
         let todosPilotos = [d.desafiante, ...d.desafiados];
+
+        // 1) Encontro: corrida em que TODOS os envolvidos participaram decide o desafio.
         for (let batKey of batKeys) {
             let dadosCorrida = corridas[batKey];
             if (!dadosCorrida) continue;
             let pilotosNaCorrida = getPilotosNaCorrida(dadosCorrida);
-            let todosPresentes = todosPilotos.every(p => pilotosNaCorrida.includes(p));
-            if (todosPresentes) {
-                let resultado = decidirDesafio(d, dadosCorrida, batKey);
-                aplicarDecisaoDesafio(id, resultado);
+            if (todosPilotos.every(p => listaTemPiloto(pilotosNaCorrida, p))) {
+                aplicarDecisaoDesafio(id, decidirDesafio(d, dadosCorrida, batKey));
                 return;
             }
-            let desafiadosPresentes = d.desafiados.filter(p => pilotosNaCorrida.includes(p));
-            if (desafiadosPresentes.length < d.desafiados.length) {
-                d.ausenciasDesafiado = (d.ausenciasDesafiado || 0) + 1;
-                if (d.ausenciasDesafiado >= WO_MAX_AUSENCIAS) {
-                    aplicarDecisaoDesafio(id, {
-                        vencedor: d.desafiante,
-                        perdedores: [...d.desafiados],
-                        bateriaKey: batKey,
-                        posicoes: {}, voltas: {}, voltasLideradas: {},
-                        decididoEm: Date.now(),
-                        wo: true
-                    });
-                    return;
+        }
+
+        // 2) W.O.: cada corrida nova conta UMA vez só (ultimaBateriaAusencia é
+        //    persistido no banco — antes o contador ficava só na memória da aba
+        //    e era re-contado a cada 30s, disparando W.O. falso em ~1 minuto).
+        //    Só conta corrida em que o desafiante participou; se o desafiado
+        //    correr (mesmo sem o desafiante), a sequência de ausências zera.
+        if (batKeys.length) {
+            let processadas = d.ultimaBateriaAusencia;
+            if (typeof processadas !== 'string') {
+                // Desafio nunca contado: começa a contar da corrida mais
+                // recente. Corridas antigas (anteriores ao desafio) não podem
+                // virar ausência — senão o primeiro tick já derrubaria W.O.
+                processadas = batKeys[0];
+                d.ultimaBateriaAusencia = processadas;
+                d.ausenciasDesafiado = d.ausenciasDesafiado || 0;
+                db.ref(`desafios/${id}`).update({ ausenciasDesafiado: d.ausenciasDesafiado, ultimaBateriaAusencia: processadas })
+                    .catch(e => console.warn('Não foi possível inicializar ausências do desafio ' + id, e));
+            } else {
+                let ausencias = d.ausenciasDesafiado || 0;
+                let mudou = false;
+                let decidiuWO = false;
+                for (let batKey of batKeys.slice().reverse()) { // da mais antiga pra mais nova
+                    if (!(batKey > processadas)) continue;       // corrida já contada
+                    processadas = batKey;
+                    mudou = true;
+                    let dadosCorrida = corridas[batKey];
+                    let pilotosNaCorrida = dadosCorrida ? getPilotosNaCorrida(dadosCorrida) : [];
+                    let desafiantePresente = listaTemPiloto(pilotosNaCorrida, d.desafiante);
+                    let todosDesafiadosPresentes = d.desafiados.every(p => listaTemPiloto(pilotosNaCorrida, p));
+                    if (todosDesafiadosPresentes) {
+                        if (!desafiantePresente) ausencias = 0; // quebrou a sequência "seguidas"
+                        continue;
+                    }
+                    if (!desafiantePresente) continue;          // corrida sem o desafiante não conta
+                    ausencias++;
+                    if (ausencias >= WO_MAX_AUSENCIAS) {
+                        aplicarDecisaoDesafio(id, {
+                            vencedor: d.desafiante,
+                            perdedores: [...d.desafiados],
+                            bateriaKey: batKey,
+                            posicoes: {}, voltas: {}, voltasLideradas: {},
+                            decididoEm: Date.now(),
+                            ausenciasDesafiado: ausencias,
+                            wo: true
+                        });
+                        decidiuWO = true;
+                        break;
+                    }
+                }
+                if (decidiuWO) return;
+                if (mudou) {
+                    d.ausenciasDesafiado = ausencias;
+                    d.ultimaBateriaAusencia = processadas;
+                    db.ref(`desafios/${id}`).update({ ausenciasDesafiado: ausencias, ultimaBateriaAusencia: processadas })
+                        .catch(e => console.warn('Não foi possível persistir ausências do desafio ' + id, e));
                 }
             }
         }
+
+        // 3) Expiração automática de desafios não decididos.
         if (d.criadoEm && (Date.now() - d.criadoEm) > EXPIRAR_DIAS * 24 * 60 * 60 * 1000) {
             aplicarDecisaoDesafio(id, {
                 vencedor: null, perdedores: [],
@@ -426,6 +502,8 @@ function verificarEncontros() {
 
 async function aplicarDecisaoDesafio(id, resultado) {
     if (!db) return;
+    let desafio = (desafiosCache || {})[id];
+    if (!desafio) return;
     try {
         let update = {
             status: resultado.expirado ? 'expirado' : 'decidido',
@@ -440,28 +518,37 @@ async function aplicarDecisaoDesafio(id, resultado) {
         if (resultado.wo) update.wo = true;
         if (resultado.expirado) update.expirado = true;
         if (resultado.maiorSequencia) update.maiorSequencia = resultado.maiorSequencia;
-        let eloAntes = {};
-        let eloDepois = {};
-        let todosPilotos = [desafiosCache[id].desafiante, ...desafiosCache[id].desafiados];
-        todosPilotos.forEach(p => { eloAntes[p] = getEloPiloto(p); });
+        if (typeof resultado.ausenciasDesafiado === 'number') update.ausenciasDesafiado = resultado.ausenciasDesafiado;
+        // Atômico: desafio + ELO gravados num único update — ou tudo é
+        // gravado, ou nada (antes o ELO era gravado por fora, sem await).
+        let atualizacoes = {};
+        Object.keys(update).forEach(k => { atualizacoes[`desafios/${id}/${k}`] = update[k]; });
+
+        let todosPilotos = [desafio.desafiante, ...(desafio.desafiados || [])];
         if (resultado.vencedor && !resultado.expirado) {
+            let eloAntes = {};
+            let eloDepois = {};
+            todosPilotos.forEach(p => { eloAntes[p] = getEloPiloto(p); });
             todosPilotos.forEach(p => {
-                let adversarios = todosPilotos.filter(a => a !== p);
+                let adversarios = todosPilotos.filter(a => !mesmoPilotoDesafio(a, p));
+                if (adversarios.length === 0) { eloDepois[p] = eloAntes[p]; return; }
                 let eloAdversario = adversarios.reduce((s, a) => s + eloAntes[a], 0) / adversarios.length;
                 let esperado = 1 / (1 + Math.pow(10, (eloAdversario - eloAntes[p]) / 400));
-                let resultadoPartida = p === resultado.vencedor ? 1 : 0;
+                let resultadoPartida = mesmoPilotoDesafio(p, resultado.vencedor) ? 1 : 0;
                 eloDepois[p] = Math.round(eloAntes[p] + ELO_K * (resultadoPartida - esperado));
             });
             update.eloAntes = eloAntes;
             update.eloDepois = eloDepois;
+            atualizacoes[`desafios/${id}/eloAntes`] = eloAntes;
+            atualizacoes[`desafios/${id}/eloDepois`] = eloDepois;
             todosPilotos.forEach(p => {
-                let metaKey = pilotoKeyDesafio(p);
+                let metaKey = chaveMetaDesafio(p);
                 if (pilotosMetadadosCache && pilotosMetadadosCache[metaKey]) {
-                    db.ref(`pilotosMetadados/${metaKey}/elo`).set(eloDepois[p]);
+                    atualizacoes[`pilotosMetadados/${metaKey}/elo`] = eloDepois[p];
                 }
             });
         }
-        await db.ref(`desafios/${id}`).update(update);
+        await db.ref().update(atualizacoes);
     } catch (e) { console.error('Erro ao aplicar decisão:', e); }
 }
 
@@ -474,7 +561,7 @@ function renderizarLeaderboardElo() {
     let pilotos = [];
     Object.keys(pilotosMetadadosCache || {}).forEach(k => {
         let m = pilotosMetadadosCache[k];
-        let nome = (m && m.apelido) || k;
+        let nome = rotuloPilotoDesafio(k);
         let elo = (m && typeof m.elo === 'number') ? m.elo : ELO_INICIAL;
         pilotos.push({ nome, elo });
     });
@@ -626,8 +713,8 @@ function calcularHistoricoConfronto(pilotoA, pilotoB) {
     let vitoriasA = 0, vitoriasB = 0, encontros = [];
     Object.keys(corridas).sort().reverse().forEach(batKey => {
         let dadosCorrida = corridas[batKey];
-        let pA = dadosCorrida.find(d => d.piloto === pilotoA);
-        let pB = dadosCorrida.find(d => d.piloto === pilotoB);
+        let pA = acharPilotoCorrida(dadosCorrida, pilotoA);
+        let pB = acharPilotoCorrida(dadosCorrida, pilotoB);
         if (pA && pB) {
             let posA = parseInt(pA.pos) || 999;
             let posB = parseInt(pB.pos) || 999;
@@ -692,7 +779,11 @@ function atualizarHistoricoConfronto() {
 
 window.selecionarFormato = function(formatoKey) {
     document.querySelectorAll('.formato-opcao').forEach(el => {
-        el.style.borderColor = el.dataset.formato === formatoKey ? 'var(--accent-red)' : 'var(--border-card)';
+        let selecionado = el.dataset.formato === formatoKey;
+        // A classe .selected é o que o botão "Enviar" lê — sem ela TODO convite
+        // era enviado como "duelo", ignorando o formato escolhido.
+        el.classList.toggle('selected', selecionado);
+        el.style.borderColor = selecionado ? 'var(--accent-red)' : 'var(--border-card)';
     });
 };
 
@@ -739,10 +830,18 @@ window.enviarConviteDesafio = async function(formato = 'duelo', voandoBaixoX = 5
 };
 
 window.responderConviteDesafio = async function(conviteId, convKey, novoStatus) {
-    if (!db || !usuarioAtual || !pilotoVinculadoAoUsuario) return;
+    if (!db || !usuarioAtual) return;
+    if (!pilotoVinculadoAoUsuario) {
+        alert("🔗 Associe um piloto à sua conta em \"Minha Conta\" pra responder convites de desafio.");
+        return;
+    }
     let convite = (convitesDesafioCache || {})[conviteId];
     if (!convite || !convite.convidados || !convite.convidados[convKey]) { alert("Convite não encontrado."); return; }
     let meuConvite = convite.convidados[convKey];
+    if (meuConvite.status && meuConvite.status !== 'pendente') {
+        alert(`Este convite já foi respondido (${meuConvite.status}).`);
+        return;
+    }
     let ehMeuConvite = meuConvite.uid
         ? meuConvite.uid === usuarioAtual.uid
         : (meuConvite.nome === pilotoVinculadoAoUsuario && !meuConvite.uid);
@@ -807,8 +906,8 @@ window.excluirDesafio = async function(desafioId) {
     if (!db) return;
     let desafio = (desafiosCache || {})[desafioId];
     if (!desafio) { alert("Desafio não encontrado."); return; }
-    let ehParte = pilotoVinculadoAoUsuario &&
-        (desafio.desafiante === pilotoVinculadoAoUsuario || desafio.desafiados.includes(pilotoVinculadoAoUsuario));
+    let ehParte = !!pilotoVinculadoAoUsuario &&
+        (mesmoPilotoDesafio(desafio.desafiante, pilotoVinculadoAoUsuario) || listaTemPiloto(desafio.desafiados, pilotoVinculadoAoUsuario));
     if (!hasPerm('desafios', 'gerenciar') && !ehParte) {
         alert("🔒 Apenas os pilotos envolvidos podem remover este desafio.");
         return;
@@ -826,14 +925,14 @@ function renderizarSecaoDesafiosMinhaConta() {
     let recebidos = Object.keys(convitesDesafioCache || {}).filter(id => {
         let c = convitesDesafioCache[id];
         if (!c || !c.convidados || !c.convidados[minhaKey]) return false;
-        if (c.desafiante === meuNome) return false;
+        if (mesmoPilotoDesafio(c.desafiante, meuNome)) return false;
         return c.convidados[minhaKey].status === 'pendente';
     }).sort((a, b) => (convitesDesafioCache[b].criadoEm || 0) - (convitesDesafioCache[a].criadoEm || 0));
     let recebidosHtml = recebidos.map(id => {
         let c = convitesDesafioCache[id];
         let inv = c.convidados[minhaKey];
         let formato = FORMATOS_DESAFIO[c.formato] ? FORMATOS_DESAFIO[c.formato] : FORMATOS_DESAFIO.duelo;
-        let outrosConvidados = Object.values(c.convidados).filter(cv => cv.nome !== meuNome).map(cv => cv.nome).join(', ');
+        let outrosConvidados = Object.values(c.convidados).filter(cv => !mesmoPilotoDesafio(cv.nome, meuNome)).map(cv => cv.nome).join(', ');
         return `
             <div class="config-panel" style="margin:0;">
                 <div style="font-size:0.82rem; color:var(--text-title);"><strong>${escapeHtml(c.desafiante)}</strong> te desafiou!</div>
@@ -852,12 +951,12 @@ function renderizarSecaoDesafiosMinhaConta() {
     }).join('');
     let aguardando = Object.keys(desafiosCache || {}).filter(id => {
         let d = desafiosCache[id];
-        return d && d.status === 'aguardando' && (d.desafiante === meuNome || d.desafiados.includes(meuNome));
+        return d && d.status === 'aguardando' && (mesmoPilotoDesafio(d.desafiante, meuNome) || listaTemPiloto(d.desafiados, meuNome));
     });
     let aguardandoHtml = aguardando.map(id => {
         let d = desafiosCache[id];
         let formato = FORMATOS_DESAFIO[d.formato] ? FORMATOS_DESAFIO[d.formato] : FORMATOS_DESAFIO.duelo;
-        let souDesafiante = d.desafiante === meuNome;
+        let souDesafiante = mesmoPilotoDesafio(d.desafiante, meuNome);
         let adversarios = souDesafiante ? d.desafiados : [d.desafiante];
         let imgAdv = getImagemCarroCache(adversarios[0]);
         let cardImg = imgAdv
@@ -877,12 +976,12 @@ function renderizarSecaoDesafiosMinhaConta() {
     }).join('');
     let decididos = Object.keys(desafiosCache || {}).filter(id => {
         let d = desafiosCache[id];
-        return d && d.status === 'decidido' && (d.desafiante === meuNome || d.desafiados.includes(meuNome));
+        return d && d.status === 'decidido' && (mesmoPilotoDesafio(d.desafiante, meuNome) || listaTemPiloto(d.desafiados, meuNome));
     }).sort((a, b) => (desafiosCache[b].decididoEm || 0) - (desafiosCache[a].decididoEm || 0));
     let decididosHtml = decididos.slice(0, 5).map(id => {
         let d = desafiosCache[id];
         let formato = FORMATOS_DESAFIO[d.formato] ? FORMATOS_DESAFIO[d.formato] : FORMATOS_DESAFIO.duelo;
-        let souVencedor = d.vencedor === meuNome;
+        let souVencedor = mesmoPilotoDesafio(d.vencedor, meuNome);
         let corBorda = souVencedor ? 'var(--accent-green)' : 'var(--accent-red)';
         return `
             <div class="config-panel" style="margin:0; border-left:3px solid ${corBorda};">
@@ -896,7 +995,7 @@ function renderizarSecaoDesafiosMinhaConta() {
             </div>`;
     }).join('');
     let enviados = Object.keys(convitesDesafioCache || {}).filter(id =>
-        convitesDesafioCache[id] && convitesDesafioCache[id].desafiante === meuNome)
+        convitesDesafioCache[id] && mesmoPilotoDesafio(convitesDesafioCache[id].desafiante, meuNome))
         .sort((a, b) => (convitesDesafioCache[b].criadoEm || 0) - (convitesDesafioCache[a].criadoEm || 0));
     let statusTexto = { pendente: '⏳ Aguardando', aceito: '✅ Aceito', recusado: '❌ Recusado', talvez: '🤔 Talvez' };
     let enviadosHtml = enviados.map(id => {
@@ -1011,9 +1110,10 @@ function sugerirEquipesDesafios() {
         }
     });
     convites.forEach(c => {
-        if (c.desafiante && c.convidados) {
-            let convidados = Object.values(c.convidados).map(cv => cv.nome);
-            adicionarEnvolvidos(c.desafiante, convidados);
+        if (c && c.desafiante && c.convidados) {
+            // Só convites ainda válidos: recusado não gera sugestão de equipe.
+            let convidados = Object.values(c.convidados).filter(cv => cv && cv.status !== 'recusado').map(cv => cv.nome);
+            if (convidados.length) adicionarEnvolvidos(c.desafiante, convidados);
         }
     });
 
@@ -1079,6 +1179,10 @@ function dispensarSugestaoEquipe(idx) {
 // ===== Inicialização =====
 
 function iniciarVerificacaoDesafios() {
+    // Evita intervalos duplicados quando o login reconecta os listeners
+    // (duas verificações simultâneas decidiriam o mesmo desafio em dobro).
+    if (typeof window !== 'undefined' && window._verificacaoDesafiosIniciada) return;
+    if (typeof window !== 'undefined') window._verificacaoDesafiosIniciada = true;
     setInterval(verificarEncontros, 30000);
     setTimeout(verificarEncontros, 2000);
 }

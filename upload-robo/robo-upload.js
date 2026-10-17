@@ -451,6 +451,15 @@ async function enviarArquivo(caminho, nome, tamanho) {
       const existente = Object.values(snapHash.val())[0];
       return { status: 'duplicado', detalhe: 'duplicado de "' + (existente.nomeArquivoOriginal || existente.sessao) + '"' };
     }
+    // Dedup por SESSÃO: registros antigos (enviados pelo site) não têm
+    // fileHash, então a busca acima nunca casava com eles e todo re-upload
+    // da mesma bateria criava uma chave nova duplicada (aconteceu em
+    // 12/10/2026: 54 baterias duplicadas, 13 com posições divergentes).
+    const snapSessao = await db.ref('baterias').orderByChild('sessao').equalTo(sessaoNome).limitToFirst(1).once('value');
+    if (snapSessao.exists()) {
+      const existente = Object.values(snapSessao.val())[0];
+      return { status: 'duplicado', detalhe: 'ja existe "' + (existente.nomeArquivoOriginal || existente.sessao) + '" (' + existente.bateriaKey + ')' };
+    }
   }
 
   if (tamanho > MAX_FILE_SIZE) throw new Error('Arquivo maior que 25MB.');

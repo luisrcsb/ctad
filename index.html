@@ -3327,6 +3327,18 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                             continue;
                         }
 
+                        // 2b. Dedup por SESSÃO: registros antigos (enviados antes
+                        //     da adoção do fileHash) não têm hash, então a checagem
+                        //     acima nunca casava com eles e re-uploads viravam
+                        //     baterias duplicadas (54 duplicatas em 12/10/2026).
+                        const snapSessao = await db.ref('baterias').orderByChild('sessao').equalTo(sessaoNome).limitToFirst(1).once('value');
+                        if (snapSessao.exists()) {
+                            duplicados++;
+                            const existente = Object.values(snapSessao.val())[0];
+                            falhas.push(`${nomeArq}: já existe bateria da sessão "${sessaoNome}" (${existente.bateriaKey})`);
+                            continue;
+                        }
+
                         let textoExtraido = '';
                         const errosValidacao = validarArquivo(file);
                         if (errosValidacao.length > 0) {
