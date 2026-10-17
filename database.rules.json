@@ -141,8 +141,8 @@
         ".read": true,
         ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
         "elo": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
-          ".validate": "newData.isNumber() && newData.val() >= 0"
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true || root.child('usuariosPilotos/' + auth.uid + '/piloto').exists())",
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3000"
         }
       }
     },
@@ -194,39 +194,11 @@
       ".read": true,
       "$desafioId": {
         ".read": true,
-        ".write": "auth != null && ((!data.exists() && newData.hasChildren(['desafiante', 'desafiados', 'formato', 'status']) && newData.child('desafiante').val() !== '' && newData.child('status').val() === 'aguardando' && newData.child('desafiados').val().length > 0 && (newData.child('desafianteUid').val() === auth.uid || newData.child('desafiadosUids').hasChild(auth.uid))) || (data.exists() && !newData.exists() && (data.child('desafianteUid').val() === auth.uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)))",
+        ".write": "auth != null && (!data.exists() && newData.hasChildren(['desafiante', 'desafiados', 'formato', 'status']) && newData.child('desafiante').val() !== '' && newData.child('status').val() === 'aguardando' && newData.child('desafiados/0').exists() && (newData.child('desafianteUid').val() === auth.uid || newData.child('desafiadosUids').hasChild(auth.uid) || root.child('usuariosPilotos/' + auth.uid + '/piloto').val() === newData.child('desafiante').val() || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true) || (data.exists() && newData.exists()) && (data.child('desafianteUid').val() === auth.uid || data.child('desafiadosUids').hasChild(auth.uid) || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true) || (data.exists() && !newData.exists()) && (data.child('desafianteUid').val() === auth.uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true))",
         "status": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
-        },
-        "vencedor": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
-        },
-        "perdedores": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
-        },
-        "bateriaKey": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
-        },
-        "posicoes": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
-        },
-        "voltas": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
-        },
-        "voltasLideradas": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
-        },
-        "decididoEm": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
-        },
-        "eloAntes": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
-        },
-        "eloDepois": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+          ".validate": "newData.val() === 'aguardando' || newData.val() === 'decidido' || newData.val() === 'expirado'"
         },
         "ausenciasDesafiado": {
-          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
           ".validate": "newData.isNumber() && newData.val() >= 0"
         }
       }
@@ -239,10 +211,10 @@
         "convidados": {
           "$convKey": {
             "status": {
-              ".write": "auth != null && (data.parent().child('uid').val() === auth.uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+              ".write": "auth != null && (data.parent().child('uid').val() === auth.uid || root.child('usuariosPilotos/' + auth.uid + '/piloto').val() === data.parent().child('nome').val() || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
             },
             "respondidoEm": {
-              ".write": "auth != null && (data.parent().child('uid').val() === auth.uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+              ".write": "auth != null && (data.parent().child('uid').val() === auth.uid || root.child('usuariosPilotos/' + auth.uid + '/piloto').val() === data.parent().child('nome').val() || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
             }
           }
         }

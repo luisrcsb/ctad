@@ -750,31 +750,44 @@ window.responderConviteDesafio = async function(conviteId, convKey, novoStatus) 
         alert("🔒 Este convite não é pra você.");
         return;
     }
+    let respondidoEm = Date.now();
+    // desafiadosUids como mapa {uid: true} para permitir verificação no Firebase Rules.
+    // Convites antigos podem ter sido gravados sem uid: nesse caso resolvemos o uid pelo
+    // vínculo do piloto e o aceitante sempre envia o próprio uid — sem isso o Firebase
+    // Rules nega a criação do desafio (o que fazia o convite ficar "aceito" sem desafio).
+    let desafiadosUidsMap = {};
+    Object.values(convite.convidados).forEach(c => {
+        let uid = c.uid || uidDoPilotoDesafio(c.nome);
+        if (uid) desafiadosUidsMap[uid] = true;
+    });
+    if (usuarioAtual && usuarioAtual.uid) desafiadosUidsMap[usuarioAtual.uid] = true;
+    // Atômico: convite marcado como respondido + desafio criado na mesma transação,
+    // evitando estado meio-aceito (convite 'aceito' mas sem desafio criado).
+    let atualizacoes = {
+        [`convitesDesafio/${conviteId}/convidados/${convKey}/status`]: novoStatus,
+        [`convitesDesafio/${conviteId}/convidados/${convKey}/respondidoEm`]: respondidoEm
+    };
+    if (novoStatus === 'aceito') {
+        let desafioId = 'desafio_' + respondidoEm + '_' + Math.random().toString(36).slice(2, 6);
+        atualizacoes[`desafios/${desafioId}`] = {
+            desafiante: convite.desafiante,
+            desafianteUid: convite.desafianteUid || null,
+            desafiados: Object.values(convite.convidados).map(c => c.nome),
+            desafiadosUids: desafiadosUidsMap,
+            formato: convite.formato || 'duelo',
+            voandoBaixoX: convite.voandoBaixoX || null,
+            status: 'aguardando',
+            criadoEm: respondidoEm,
+            respondidoEm: respondidoEm,
+            ausenciasDesafiado: 0
+        };
+    }
     try {
-        await db.ref(`convitesDesafio/${conviteId}/convidados/${convKey}`).update({
-            status: novoStatus,
-            respondidoEm: Date.now()
-        });
+        await db.ref().update(atualizacoes);
         if (novoStatus === 'aceito') {
-            let desafioId = 'desafio_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-            // desafiadosUids como mapa {uid: true} para permitir verificação no Firebase Rules
-            let desafiadosUidsMap = {};
-            Object.values(convite.convidados).forEach(c => { if (c.uid) desafiadosUidsMap[c.uid] = true; });
-            await db.ref(`desafios/${desafioId}`).set({
-                desafiante: convite.desafiante,
-                desafianteUid: convite.desafianteUid || null,
-                desafiados: Object.values(convite.convidados).map(c => c.nome),
-                desafiadosUids: desafiadosUidsMap,
-                formato: convite.formato || 'duelo',
-                voandoBaixoX: convite.voandoBaixoX || null,
-                status: 'aguardando',
-                criadoEm: Date.now(),
-                respondidoEm: Date.now(),
-                ausenciasDesafiado: 0
-            });
             alert(`Desafio aceito! ${convite.desafiante} vs ${Object.values(convite.convidados).map(c => c.nome).join(', ')} está valendo — o sistema vai decidir automaticamente no primeiro encontro.`);
         }
-    } catch (err) { alert("Erro: " + err.message); }
+    } catch (err) { alert("Erro: " + (err && err.message ? err.message : err)); }
 };
 
 window.encerrarConviteDesafio = async function(conviteId) {
