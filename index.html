@@ -1032,7 +1032,7 @@
             databaseURL: "https://krathus-telemetria-default-rtdb.firebaseio.com"
         };
 
-        const PILOTOS_CORE_PADRAO = ["DJ Edgard", "Gustavo", "Henrique", "Raphael", "Ronaldo"];
+        const PILOTOS_CORE_PADRAO = ["DJ Edgard", "Gustavo", "Henrique", "Hélio", "Raphael", "Ronaldo"];
 
         let db = null;
         let listaJsonsCache = [];
@@ -1064,6 +1064,11 @@
         let acessibilidadeHabilitadaGlobal = false;
         let pilotoSendoConfigurado = null;
         let ultimaBateriaTopoKeyCache = null;
+        // Filtro "PILOTOS (Resumo compacto)": guarda só o que o usuário desmarcou
+        // à mão. Quem entra na lista depois (baterias/metadados chegando do
+        // Firebase em ordem diferente) carrega marcado por padrão — antes, um
+        // piloto que só aparecia na 2ª renderização (ex.: Hélio) ficava sem marca.
+        let pilotosDesmarcadosFiltro = new Set();
 
         // Aviso visível de falha na conexão com o banco (script do Firebase
         // bloqueado por antivírus/adblock, rede, etc.). Sem isso a página
@@ -1456,6 +1461,11 @@
                         }
                     }
                     if (typeof renderizarPainelContasVinculadas === 'function') renderizarPainelContasVinculadas();
+                    // Re-renderiza o filtro de pilotos (Resumo compacto) para
+                    // incluir pilotos vindos de vínculos de conta, que chegam em
+                    // listener próprio (antes só quem tinha baterias/cadastro
+                    // entrava na lista).
+                    try { gerarFiltrosDinamicos(); } catch (e) {}
                 });
 
                 // usuarios/ alimenta o painel de contas vinculadas com o e-mail
@@ -3761,15 +3771,22 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 if (p && p.trim()) pilotosSet.add(mesclagensCache[p.replace(/[.#$\/\[\]]/g, "_")] || p.trim());
             });
 
+            // Contas vinculadas (usuariosPilotos) também entram: garante a lista
+            // COMPLETA de pilotos mesmo sem cadastro em pilotosMetadados nem
+            // baterias carregadas (ex.: Hélio, que só tinha vínculo de conta).
+            try {
+                Object.values(usuariosPilotosCache || {}).forEach(v => {
+                    let n = (v && typeof v === "object" && v.piloto) ? String(v.piloto).trim() : "";
+                    if (n) pilotosSet.add(n);
+                });
+            } catch (e) {}
+
             let topKeyAtual = listaParaFiltros.length > 0 ? listaParaFiltros[0].firebaseKey : null;
             let houveNovaBateria = topKeyAtual !== ultimaBateriaTopoKeyCache;
             ultimaBateriaTopoKeyCache = topKeyAtual;
 
             let bateriasSelecionadasAntigas = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
             let primeiraVezBat = bateriasSelecionadasAntigas.length === 0 || houveNovaBateria;
-
-            let pilotosSelecionadosAntigos = Array.from(document.querySelectorAll('.filter-piloto:checked')).map(cb => cb.value);
-            let primeiraVezPil = pilotosSelecionadosAntigos.length === 0;
 
             batContainer.innerHTML = listaParaFiltros.map((arq, index) => {
                 let key = arq.firebaseKey;
@@ -3793,16 +3810,19 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             });
 
             let tagsAutomaticasGlobaisFiltro = calcularTagsAutomaticasPilotos();
-            pilContainer.innerHTML = listaNomesUnicos.sort().map(piloto => {
+            // localeCompare: senão "Hélio" (acento) cai no fim da lista em vez
+            // de perto de "Henrique" — parecia piloto "sumido"/fora de ordem.
+            pilContainer.innerHTML = listaNomesUnicos.sort((a, b) => a.localeCompare(b, 'pt-BR')).map(piloto => {
                 let meta = pilotosMetadadosCache[piloto] || {};
                 let labelExib = meta.apelido ? `${piloto} (${meta.apelido})` : piloto;
-                let marcado = primeiraVezPil || pilotosSelecionadosAntigos.includes(piloto) ? 'checked' : '';
+                // Marcado por padrão; só fica desmarcado se o usuário desmarcou.
+                let marcado = pilotosDesmarcadosFiltro.has(piloto) ? '' : 'checked';
                 let tagsDoPilotoFiltro = obterTodasTagsPiloto(piloto, tagsAutomaticasGlobaisFiltro);
                 let iconesTagsHtml = renderizarIconesTagsTooltipHtml(tagsDoPilotoFiltro);
                 return `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0; border-bottom: 1px solid rgba(34, 45, 66, 0.4); gap: 6px;">
                         <label class="checkbox-item" style="flex: 1; margin: 0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            <input type="checkbox" value="${escapeHtml(piloto)}" class="filter-piloto" ${marcado} onchange="atualizarDashboard()"> 
+                            <input type="checkbox" value="${escapeHtml(piloto)}" class="filter-piloto" ${marcado} onchange="filtroPilotoAlterado(this)"> 
                             ${escapeHtml(labelExib)}
                         </label>
                         ${iconesTagsHtml}
@@ -3813,7 +3833,19 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
         }
 
         window.limparSelecao = function(classeFiltro) {
-            document.querySelectorAll(`.${classeFiltro}`).forEach(cb => cb.checked = false);
+            document.querySelectorAll(`.${classeFiltro}`).forEach(cb => {
+                cb.checked = false;
+                // No filtro de pilotos a escolha é registrada: um piloto que
+                // entrar na lista depois continua desmarcado (intenção do "Limpar").
+                if (classeFiltro === 'filter-piloto') pilotosDesmarcadosFiltro.add(cb.value);
+            });
+            atualizarDashboard();
+        };
+
+        // Marca/desmarca individual do filtro de pilotos (Resumo compacto).
+        window.filtroPilotoAlterado = function(cb) {
+            if (cb.checked) pilotosDesmarcadosFiltro.delete(cb.value);
+            else pilotosDesmarcadosFiltro.add(cb.value);
             atualizarDashboard();
         };
 

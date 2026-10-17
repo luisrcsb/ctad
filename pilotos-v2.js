@@ -330,7 +330,7 @@
     // ---------------------------------------------------------------
     // 3.5 Pilotos padrão no Firebase (seed + getter com fallback)
     // ---------------------------------------------------------------
-    var PILOTOS_PADRAO_SEED = ['DJ Edgard', 'Gustavo', 'Henrique', 'Raphael', 'Ronaldo'];
+    var PILOTOS_PADRAO_SEED = ['DJ Edgard', 'Gustavo', 'Henrique', 'Hélio', 'Raphael', 'Ronaldo'];
     window.obterPilotosPadrao = function () {
         if (Array.isArray(window.pilotosPadraoCache) && window.pilotosPadraoCache.length > 0) return window.pilotosPadraoCache;
         if (typeof PILOTOS_CORE_PADRAO !== 'undefined' && Array.isArray(PILOTOS_CORE_PADRAO)) return PILOTOS_CORE_PADRAO;
