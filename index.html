@@ -250,6 +250,7 @@
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                                 <input type="file" id="input-pdf-upload" accept=".pdf,.html,.htm" multiple style="background: var(--bg-card); padding: 7px; border-radius: 6px; border: 1px solid var(--border-card); color: var(--text-main); flex: 1; font-size: 0.82rem;">
                                 <button class="btn btn-admin-trigger" onclick="processarUploadEEnviarNuvemPrincipal()">Converter e Enviar</button>
+                                <button class="btn btn-admin-trigger" style="background:var(--bg-card); border:1px solid var(--border-card);" onclick="recalcularEloGeralAdmin()" title="Recalcula o ranking ELO a partir de todas as baterias e desafios decididos">🔄 Recalcular ELO</button>
                             </div>
                             <div id="upload-progress-container" style="display:none; margin-top:8px;">
                                 <div style="display:flex; align-items:center; gap:8px; font-size:0.72rem; color:var(--text-muted);">
@@ -858,6 +859,7 @@
     <script src="produtos-recomendados.js"></script>
     <script src="piloto-conta.js"></script>
     <script src="elo.js"></script>
+    <script src="elo-recalc.js"></script>
     <script src="desafios.js"></script>
     <script src="comentarios.js"></script>
     <script src="pilotos.js"></script>
@@ -3432,13 +3434,37 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
 
             atualizarListaUploadHistoricoPrincipal();
 
+            // ELO: recalcula o ranking geral com as baterias novas (automático)
+            let eloRecalculado = false;
+            if (sucessos > 0 && typeof window.recalcularEloGeral === 'function') {
+                try { await window.recalcularEloGeral(); eloRecalculado = true; }
+                catch (eElo) { console.warn('ELO não recalculado:', eElo); }
+            }
+
             let msg = `✅ ${sucessos} arquivo(s) enviado(s) para o Banco Principal com sucesso.`;
+            if (eloRecalculado) msg += `\n🔄 Ranking ELO recalculado.`;
             if (duplicados > 0) msg += `\n⏭️ ${duplicados} duplicado(s) ignorado(s).`;
             if (falhas.length > 0) msg += `\n⚠️ ${falhas.length} falha(s):\n${falhas.join('\n')}`;
             alert(msg);
             
             if (falhas.length === 0 && duplicados === 0) {
                 fecharModalUpload();
+            }
+        };
+
+        // Recálculo manual do ranking ELO (botão na administração de uploads)
+        window.recalcularEloGeralAdmin = async function() {
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
+            if (!db) { alert('❌ Banco não conectado.'); return; }
+            if (!confirm('Recalcular o ranking ELO geral a partir de todas as baterias e desafios decididos?')) return;
+            try {
+                const r = await window.recalcularEloGeral();
+                const top = r.ranking.slice(0, 6)
+                    .map((p, i) => `${i + 1}º ${p.nome}: ${p.elo}`)
+                    .join('\n');
+                alert(`✅ ELO recalculado (${r.bateriasContadas} baterias, ${r.desafiosContados} desafio(s) em replay).\n${r.alteracoes.length} piloto(s) atualizado(s).\n\n🏆 Ranking:\n${top}`);
+            } catch (e) {
+                alert('❌ Erro ao recalcular ELO: ' + (e && e.message ? e.message : e));
             }
         };
 
@@ -3648,7 +3674,12 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                     fileHash: item.fileHash || '',
                     timestamp: Date.now()
                 });
-                
+
+                // ELO: reprocessamento muda posições → refaz o ranking
+                if (typeof window.recalcularEloGeral === 'function') {
+                    try { await window.recalcularEloGeral(); } catch (eElo) { console.warn('ELO não recalculado:', eElo); }
+                }
+
                 alert('✅ Reprocessado com sucesso!');
                 atualizarListaUploadHistoricoPrincipal();
             } catch (err) {
@@ -3673,6 +3704,10 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                             timestamp: Date.now()
                         });
                     }));
+                    // ELO: menos baterias → refaz o ranking geral
+                    if (typeof window.recalcularEloGeral === 'function') {
+                        try { await window.recalcularEloGeral(); } catch (eElo) { console.warn('ELO não recalculado:', eElo); }
+                    }
                 } catch (err) { alert("Erro: " + err.message); }
             }
         };

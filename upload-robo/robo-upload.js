@@ -565,8 +565,40 @@ async function varrer() {
     }
     salvarEstado(estado);
     if (novos === 0) log('[robo] varredura ok, nada novo.');
+    else if (!DRY_RUN) await recalcularEloGeralRobo();
   } finally {
     escaneando = false;
+  }
+}
+
+// ---- ELO: recalcula o ranking geral apos uploads (compartilha elo-recalc.js do site) ----
+async function recalcularEloGeralRobo() {
+  let modulo;
+  try {
+    modulo = require(path.resolve(__dirname, '..', 'elo-recalc.js'));
+  } catch (e) {
+    log('[robo][elo] modulo elo-recalc.js indisponivel: ' + e.message);
+    return;
+  }
+  try {
+    const [snapBat, snapDes, snapMesc, snapMeta] = await Promise.all([
+      db.ref('baterias').once('value'),
+      db.ref('desafios').once('value'),
+      db.ref('mesclagensPilotos').once('value'),
+      db.ref('pilotosMetadados').once('value'),
+    ]);
+    const resultado = modulo.calcularRankingElo(
+      snapBat.val() || {}, snapDes.val() || {}, snapMesc.val() || {}, snapMeta.val() || {}
+    );
+    if (!resultado.alteracoes.length) {
+      log('[robo][elo] ranking sem alteracoes (' + resultado.bateriasContadas + ' baterias).');
+      return;
+    }
+    await db.ref().update(modulo.montarUpdatesElo(resultado.alteracoes));
+    log('[robo][elo] atualizado: ' + resultado.alteracoes
+      .map(a => a.metaKey + '=' + a.elo + ' (antes ' + a.antes + ')').join(', '));
+  } catch (e) {
+    log('[robo][elo] ERRO ao recalcular ELO: ' + e.message);
   }
 }
 
