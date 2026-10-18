@@ -76,9 +76,11 @@
         let primeiroVisto = {};
 
         let elo = {};
+        let stats = {}; // corridas/vitórias contadas nas baterias (desafios não contam)
         function garantir(pCanon, nomeOriginal) {
             if (elo[pCanon] == null) {
                 elo[pCanon] = ELO_INICIAL_R;
+                stats[pCanon] = { corridas: 0, vitorias: 0 };
                 let nome = exibicao[pCanon] || apelidos[pCanon] || nomeOriginal || pCanon;
                 exibicao[pCanon] = String(nome).replace(/[.#$\/\[\]]/g, '_');
             }
@@ -117,6 +119,8 @@
                 let esperado = 1 / (1 + Math.pow(10, (eloAdv - antes[p]) / 400));
                 let venceu = b.dados.some(d => d && canon(d.piloto || '') === p && posNumElo(d.pos) === 1);
                 elo[p] = Math.round(elo[p] + ELO_K_R * ((venceu ? 1 : 0) - esperado));
+                stats[p].corridas++;
+                if (venceu) stats[p].vitorias++;
             });
         });
 
@@ -145,14 +149,30 @@
         });
 
         let ranking = Object.keys(elo)
-            .map(c => ({ canon: c, nome: exibicao[c] || c, elo: elo[c] }))
+            .map(c => ({
+                canon: c,
+                nome: exibicao[c] || c,
+                elo: elo[c],
+                corridas: stats[c].corridas,
+                vitorias: stats[c].vitorias
+            }))
             .sort((a, b) => b.elo - a.elo);
 
         let alteracoes = [];
         ranking.forEach(r => {
             let meta = metadados && metadados[r.nome];
             let atual = (meta && typeof meta.elo === 'number') ? meta.elo : null;
-            if (atual !== r.elo) alteracoes.push({ metaKey: r.nome, elo: r.elo, antes: atual });
+            let corridasAtual = (meta && typeof meta.corridas === 'number') ? meta.corridas : null;
+            let vitoriasAtual = (meta && typeof meta.vitorias === 'number') ? meta.vitorias : null;
+            if (atual !== r.elo || corridasAtual !== r.corridas || vitoriasAtual !== r.vitorias) {
+                alteracoes.push({
+                    metaKey: r.nome,
+                    elo: r.elo,
+                    corridas: r.corridas,
+                    vitorias: r.vitorias,
+                    antes: atual
+                });
+            }
         });
 
         return { ranking, alteracoes, bateriasContadas, desafiosContados: decisoes.length };
@@ -161,7 +181,11 @@
     // Multi-path update pronto pra db.ref().update() / admin SDK.
     function montarUpdatesElo(alteracoes) {
         let updates = {};
-        alteracoes.forEach(a => { updates['pilotosMetadados/' + a.metaKey + '/elo'] = a.elo; });
+        alteracoes.forEach(a => {
+            updates['pilotosMetadados/' + a.metaKey + '/elo'] = a.elo;
+            updates['pilotosMetadados/' + a.metaKey + '/corridas'] = a.corridas;
+            updates['pilotosMetadados/' + a.metaKey + '/vitorias'] = a.vitorias;
+        });
         return updates;
     }
 

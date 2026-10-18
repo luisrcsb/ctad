@@ -3460,7 +3460,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             try {
                 const r = await window.recalcularEloGeral();
                 const top = r.ranking.slice(0, 6)
-                    .map((p, i) => `${i + 1}º ${p.nome}: ${p.elo}`)
+                    .map((p, i) => `${i + 1}º ${p.nome} — ${p.elo} (${p.corridas} corridas, ${p.vitorias} vitórias)`)
                     .join('\n');
                 alert(`✅ ELO recalculado (${r.bateriasContadas} baterias, ${r.desafiosContados} desafio(s) em replay).\n${r.alteracoes.length} piloto(s) atualizado(s).\n\n🏆 Ranking:\n${top}`);
             } catch (e) {

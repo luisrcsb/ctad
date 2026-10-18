@@ -596,7 +596,7 @@ async function recalcularEloGeralRobo() {
     }
     await db.ref().update(modulo.montarUpdatesElo(resultado.alteracoes));
     log('[robo][elo] atualizado: ' + resultado.alteracoes
-      .map(a => a.metaKey + '=' + a.elo + ' (antes ' + a.antes + ')').join(', '));
+      .map(a => a.metaKey + '=' + a.elo + ' [' + a.corridas + ' corridas, ' + a.vitorias + ' vitorias] (antes ' + a.antes + ')').join(', '));
   } catch (e) {
     log('[robo][elo] ERRO ao recalcular ELO: ' + e.message);
   }
