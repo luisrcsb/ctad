@@ -3,9 +3,16 @@
     "rules": "database.rules.json"
   },
   "hosting": {
-    "public": ".",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "downloads/*.exe", "app-local/dist/**", "app-local/build/**", "**/*.bat"],
+    "public": "hosting-redirect",
+    "ignore": ["firebase.json", "**/.*"],
     "cleanUrls": true,
+    "redirects": [
+      {
+        "source": "**",
+        "destination": "https://luisrcsb.github.io/ctad/",
+        "type": 302
+      }
+    ],
     "headers": [
       {
         "source": "/",
