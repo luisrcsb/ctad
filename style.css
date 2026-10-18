@@ -208,6 +208,9 @@
         .checkbox-container { background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; max-height: 150px; overflow-y: auto; }
         .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-main); cursor: pointer; }
         .checkbox-item input[type="checkbox"] { accent-color: var(--accent-red); width: 15px; height: 15px; cursor: pointer; }
+        /* Cabeçalho de dia no filtro de baterias (rodadas); fica fixo no topo enquanto a lista rola */
+        .filtro-rodada-dia { position: sticky; top: -8px; z-index: 1; background: var(--bg-input); font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 0 2px; border-bottom: 1px dashed var(--border-card); }
+        .filtro-rodada-atual { color: var(--accent-gold); }
 
         .upload-grid-manager { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
         .upload-box { background: var(--bg-input); border: 1px dashed var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }

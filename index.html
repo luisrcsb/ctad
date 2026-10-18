@@ -1065,7 +1065,10 @@
         let redesSociaisCache = {};
         let acessibilidadeHabilitadaGlobal = false;
         let pilotoSendoConfigurado = null;
-        let ultimaBateriaTopoKeyCache = null;
+        // Filtro de baterias por RODADA (dia): agrupa as baterias por dia
+        // efetivo e mantém a rodada atual selecionada; ver chaveRodadaBateria().
+        let ultimaRodadaAtualCache = null;
+        let bateriasRenderizadasCache = [];
         // Filtro "PILOTOS (Resumo compacto)": guarda só o que o usuário desmarcou
         // à mão. Quem entra na lista depois (baterias/metadados chegando do
         // Firebase em ordem diferente) carrega marcado por padrão — antes, um
@@ -1342,6 +1345,45 @@
             let matchSeq = sessaoStr.match(/\((\d+)\)/) || sessaoStr.match(/bateria\s*(\d+)/i) || sessaoStr.match(/(\d+)/);
             let sequencial = matchSeq ? parseInt(matchSeq[1], 10) : 0;
             return timestampData + sequencial;
+        }
+
+        // ===== Rodadas do dia =====
+        // Uma "rodada" = a noite do clube: uma sessão que atravessa a
+        // madrugada continua no dia que a começou. Regra: data efetiva =
+        // MENOR data entre (a) a data no nome da sessão e (b) o upload − 6h
+        // (arquivo subido às 3h da manhã do dia 13 ainda é rodada do dia 12).
+        // O upload usa o ts embutido na chave (o uploadedAt das baterias
+        // antigas foi sobrescrito pelo re-upload em lote de 12/10).
+        const RODADA_TOLERANCIA_HORAS = 6;
+
+        function tsUploadDaBateria(arq) {
+            let m = String((arq && arq.firebaseKey) || '').match(/(\d{13})/);
+            if (m) return Number(m[1]);
+            if (arq && typeof arq.uploadedAt === 'number') return arq.uploadedAt;
+            if (arq && typeof arq.id === 'number') return arq.id;
+            return 0;
+        }
+
+        function chaveRodadaBateria(arq) {
+            let nome = (arq && arq.sessao) || (arq && arq.dados && arq.dados[0] ? arq.dados[0].sessao : '') || '';
+            let match = String(nome).match(/(\d{2})[-/](\d{2})[-/](\d{2})/);
+            let tsNome = match ? new Date(2000 + parseInt(match[3], 10), parseInt(match[2], 10) - 1, parseInt(match[1], 10)).getTime() : NaN;
+            let tsUpload = tsUploadDaBateria(arq);
+            let tsEfetivo;
+            if (tsUpload > 0) {
+                let tsUploadRodada = tsUpload - RODADA_TOLERANCIA_HORAS * 3600 * 1000;
+                tsEfetivo = isFinite(tsNome) ? Math.min(tsNome, tsUploadRodada) : tsUploadRodada;
+            } else {
+                tsEfetivo = isFinite(tsNome) ? tsNome : 0;
+            }
+            let d = new Date(tsEfetivo);
+            let pad = n => String(n).padStart(2, '0');
+            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        }
+
+        function formatarRodadaDia(chaveRodada) {
+            let p = String(chaveRodada).split('-');
+            return p[2] + '/' + p[1] + '/' + p[0];
         }
 
         /**
@@ -3828,25 +3870,51 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 });
             } catch (e) {}
 
-            let topKeyAtual = listaParaFiltros.length > 0 ? listaParaFiltros[0].firebaseKey : null;
-            let houveNovaBateria = topKeyAtual !== ultimaBateriaTopoKeyCache;
-            ultimaBateriaTopoKeyCache = topKeyAtual;
+            // ===== Rodadas do dia =====
+            // Agrupa por rodada (dia efetivo); a lista vem da mais nova pra
+            // mais velha, então o primeiro grupo é o atual.
+            let gruposRodada = [];
+            let indicePorRodada = {};
+            listaParaFiltros.forEach(arq => {
+                let rodada = chaveRodadaBateria(arq);
+                if (indicePorRodada[rodada] == null) {
+                    indicePorRodada[rodada] = gruposRodada.length;
+                    gruposRodada.push({ rodada, itens: [] });
+                }
+                gruposRodada[indicePorRodada[rodada]].itens.push(arq);
+            });
+            let rodadaAtual = gruposRodada.length ? gruposRodada[0].rodada : null;
+            let houveNovaRodada = rodadaAtual !== ultimaRodadaAtualCache;
+            ultimaRodadaAtualCache = rodadaAtual;
 
             let bateriasSelecionadasAntigas = Array.from(document.querySelectorAll('.filter-bateria:checked')).map(cb => cb.value);
-            let primeiraVezBat = bateriasSelecionadasAntigas.length === 0 || houveNovaBateria;
+            let chavesRenderizadasAntes = new Set(bateriasRenderizadasCache);
+            bateriasRenderizadasCache = listaParaFiltros.map(a => a.firebaseKey);
+            let primeiraVezBat = bateriasSelecionadasAntigas.length === 0;
+            // Marca a rodada atual INTEIRA na primeira carga ou quando começa
+            // uma rodada nova; no meio da rodada (baterias da mesma noite
+            // chegando na madrugada) apenas SOMA as novas às marcadas.
+            let marcarRodadaAtualInteira = primeiraVezBat || houveNovaRodada;
 
-            batContainer.innerHTML = listaParaFiltros.map((arq, index) => {
-                let key = arq.firebaseKey;
-                let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
-                
-                let marcado = '';
-                if (primeiraVezBat) {
-                    if (index === 0) marcado = 'checked';
-                } else {
-                    if (bateriasSelecionadasAntigas.includes(key)) marcado = 'checked';
-                }
+            batContainer.innerHTML = gruposRodada.map(g => {
+                let ehRodadaAtual = g.rodada === rodadaAtual;
+                let itensHtml = g.itens.map(arq => {
+                    let key = arq.firebaseKey;
+                    let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
 
-                return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(formatarNomeSessao(sessaoOriginal))}</label>`;
+                    let marcado = '';
+                    if (marcarRodadaAtualInteira) {
+                        if (ehRodadaAtual) marcado = 'checked';
+                    } else {
+                        let novaNaRodadaAtiva = ehRodadaAtual && !chavesRenderizadasAntes.has(key);
+                        if (bateriasSelecionadasAntigas.includes(key) || novaNaRodadaAtiva) marcado = 'checked';
+                    }
+
+                    return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(formatarNomeSessao(sessaoOriginal))}</label>`;
+                }).join('');
+                let cabecalho = '<div class="filtro-rodada-dia">' + escapeHtml(formatarRodadaDia(g.rodada)) +
+                    (ehRodadaAtual ? ' <span class="filtro-rodada-atual">• atual</span>' : '') + '</div>';
+                return cabecalho + itensHtml;
             }).join('');
 
             let listaNomesUnicos = Array.from(pilotosSet).filter(p => {
