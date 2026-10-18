@@ -1,10 +1,35 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v1.0";
-        const TITULO_VERSAO_ATUAL = "Versão 1.0 — Marco Inicial";
+        const VERSAO_ATUAL_SISTEMA = "v1.2";
+        const TITULO_VERSAO_ATUAL = "Baterias por Rodada (Dia)";
 
         const historicoAtualizacoesDB = [
+            {
+                versao: "v1.2",
+                data: "18 de Outubro de 2026",
+                titulo: "Baterias por Rodada (Dia)",
+                relevante: [
+                    { tipo: "novo", texto: "O filtro \"SESSÕES / BATERIAS\" agora agrupa as baterias por RODADA (dia): cada dia aparece sob um próprio cabeçalho com a data, que fica fixo no topo enquanto a lista rola — o dia atual vem primeiro, com o selo \"• atual\"." },
+                    { tipo: "melhoria", texto: "Seleção automática por rodada: na primeira carga o site marca o dia inteiro (não só a última bateria). Uploads da mesma noite vão somando às que já estão ativas — a sessão que atravessa a madrugada continua pertencendo ao dia que começou (vale até as 6h da manhã seguinte) e só quando abre a rodada do dia novo é que a seleção troca. A seleção manual continua sendo respeitada." },
+                    { tipo: "melhoria", texto: "Data de upload histórica corrigida: as baterias antigas voltaram a exibir no histórico da administração a data original do upload (antes aparecia a do reprocessamento em lote de 12/10)." }
+                ]
+            },
+            {
+                versao: "v1.1",
+                data: "18 de Outubro de 2026",
+                titulo: "ELO ao Vivo e Desafios Consertados",
+                relevante: [
+                    { tipo: "novo", texto: "Ranking ELO com estatísticas: a tabela (#, Piloto, ELO) passou a mostrar também Corridas e Vitórias de cada piloto, gravadas individualmente no cadastro — desafio vencido conta como vitória, mas não como corrida." },
+                    { tipo: "novo", texto: "ELO recalcula sozinho: após upload (manual ou robô), exclusão em lote ou reprocessamento de baterias, o ranking inteiro é recalculado na hora; o painel de administração ganhou o botão \"🔄 Recalcular ELO\" pra forçar o recálculo quando quiser." },
+                    { tipo: "correcao", texto: "Desafios voltaram a funcionar: as regras do banco negavam o aceite (o convite ficava \"aceito\" sem criar o desafio) e as decisões não gravavam — agora o aceite é atômico e vencedor, W.O. e expiração são registrados corretamente (validado no emulador do banco)." },
+                    { tipo: "correcao", texto: "W.O. agora é persistido no desafio: a ausência do desafiado fica registrada sem travar a criação, e cada corrida conta uma vez no placar." },
+                    { tipo: "correcao", texto: "ELO e foto do carro do desafio usavam a chave errada do piloto em certos nomes; variantes de apelido (ex.: \"DJ\" x \"DJ Edgard\") agora são unificados pelas mesclagens." },
+                    { tipo: "correcao", texto: "Filtro do Resumo compacto: todos os pilotos entram na lista e quem acaba de chegar (ex.: Hélio) já aparece marcado por padrão." },
+                    { tipo: "melhoria", texto: "Deduplicação de baterias por sessão no robô e no upload manual: o mesmo arquivo não entra duas vezes — e a base de produção foi limpa das duplicatas geradas pelo reprocessamento de 12/10." },
+                    { tipo: "melhoria", texto: "Site migrado pro GitHub Pages: publicação automática a cada atualização e carregamento mais estável." }
+                ]
+            },
             {
                 versao: "v1.0",
                 data: "09 de Outubro de 2026",
