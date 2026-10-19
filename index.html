@@ -770,16 +770,14 @@
                 </div>
                 <div class="card" style="margin-bottom: 0;">
                     <div class="card-header">🥊 Pilotos & ⚔️ Desafios</div>
-                    <div class="bloco-pilotos-filtro" style="margin-top: 6px;">
-                        <div class="filter-group-header">
-                            <label class="group-title">PILOTOS (Resumo compacto)</label>
-                            <button class="btn-text-action" onclick="limparSelecao('filter-piloto')">🗑️ Limpar</button>
-                        </div>
+                    <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin: 6px 0 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <span>⚔️ Desafios Ativos</span>
+                        <button class="btn-text-action" onclick="limparSelecao('filter-piloto')" title="Desmarca todos os pilotos do filtro">🗑️ Limpar pilotos</button>
+                    </div>
+                    <div class="bloco-pilotos-filtro">
                         <div class="checkbox-container" id="filtro-pilotos-container"></div>
                     </div>
-                    <div style="border-top: 1px solid var(--border-card); margin: 10px 0 8px;"></div>
-                    <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">⚔️ Desafios Ativos</div>
-                    <div id="kpi-desafios-conteudo" style="display: flex; flex-direction: column; gap: 6px;">
+                    <div id="kpi-desafios-conteudo" style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
                         <div style="color: var(--text-muted); font-size: 0.8rem;">Carregando desafios...</div>
                     </div>
                 </div>
@@ -795,6 +793,11 @@
                                 <button class="btn-text-action" onclick="selecionarTodasBaterias()">✅ Todas</button>
                                 <button class="btn-text-action" onclick="limparSelecao('filter-bateria')">🗑️ Limpar</button>
                             </div>
+                        </div>
+                        <div class="baterias-barra">
+                            <button id="bateria-atual-chip" class="bateria-atual-chip" onclick="marcarSomenteBateriaAtual()" title="Bateria mais recente — clique pra marcar SÓ ela"></button>
+                            <button id="btn-lista-baterias" class="btn-lista-baterias" onclick="alternarListaBaterias()">📋 Lista</button>
+                            <span id="baterias-selecao-info" class="baterias-selecao-info"></span>
                         </div>
                         <div class="checkbox-container" id="filtro-baterias-container"></div>
                     </div>
@@ -3877,6 +3880,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
         window.selecionarTodasBaterias = function() {
             document.querySelectorAll('.filter-bateria').forEach(cb => cb.checked = true);
             sincronizarCabecalhosRodada();
+            atualizarInfoSelecaoBaterias();
             atualizarDashboard();
         };
 
@@ -3991,6 +3995,8 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 return `<div class="filtro-rodada-grupo">${cabecalho}<div class="filtro-rodada-itens">${itensHtml}</div></div>`;
             }).join('');
             sincronizarCabecalhosRodada();
+            atualizarChipBateriaAtual(gruposRodada);
+            atualizarInfoSelecaoBaterias();
 
             let listaNomesUnicos = Array.from(pilotosSet).filter(p => {
                 if (!p || !p.trim()) return false;
@@ -4029,7 +4035,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 // entrar na lista depois continua desmarcado (intenção do "Limpar").
                 if (classeFiltro === 'filter-piloto') pilotosDesmarcadosFiltro.add(cb.value);
             });
-            if (classeFiltro === 'filter-bateria') sincronizarCabecalhosRodada();
+            if (classeFiltro === 'filter-bateria') { sincronizarCabecalhosRodada(); atualizarInfoSelecaoBaterias(); }
             atualizarDashboard();
         };
 
@@ -4046,6 +4052,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             if (!grupo) return;
             grupo.querySelectorAll('.filter-bateria').forEach(f => { f.checked = cb.checked; });
             cb.indeterminate = false;
+            atualizarInfoSelecaoBaterias();
             atualizarDashboard();
         };
 
@@ -4053,6 +4060,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
         // do checkbox do dia (só fica marcado quando o dia inteiro está ativo).
         window.bateriaFiltroAlterada = function() {
             sincronizarCabecalhosRodada();
+            atualizarInfoSelecaoBaterias();
             atualizarDashboard();
         };
 
@@ -4066,6 +4074,68 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 cab.checked = total > 0 && marcados === total;
                 cab.indeterminate = marcados > 0 && marcados < total;
             });
+        }
+
+        // ===== Filtro de baterias enxuto: atual exposto + lista recolhida =====
+        let bateriaAtualKeyCache = null;
+
+        // Selo da bateria ATUAL (a mais nova do primeiro grupo) + total no botão.
+        function atualizarChipBateriaAtual(gruposRodada) {
+            let chip = document.getElementById('bateria-atual-chip');
+            if (!chip) return;
+            let g = gruposRodada && gruposRodada.length ? gruposRodada[0] : null;
+            // Itens do dia vêm em ordem crescente (1, 2, 3…): a mais nova é a última.
+            let arq = g && g.itens.length ? g.itens[g.itens.length - 1] : null;
+            if (!arq) { bateriaAtualKeyCache = null; chip.style.display = 'none'; return; }
+            chip.style.display = '';
+            bateriaAtualKeyCache = arq.firebaseKey;
+            let nome = formatarNomeSessao(arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : arq.firebaseKey));
+            let num = extrairNumeroBateria(arq) || '?';
+            chip.innerHTML = '🔥 Atual: <b>' + escapeHtml(String(num)) + '</b>';
+            chip.title = nome + '\n(clique pra marcar SÓ a bateria atual)';
+            let btn = document.getElementById('btn-lista-baterias');
+            let total = document.querySelectorAll('.filter-bateria').length;
+            if (btn && !document.getElementById('filtro-baterias-container').classList.contains('aberta')) {
+                btn.innerHTML = '📋 Lista (' + total + ')';
+            }
+            atualizarChipSelecionado();
+        }
+
+        // Selo apagado quando a bateria atual não está marcada.
+        function atualizarChipSelecionado() {
+            let chip = document.getElementById('bateria-atual-chip');
+            if (!chip || !bateriaAtualKeyCache) return;
+            let cb = document.querySelector('.filter-bateria[value="' + (window.CSS && CSS.escape ? CSS.escape(bateriaAtualKeyCache) : bateriaAtualKeyCache) + '"]');
+            chip.classList.toggle('desmarcada', !(cb && cb.checked));
+        }
+
+        // Clique no selo: deixa só a bateria atual marcada.
+        window.marcarSomenteBateriaAtual = function() {
+            if (!bateriaAtualKeyCache) return;
+            document.querySelectorAll('.filter-bateria').forEach(cb => { cb.checked = (cb.value === bateriaAtualKeyCache); });
+            sincronizarCabecalhosRodada();
+            atualizarInfoSelecaoBaterias();
+            atualizarDashboard();
+        };
+
+        // Abre/fecha a lista completa de dias ao lado do selo do atual.
+        window.alternarListaBaterias = function() {
+            let c = document.getElementById('filtro-baterias-container');
+            let btn = document.getElementById('btn-lista-baterias');
+            if (!c) return;
+            let aberta = c.classList.toggle('aberta');
+            if (btn) btn.innerHTML = (aberta ? '▲ Recolher' : '📋 Lista') + ' (' + document.querySelectorAll('.filter-bateria').length + ')';
+        };
+
+        // Contador "N/M marcadas" ao lado do botão da lista.
+        function atualizarInfoSelecaoBaterias() {
+            let info = document.getElementById('baterias-selecao-info');
+            if (info) {
+                let marcadas = document.querySelectorAll('.filter-bateria:checked').length;
+                let total = document.querySelectorAll('.filter-bateria').length;
+                info.textContent = total ? (marcadas + '/' + total + ' marcadas') : '';
+            }
+            atualizarChipSelecionado();
         }
 
 

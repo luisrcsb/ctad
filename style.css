@@ -201,7 +201,15 @@
 
         .filters-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
         .filters-grid { display: flex; flex-direction: column; gap: 12px; }
-        #filtro-baterias-container { display: flex; flex-wrap: wrap; gap: 8px; max-height: none; overflow: visible; }
+        /* Filtro de baterias enxuto: barra com selo do atual + botão da lista;
+           a grade de dias fica recolhida (só abre com .aberta). */
+        .baterias-barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .bateria-atual-chip { background: rgba(230, 57, 70, 0.12); border: 1px solid var(--accent-red); color: var(--text-title); font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+        .bateria-atual-chip.desmarcada { opacity: 0.45; border-color: var(--border-card); background: var(--bg-input); }
+        .btn-lista-baterias { background: var(--bg-input); border: 1px solid var(--border-card); color: var(--text-main); font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; font-family: inherit; }
+        .baterias-selecao-info { font-size: 0.68rem; color: var(--text-muted); font-weight: 600; }
+        #filtro-baterias-container { display: none; }
+        #filtro-baterias-container.aberta { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; max-height: 260px; overflow-y: auto; padding: 8px; }
         #filtro-modulos-container { display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px 16px; max-height: none; overflow: visible; }
         #filtro-pilotos-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 2px 12px; max-height: 230px; overflow-y: auto; }
         .filter-group { display: flex; flex-direction: column; gap: 8px; }
@@ -212,7 +220,7 @@
         .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-main); cursor: pointer; }
         .checkbox-item input[type="checkbox"] { accent-color: var(--accent-red); width: 15px; height: 15px; cursor: pointer; }
         /* Cabeçalho de dia no filtro de baterias (rodadas); fica fixo no topo enquanto a lista rola */
-        .filtro-rodada-dia { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 0 2px; border-bottom: 1px dashed var(--border-card); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+        .filtro-rodada-dia { position: sticky; top: -8px; z-index: 1; background: var(--bg-card); font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 0 2px; border-bottom: 1px dashed var(--border-card); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
         .filtro-rodada-atual { color: var(--accent-gold); }
         /* Checkbox antes da data: marca/desmarca o dia inteiro. */
         .filtro-rodada-toggle { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: inherit; min-width: 0; }
