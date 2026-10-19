@@ -200,7 +200,10 @@
         .admin-alerta-solicitacoes:hover { background: rgba(255, 183, 3, 0.2); }
 
         .filters-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
-        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+        .filters-grid { display: flex; flex-direction: column; gap: 12px; }
+        #filtro-baterias-container { display: flex; flex-wrap: wrap; gap: 8px; max-height: none; overflow: visible; }
+        #filtro-modulos-container { display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px 16px; max-height: none; overflow: visible; }
+        #filtro-pilotos-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 2px 12px; max-height: 230px; overflow-y: auto; }
         .filter-group { display: flex; flex-direction: column; gap: 8px; }
         .filter-group-header { display: flex; justify-content: space-between; align-items: center; }
         .filter-group label.group-title { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
@@ -209,13 +212,12 @@
         .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-main); cursor: pointer; }
         .checkbox-item input[type="checkbox"] { accent-color: var(--accent-red); width: 15px; height: 15px; cursor: pointer; }
         /* Cabeçalho de dia no filtro de baterias (rodadas); fica fixo no topo enquanto a lista rola */
-        .filtro-rodada-dia { position: sticky; top: -8px; z-index: 1; background: var(--bg-input); font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 0 2px; border-bottom: 1px dashed var(--border-card); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+        .filtro-rodada-dia { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 0 2px; border-bottom: 1px dashed var(--border-card); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
         .filtro-rodada-atual { color: var(--accent-gold); }
         /* Checkbox antes da data: marca/desmarca o dia inteiro. */
         .filtro-rodada-toggle { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: inherit; min-width: 0; }
         .filtro-rodada-toggle input[type="checkbox"] { accent-color: var(--accent-gold); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
-        .filtro-rodada-grupo { display: flex; flex-direction: column; gap: 4px; padding-bottom: 5px; border-bottom: 1px solid rgba(34, 45, 66, 0.35); }
-        .filtro-rodada-grupo:last-child { border-bottom: none; padding-bottom: 0; }
+        .filtro-rodada-grupo { display: flex; flex-direction: column; gap: 4px; flex: 1 1 250px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 5px 8px; }
         /* Item da lista: só o número da bateria + checkbox. */
         .filtro-rodada-itens { display: flex; flex-wrap: wrap; gap: 4px; }
         .filtro-rodada-grupo .checkbox-bateria { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; padding: 2px 6px; gap: 5px; font-size: 0.78rem; font-weight: 700; }
@@ -380,7 +382,7 @@
         @media print {
             body, body * { color: #000000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body { background-color: #ffffff !important; padding: 4px !important; font-size: 9px !important; }
-            .header-actions, .filters-card, .btn-pdf-global, .comments-section, .custom-modal, #campeonato-fullscreen, #admin-fullscreen { display: none !important; }
+            .header-actions, .filters-card, .bloco-pilotos-filtro, .btn-pdf-global, .comments-section, .custom-modal, #campeonato-fullscreen, #admin-fullscreen { display: none !important; }
         }
 
 /* ==============================================
