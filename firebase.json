@@ -8,11 +8,6 @@
     "cleanUrls": true,
     "redirects": [
       {
-        "source": "/downloads/**",
-        "destination": "https://luisrcsb.github.io/ctad/downloads/:splat",
-        "type": 302
-      },
-      {
         "source": "**",
         "destination": "https://luisrcsb.github.io/ctad/",
         "type": 302
