@@ -771,7 +771,7 @@
                 <div class="card" style="margin-bottom: 0;">
                     <div class="card-header">🥊 Pilotos & ⚔️ Desafios</div>
                     <div style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin: 6px 0 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-                        <span>⚔️ Desafios Ativos</span>
+                        <span>🏆 Top ELO & ⚔️ Desafios</span>
                         <button class="btn-text-action" onclick="limparSelecao('filter-piloto')" title="Desmarca todos os pilotos do filtro">🗑️ Limpar pilotos</button>
                     </div>
                     <div class="bloco-pilotos-filtro">
@@ -4010,26 +4010,52 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             });
 
             let tagsAutomaticasGlobaisFiltro = calcularTagsAutomaticasPilotos();
-            // localeCompare: senão "Hélio" (acento) cai no fim da lista em vez
-            // de perto de "Henrique" — parecia piloto "sumido"/fora de ordem.
-            pilContainer.innerHTML = listaNomesUnicos.sort((a, b) => a.localeCompare(b, 'pt-BR')).map(piloto => {
+            // Lista ÚNICA: filtro de pilotos + Top ELO no mesmo bloco (sem
+            // nomes repetidos). Ordena por ELO desc — empate por nome
+            // (localeCompare: senão "Hélio" cai no fim em vez de perto de
+            // "Henrique"). Atualiza sozinha: o listener de pilotosMetadados
+            // reexecuta esta função a cada mudança de ELO.
+            let linhasPilotos = listaNomesUnicos.map(piloto => {
                 let meta = pilotosMetadadosCache[piloto] || {};
+                let elo = (typeof meta.elo === 'number') ? meta.elo : ELO_INICIAL;
+                let corridas = (typeof meta.corridas === 'number') ? meta.corridas : 0;
+                let vitorias = (typeof meta.vitorias === 'number') ? meta.vitorias : 0;
                 let labelExib = meta.apelido ? `${piloto} (${meta.apelido})` : piloto;
+                return { piloto, labelExib, elo, corridas, vitorias };
+            }).sort((a, b) => b.elo !== a.elo ? b.elo - a.elo : a.piloto.localeCompare(b.piloto, 'pt-BR'));
+
+            let cabecalhoListaPilotos = `
+                <div style="display:flex; align-items:center; gap:6px; padding:2px 0; border-bottom:1px solid var(--border-card); font-size:0.6rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">
+                    <input type="checkbox" title="Marcar/desmarcar todos os pilotos" onchange="alternarTodosPilotos(this)">
+                    <span style="width:22px; text-align:center;">#</span>
+                    <span style="flex:1; min-width:0;">Piloto</span>
+                    <span style="width:34px; text-align:right;">ELO</span>
+                    <span style="width:26px; text-align:right;" title="Corridas disputadas">Cor</span>
+                    <span style="width:26px; text-align:right;" title="Vitórias">Vit</span>
+                    <span style="width:46px;"></span>
+                </div>`;
+
+            pilContainer.innerHTML = cabecalhoListaPilotos + (linhasPilotos.length ? linhasPilotos.map((p, idx) => {
+                let posCor = idx === 0 ? 'var(--accent-gold)' : idx === 1 ? '#C0C0C0' : idx === 2 ? '#CD7F32' : 'var(--text-muted)';
                 // Marcado por padrão; só fica desmarcado se o usuário desmarcou.
-                let marcado = pilotosDesmarcadosFiltro.has(piloto) ? '' : 'checked';
-                let tagsDoPilotoFiltro = obterTodasTagsPiloto(piloto, tagsAutomaticasGlobaisFiltro);
+                let marcado = pilotosDesmarcadosFiltro.has(p.piloto) ? '' : 'checked';
+                let tagsDoPilotoFiltro = obterTodasTagsPiloto(p.piloto, tagsAutomaticasGlobaisFiltro);
                 let iconesTagsHtml = renderizarIconesTagsTooltipHtml(tagsDoPilotoFiltro);
                 return `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0; border-bottom: 1px solid rgba(34, 45, 66, 0.4); gap: 6px;">
-                        <label class="checkbox-item" style="flex: 1; margin: 0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            <input type="checkbox" value="${escapeHtml(piloto)}" class="filter-piloto" ${marcado} onchange="filtroPilotoAlterado(this)"> 
-                            ${escapeHtml(labelExib)}
+                    <div class="piloto-linha-top" style="display: flex; align-items: center; padding: 3px 0; border-bottom: 1px dashed var(--border-card); gap: 6px;">
+                        <input type="checkbox" value="${escapeHtml(p.piloto)}" class="filter-piloto" ${marcado} onchange="filtroPilotoAlterado(this)">
+                        <span style="font-size: 0.72rem; font-weight: 700; color: ${posCor}; width: 22px; text-align: center; flex-shrink: 0;">${idx + 1}º</span>
+                        <label class="checkbox-item" style="flex: 1; min-width: 0; margin: 0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            ${escapeHtml(p.labelExib)}
                         </label>
                         ${iconesTagsHtml}
-                        <button class="btn-text-action" data-piloto="${escapeHtml(piloto)}" onclick="abrirDossiePiloto(this.dataset.piloto)">Resumo</button>
+                        <span style="font-size: 0.78rem; font-weight: 700; color: var(--accent-gold); width: 34px; text-align: right; flex-shrink: 0;">${p.elo}</span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted); width: 26px; text-align: right; flex-shrink: 0;" title="Corridas disputadas">${p.corridas}</span>
+                        <span style="font-size: 0.72rem; color: var(--accent-green); font-weight: 600; width: 26px; text-align: right; flex-shrink: 0;" title="Vitórias">${p.vitorias}</span>
+                        <button class="btn-text-action" data-piloto="${escapeHtml(p.piloto)}" onclick="abrirDossiePiloto(this.dataset.piloto)">Resumo</button>
                     </div>
                 `;
-            }).join('');
+            }).join('') : '<div style="font-size: 0.75rem; color: var(--text-muted); padding: 6px 0;">Nenhum piloto.</div>');
         }
 
         window.limparSelecao = function(classeFiltro) {
@@ -4047,6 +4073,16 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
         window.filtroPilotoAlterado = function(cb) {
             if (cb.checked) pilotosDesmarcadosFiltro.delete(cb.value);
             else pilotosDesmarcadosFiltro.add(cb.value);
+            atualizarDashboard();
+        };
+
+        // Checkbox do cabeçalho da lista: marca/desmarca TODOS os pilotos.
+        window.alternarTodosPilotos = function(cb) {
+            document.querySelectorAll('.filter-piloto').forEach(p => {
+                p.checked = cb.checked;
+                if (cb.checked) pilotosDesmarcadosFiltro.delete(p.value);
+                else pilotosDesmarcadosFiltro.add(p.value);
+            });
             atualizarDashboard();
         };
 

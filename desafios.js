@@ -558,16 +558,8 @@ async function aplicarDecisaoDesafio(id, resultado) {
 function renderizarLeaderboardElo() {
     let container = document.getElementById('kpi-desafios-conteudo');
     if (!container) return;
-    let pilotos = [];
-    Object.keys(pilotosMetadadosCache || {}).forEach(k => {
-        let m = pilotosMetadadosCache[k];
-        let nome = rotuloPilotoDesafio(k);
-        let elo = (m && typeof m.elo === 'number') ? m.elo : ELO_INICIAL;
-        let corridas = (m && typeof m.corridas === 'number') ? m.corridas : 0;
-        let vitorias = (m && typeof m.vitorias === 'number') ? m.vitorias : 0;
-        pilotos.push({ nome, elo, corridas, vitorias });
-    });
-    pilotos.sort((a, b) => b.elo - a.elo);
+    // O Top ELO agora vive na lista ÚNICA de pilotos do card (gerada no
+    // index.html, com filtro + Resumo por linha) — aqui ficam só os desafios.
     let ids = Object.keys(desafiosCache || {}).filter(id => desafiosCache[id].status === 'decidido')
         .sort((a, b) => (desafiosCache[b].decididoEm || 0) - (desafiosCache[a].decididoEm || 0));
     let desafiosHtml = ids.slice(0, 6).map(id => {
@@ -604,28 +596,8 @@ function renderizarLeaderboardElo() {
             '</div>' +
         '</div>';
     }).join('');
-    let leaderboardCabecalho =
-        '<div style="display:flex; align-items:center; gap:8px; padding:2px 0; border-bottom:1px solid var(--border-card); font-size:0.6rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">' +
-            '<span style="width:22px; text-align:center;">#</span>' +
-            '<span style="flex:1; min-width:0;">Piloto</span>' +
-            '<span style="width:34px; text-align:right;">ELO</span>' +
-            '<span style="width:26px; text-align:right;" title="Corridas disputadas">Cor</span>' +
-            '<span style="width:26px; text-align:right;" title="Vitórias">Vit</span>' +
-        '</div>';
-    let leaderboardHtml = pilotos.slice(0, 10).map((p, idx) => {
-        let posCor = idx === 0 ? 'var(--accent-gold)' : idx === 1 ? '#C0C0C0' : idx === 2 ? '#CD7F32' : 'var(--text-muted)';
-        return '<div style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed var(--border-card);">' +
-            '<span style="font-size:0.72rem; font-weight:700; color:' + posCor + '; width:22px; text-align:center;">' + (idx + 1) + 'º</span>' +
-            '<span style="flex:1; font-size:0.78rem; color:var(--text-title); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(p.nome) + '</span>' +
-            '<span style="font-size:0.78rem; font-weight:700; color:var(--accent-gold); width:34px; text-align:right;">' + p.elo + '</span>' +
-            '<span style="font-size:0.72rem; color:var(--text-muted); width:26px; text-align:right;" title="Corridas disputadas">' + p.corridas + '</span>' +
-            '<span style="font-size:0.72rem; color:var(--accent-green); font-weight:600; width:26px; text-align:right;" title="Vitórias">' + p.vitorias + '</span>' +
-        '</div>';
-    }).join('');
     container.innerHTML = `
-        <div style="font-size:0.72rem; font-weight:800; color:var(--accent-gold); text-transform:uppercase; margin-bottom:6px;">🏆 Top ELO</div>
-        ${pilotos.length ? leaderboardCabecalho + leaderboardHtml : '<div style="font-size:0.75rem; color:var(--text-muted);">Nenhum piloto com ELO ainda.</div>'}
-        <div style="font-size:0.72rem; font-weight:800; color:var(--accent-gold); text-transform:uppercase; margin:10px 0 6px;">⚔️ Últimos Desafios Decididos</div>
+        <div style="font-size:0.72rem; font-weight:800; color:var(--accent-gold); text-transform:uppercase; margin-bottom:6px;">⚔️ Últimos Desafios Decididos</div>
         ${desafiosHtml || '<div style="font-size:0.75rem; color:var(--text-muted);">Nenhum desafio decidido ainda.</div>'}
     `;
 }
