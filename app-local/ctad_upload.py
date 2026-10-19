@@ -113,7 +113,7 @@ def carregar_config():
     cfg.setdefault("mover_para_enviados", True)
     cfg.setdefault("apagar_remoto", False)
     cfg.setdefault("atualizar_auto", True)
-    cfg.setdefault("update_url", "https://krathus-telemetria.web.app/downloads/versao.json")
+    cfg.setdefault("update_url", "https://luisrcsb.github.io/ctad/downloads/versao.json")
     cfg.setdefault("auto_iniciar_monitor", False)
     cfg.setdefault("iniciar_com_windows", False)
     return cfg

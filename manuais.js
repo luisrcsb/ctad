@@ -117,7 +117,7 @@
                 id: 'downloads', icone: '💾', ordem: 5, titulo: 'Área de Downloads',
                 corpo: `
                 <p>Cartão/seção onde administradores baixam o <strong>instalador Windows</strong> (recomendado) ou o <strong>aplicativo portátil</strong> em <code>.zip</code>, com o modelo de <code>config.json</code> e os SHA-256 para conferência.</p>
-                <p><strong>Nova versão:</strong> atualize <code>APP_VERSAO</code> em <code>ctad_upload.py</code>, rode <code>build-installer.bat</code> (instalador) e <code>build-exe.bat</code> (zip portátil + versao.json), atualize os hashes na seção e faça <code>firebase deploy</code>.</p>`
+                <p><strong>Nova versão:</strong> atualize <code>APP_VERSAO</code> em <code>ctad_upload.py</code>, rode <code>build-installer.bat</code> (instalador) e <code>build-exe.bat</code> (zip portátil + versao.json), depois <code>python publicar_downloads.py</code> (regrava links e hashes na seção) e faça <code>commit + push</code> no GitHub — o GitHub Pages publica sozinho. O painel do KChrono se atualiza automaticamente dos Releases do GitHub do KChrono.</p>`
             },
             {
                 id: 'championship', icone: '🏆', ordem: 6, titulo: 'Championship Manager (5 abas)',

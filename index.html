@@ -1960,14 +1960,48 @@
                 '<div style="font-size:0.7rem;color:var(--text-muted);">Requisitos: Windows 10/11 64-bit, conta de admin/gestor no site. Se o Storage negar o arquivo original, o conteúdo segue preservado no banco (pdfBase64).</div>' +
                 '</div>' +
                 '<div class="config-panel" style="border-color:var(--accent-blue);">' +
-                '<div class="config-panel-title" style="color:var(--accent-blue);">🏁 KChrono v1.0.0 (Windows 64-bit)</div>' +
+                '<div class="config-panel-title" id="kchrono-titulo" style="color:var(--accent-blue);">🏁 KChrono v1.0.7 (Windows 64-bit)</div>' +
                 '<p style="font-size:0.78rem;color:var(--text-muted);margin:0;">Cronometragem de precisão para a pista: painel do operador, telão, campeonatos e envio automático ao banco. Substituto do ZRound — conecte o decoder MyLaps e opere pela rede local.</p>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">' +
-                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="downloads/KChrono-v1.0.0.zip" download>⬇️ KChrono portátil (.zip com KChrono.exe)</a>' +
+                '<a id="kchrono-btn-setup" class="btn-action-primary" style="text-decoration:none;display:inline-block;" href="https://github.com/luisrcsb/KChrono/releases/download/v1.0.7/KChrono-Setup-1-0-7.exe">⬇️ Instalador Windows</a>' +
+                '<a id="kchrono-btn-portatil" class="btn-action-primary" style="text-decoration:none;display:inline-block;background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-main);" href="https://github.com/luisrcsb/KChrono/releases/download/v1.0.7/KChrono.exe">📦 Aplicativo portátil (KChrono.exe)</a>' +
+                '<a class="btn-action-primary" style="text-decoration:none;display:inline-block;background:var(--bg-input);border:1px solid var(--border-card);color:var(--text-main);" href="https://github.com/luisrcsb/KChrono/releases" target="_blank" rel="noopener">🌐 Todas as versões (Linux, ISO...)</a>' +
                 '</div>' +
-                '<div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">SHA-256 — portátil: <code>17699C497DE9AE2DCEB4DCA49BC531336BB268BD383A1BD1FC99D799F2586D60</code></div>' +
-                '<div style="font-size:0.7rem;color:var(--text-muted);">Requisitos: Windows 10/11 64-bit. Extraia em uma pasta fixa e execute o KChrono.exe — o navegador abre sozinho no painel.</div>' +
+                '<div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">SHA-256 — instalador: <code id="kchrono-sha-setup">CF22E772E29F72F311488641653873DF079DCA319C82CA279C8E91755F4B3225</code><br>SHA-256 — portátil: <code id="kchrono-sha-portatil">D0219045BD5BCD6E4C783CCF6C0D9943FF03F46BBA6BBE14DCA8F312593866FA</code></div>' +
+                '<div style="font-size:0.7rem;color:var(--text-muted);">Requisitos: Windows 10/11 64-bit. Extraia em uma pasta fixa e execute o KChrono.exe — o navegador abre sozinho no painel. A versão é buscada sozinha nos Releases do GitHub do KChrono: essa lista nunca fica velha.</div>' +
                 '</div>';
+
+            atualizarPainelKChrono();
+        };
+
+        // Puxa a versão mais recente do KChrono direto dos GitHub Releases (o
+        // KChrono publica sozinho via CI). Falhou (offline/sem API)? Mantém a
+        // versão fixa embutida no HTML como está.
+        async function atualizarPainelKChrono() {
+            try {
+                let resp = await fetch('https://api.github.com/repos/luisrcsb/KChrono/releases/latest');
+                if (!resp.ok) return;
+                let rel = await resp.json();
+                let versao = String(rel.tag_name || '').replace(/^v/, '');
+                if (!versao || !Array.isArray(rel.assets)) return;
+
+                let achar = (fn) => rel.assets.find(a => fn(String(a.name || '').toLowerCase())) || null;
+                let setup = achar(n => n.startsWith('kchrono-setup') && n.endsWith('.exe'));
+                let portatil = achar(n => n === 'kchrono.exe');
+                let shaDe = (a) => (a && String(a.digest || '').startsWith('sha256:'))
+                    ? String(a.digest).slice(7).toUpperCase() : '(confira na release)';
+
+                let el = id => document.getElementById(id);
+                if (el('kchrono-titulo')) el('kchrono-titulo').textContent = '🏁 KChrono v' + versao + ' (Windows 64-bit)';
+                if (setup && el('kchrono-btn-setup')) {
+                    el('kchrono-btn-setup').href = setup.browser_download_url;
+                    if (el('kchrono-sha-setup')) el('kchrono-sha-setup').textContent = shaDe(setup);
+                }
+                if (portatil && el('kchrono-btn-portatil')) {
+                    el('kchrono-btn-portatil').href = portatil.browser_download_url;
+                    if (el('kchrono-sha-portatil')) el('kchrono-sha-portatil').textContent = shaDe(portatil);
+                }
+            } catch (e) { /* silencioso: reserva local já está renderizada */ }
         };
 
         window.fazerLoginAdmin = async function() {
