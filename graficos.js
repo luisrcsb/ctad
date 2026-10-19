@@ -59,3 +59,57 @@
                 }
             }));
         }
+
+        /* ============================================================
+           Impressão / PDF: as cores acima são feitas pro fundo escuro
+           (legenda cinza-clara, etc). No momento de imprimir (beforeprint)
+           os gráficos abertos são repintados com uma paleta escura mais
+           forte, legível no papel branco, e voltam ao visual da tela
+           sozinhos depois de imprimir (afterprint).
+           ============================================================ */
+        const PALETA_SERIE_TELA = ["#2ec4b6", "#ffb703", "#e63946", "#3a86ff", "#ff006e", "#8338ec"];
+        const PALETA_SERIE_IMPRESSAO = ["#0f7c74", "#a87400", "#c1121f", "#1c5cd6", "#c2185b", "#5e35b1"];
+
+        function repintarChartsParaImpressao(impressao) {
+            if (typeof chartInstances === 'undefined' || !chartInstances) return;
+            chartInstances.forEach(chart => {
+                if (!chart || !chart.data || !chart.data.datasets) return;
+                // Guarda as cores originais da tela na primeira repintagem
+                if (!chart.__coresOriginais) {
+                    chart.__coresOriginais = {
+                        datasets: chart.data.datasets.map(ds => ({ b: ds.borderColor, bg: ds.backgroundColor })),
+                        legenda: (chart.options && chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) ? chart.options.plugins.legend.labels.color : undefined,
+                        escalas: {}
+                    };
+                    const esc0 = (chart.options && chart.options.scales) || {};
+                    Object.keys(esc0).forEach(k => {
+                        chart.__coresOriginais.escalas[k] = {
+                            ticks: (esc0[k].ticks && esc0[k].ticks.color) || undefined,
+                            grid: (esc0[k].grid && esc0[k].grid.color) || undefined
+                        };
+                    });
+                }
+                const orig = chart.__coresOriginais;
+                const series = impressao ? PALETA_SERIE_IMPRESSAO : PALETA_SERIE_TELA;
+                chart.data.datasets.forEach((ds, i) => {
+                    const corTela = (orig.datasets[i] && orig.datasets[i].b) || series[i % series.length];
+                    const cor = impressao ? series[i % series.length] : corTela;
+                    ds.borderColor = cor;
+                    ds.backgroundColor = impressao ? cor : ((orig.datasets[i] && orig.datasets[i].bg) || cor);
+                });
+                if (chart.options && chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+                    chart.options.plugins.legend.labels.color = impressao ? '#111111' : orig.legenda;
+                }
+                const esc = (chart.options && chart.options.scales) || {};
+                Object.keys(esc).forEach(k => {
+                    if (!esc[k].ticks) esc[k].ticks = {};
+                    if (!esc[k].grid) esc[k].grid = {};
+                    esc[k].ticks.color = impressao ? '#333333' : orig.escalas[k].ticks;
+                    esc[k].grid.color = impressao ? 'rgba(0,0,0,0.15)' : orig.escalas[k].grid;
+                });
+                chart.update('none');
+            });
+        }
+
+        window.addEventListener('beforeprint', function () { try { repintarChartsParaImpressao(true); } catch (e) { } });
+        window.addEventListener('afterprint', function () { try { repintarChartsParaImpressao(false); } catch (e) { } });

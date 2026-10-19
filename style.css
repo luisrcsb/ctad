@@ -380,8 +380,24 @@
         .patch-tag.correcao { background: rgba(230,57,70,0.15); color: var(--accent-red); border: 1px solid var(--accent-red); }
 
         @media print {
+            /* Tema claro de impressão: sobrescreve as variáveis do tema escuro pra que
+               cards, painéis e cabeçalhos imprimam em fundo branco com bordas visíveis.
+               Inclui body.modo-alto-contraste (mesma especificidade, mas esta regra vem
+               depois no arquivo, então ela perde na impressão). */
+            :root, body.modo-alto-contraste {
+                --bg-body: #ffffff;
+                --bg-card: #ffffff;
+                --bg-card-header: #eef1f5;
+                --bg-input: #ffffff;
+                --border-card: #9aa3ad;
+                --text-title: #111111;
+                --text-main: #1a1a1a;
+                --text-muted: #4a4a4a;
+            }
             body, body * { color: #000000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             body { background-color: #ffffff !important; padding: 4px !important; font-size: 9px !important; }
+            .session-block { background: #ffffff !important; }
+            .chart-container { height: 200px !important; }
             .header-actions, .filters-card, .bloco-pilotos-filtro, .btn-pdf-global, .comments-section, .custom-modal, #campeonato-fullscreen, #admin-fullscreen { display: none !important; }
         }
 
