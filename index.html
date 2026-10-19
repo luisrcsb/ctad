@@ -795,8 +795,8 @@
                             </div>
                         </div>
                         <div class="baterias-barra">
-                            <button id="bateria-atual-chip" class="bateria-atual-chip" onclick="marcarSomenteBateriaAtual()" title="Bateria mais recente — clique pra marcar SÓ ela"></button>
-                            <button id="btn-lista-baterias" class="btn-lista-baterias" onclick="alternarListaBaterias()">📋 Lista</button>
+                            <div id="bateria-atual-chip" class="bateria-atual-chip"></div>
+                            <button id="btn-lista-baterias" class="btn-lista-baterias" onclick="alternarListaBaterias()">📋 Dias anteriores</button>
                             <span id="baterias-selecao-info" class="baterias-selecao-info"></span>
                         </div>
                         <div class="checkbox-container" id="filtro-baterias-container"></div>
@@ -3961,8 +3961,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             // chegando na madrugada) apenas SOMA as novas às marcadas.
             let marcarRodadaAtualInteira = primeiraVezBat || houveNovaRodada;
 
-            batContainer.innerHTML = gruposRodada.map(g => {
-                let ehRodadaAtual = g.rodada === rodadaAtual;
+            let montarGrupoHtml = (g, ehRodadaAtual) => {
                 let itensHtml = g.itens.map(arq => {
                     let key = arq.firebaseKey;
                     let sessaoOriginal = arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : key);
@@ -3988,12 +3987,17 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 let cabecalho = `<div class="filtro-rodada-dia">
                     <label class="filtro-rodada-toggle" title="Marcar/desmarcar todas as baterias deste dia">
                         <input type="checkbox" class="filter-rodada-all" onchange="alternarRodadaDia(this)">
-                        <span>${escapeHtml(formatarRodadaDia(g.rodada))}</span>
+                        <span>${ehRodadaAtual ? '🔥 ' : ''}${escapeHtml(formatarRodadaDia(g.rodada))}</span>
                     </label>
                     ${ehRodadaAtual ? '<span class="filtro-rodada-atual">• atual</span>' : ''}
                 </div>`;
                 return `<div class="filtro-rodada-grupo">${cabecalho}<div class="filtro-rodada-itens">${itensHtml}</div></div>`;
-            }).join('');
+            };
+            // Dia ATUAL exposto por inteiro na barra (🔥, com checkbox por
+            // bateria + do dia); os dias anteriores só aparecem na lista recolhida.
+            let chipAtual = document.getElementById('bateria-atual-chip');
+            if (chipAtual) chipAtual.innerHTML = gruposRodada.length ? montarGrupoHtml(gruposRodada[0], true) : '';
+            batContainer.innerHTML = gruposRodada.slice(1).map(g => montarGrupoHtml(g, false)).join('');
             sincronizarCabecalhosRodada();
             atualizarChipBateriaAtual(gruposRodada);
             atualizarInfoSelecaoBaterias();
@@ -4076,66 +4080,36 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             });
         }
 
-        // ===== Filtro de baterias enxuto: atual exposto + lista recolhida =====
-        let bateriaAtualKeyCache = null;
-
-        // Selo da bateria ATUAL (a mais nova do primeiro grupo) + total no botão.
+        // ===== Filtro de baterias enxuto: dia atual exposto + lista recolhida =====
+        // Botão da lista: só os dias ANTERIORES (o dia atual fica exposto fora).
         function atualizarChipBateriaAtual(gruposRodada) {
             let chip = document.getElementById('bateria-atual-chip');
-            if (!chip) return;
-            let g = gruposRodada && gruposRodada.length ? gruposRodada[0] : null;
-            // Itens do dia vêm em ordem crescente (1, 2, 3…): a mais nova é a última.
-            let arq = g && g.itens.length ? g.itens[g.itens.length - 1] : null;
-            if (!arq) { bateriaAtualKeyCache = null; chip.style.display = 'none'; return; }
-            chip.style.display = '';
-            bateriaAtualKeyCache = arq.firebaseKey;
-            let nome = formatarNomeSessao(arq.sessao || (arq.dados && arq.dados[0] ? arq.dados[0].sessao : arq.firebaseKey));
-            let num = extrairNumeroBateria(arq) || '?';
-            chip.innerHTML = '🔥 Atual: <b>' + escapeHtml(String(num)) + '</b>';
-            chip.title = nome + '\n(clique pra marcar SÓ a bateria atual)';
             let btn = document.getElementById('btn-lista-baterias');
-            let total = document.querySelectorAll('.filter-bateria').length;
-            if (btn && !document.getElementById('filtro-baterias-container').classList.contains('aberta')) {
-                btn.innerHTML = '📋 Lista (' + total + ')';
+            if (chip) chip.style.display = (gruposRodada && gruposRodada.length) ? '' : 'none';
+            if (!btn) return;
+            let totalAnteriores = document.querySelectorAll('#filtro-baterias-container .filter-bateria').length;
+            btn.style.display = totalAnteriores ? '' : 'none';
+            if (!document.getElementById('filtro-baterias-container').classList.contains('aberta')) {
+                btn.innerHTML = '📋 Dias anteriores (' + totalAnteriores + ')';
             }
-            atualizarChipSelecionado();
         }
 
-        // Selo apagado quando a bateria atual não está marcada.
-        function atualizarChipSelecionado() {
-            let chip = document.getElementById('bateria-atual-chip');
-            if (!chip || !bateriaAtualKeyCache) return;
-            let cb = document.querySelector('.filter-bateria[value="' + (window.CSS && CSS.escape ? CSS.escape(bateriaAtualKeyCache) : bateriaAtualKeyCache) + '"]');
-            chip.classList.toggle('desmarcada', !(cb && cb.checked));
-        }
-
-        // Clique no selo: deixa só a bateria atual marcada.
-        window.marcarSomenteBateriaAtual = function() {
-            if (!bateriaAtualKeyCache) return;
-            document.querySelectorAll('.filter-bateria').forEach(cb => { cb.checked = (cb.value === bateriaAtualKeyCache); });
-            sincronizarCabecalhosRodada();
-            atualizarInfoSelecaoBaterias();
-            atualizarDashboard();
-        };
-
-        // Abre/fecha a lista completa de dias ao lado do selo do atual.
+        // Abre/fecha a lista de dias anteriores ao lado do dia exposto.
         window.alternarListaBaterias = function() {
             let c = document.getElementById('filtro-baterias-container');
             let btn = document.getElementById('btn-lista-baterias');
             if (!c) return;
             let aberta = c.classList.toggle('aberta');
-            if (btn) btn.innerHTML = (aberta ? '▲ Recolher' : '📋 Lista') + ' (' + document.querySelectorAll('.filter-bateria').length + ')';
+            if (btn) btn.innerHTML = (aberta ? '▲ Recolher' : '📋 Dias anteriores') + ' (' + document.querySelectorAll('#filtro-baterias-container .filter-bateria').length + ')';
         };
 
         // Contador "N/M marcadas" ao lado do botão da lista.
         function atualizarInfoSelecaoBaterias() {
             let info = document.getElementById('baterias-selecao-info');
-            if (info) {
-                let marcadas = document.querySelectorAll('.filter-bateria:checked').length;
-                let total = document.querySelectorAll('.filter-bateria').length;
-                info.textContent = total ? (marcadas + '/' + total + ' marcadas') : '';
-            }
-            atualizarChipSelecionado();
+            if (!info) return;
+            let marcadas = document.querySelectorAll('.filter-bateria:checked').length;
+            let total = document.querySelectorAll('.filter-bateria').length;
+            info.textContent = total ? (marcadas + '/' + total + ' marcadas') : '';
         }
 
 

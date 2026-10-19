@@ -204,8 +204,10 @@
         /* Filtro de baterias enxuto: barra com selo do atual + botão da lista;
            a grade de dias fica recolhida (só abre com .aberta). */
         .baterias-barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-        .bateria-atual-chip { background: rgba(230, 57, 70, 0.12); border: 1px solid var(--accent-red); color: var(--text-title); font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; font-family: inherit; }
-        .bateria-atual-chip.desmarcada { opacity: 0.45; border-color: var(--border-card); background: var(--bg-input); }
+        .bateria-atual-chip { flex: 1 1 320px; min-width: 0; background: rgba(230, 57, 70, 0.06); border: 1px solid rgba(230, 57, 70, 0.45); border-radius: 8px; padding: 4px 8px; }
+        .bateria-atual-chip .filtro-rodada-grupo { flex: none; background: transparent; border: none; padding: 0; gap: 3px; }
+        .bateria-atual-chip .filtro-rodada-dia { position: static; background: transparent; border-bottom: none; padding: 1px 0 2px; }
+        .bateria-atual-chip .filtro-rodada-grupo .checkbox-bateria { background: rgba(230, 57, 70, 0.10); border-color: rgba(230, 57, 70, 0.40); }
         .btn-lista-baterias { background: var(--bg-input); border: 1px solid var(--border-card); color: var(--text-main); font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; cursor: pointer; font-family: inherit; }
         .baterias-selecao-info { font-size: 0.68rem; color: var(--text-muted); font-weight: 600; }
         #filtro-baterias-container { display: none; }
