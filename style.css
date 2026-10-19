@@ -200,7 +200,7 @@
         .admin-alerta-solicitacoes:hover { background: rgba(255, 183, 3, 0.2); }
 
         .filters-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
-        .filters-grid { display: flex; flex-direction: column; gap: 12px; }
+        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr)); gap: 12px; align-items: start; }
         /* Filtro de baterias enxuto: barra com selo do atual + botão da lista;
            a grade de dias fica recolhida (só abre com .aberta). */
         .baterias-barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
