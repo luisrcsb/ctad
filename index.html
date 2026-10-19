@@ -3930,6 +3930,18 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 }
                 gruposRodada[indicePorRodada[rodada]].itens.push(arq);
             });
+            // Cada dia em ordem crescente: bateria 1, 2, 3… e a mais nova por
+            // ÚLTIMO (a lista de partida vem da mais nova pra mais velha; os
+            // grupos continuam em ordem de recência — só os itens do dia mudam).
+            gruposRodada.forEach(g => {
+                g.itens.sort((a, b) => {
+                    let na = parseInt(extrairNumeroBateria(a), 10);
+                    let nb = parseInt(extrairNumeroBateria(b), 10);
+                    if (isNaN(na)) na = Number.MAX_SAFE_INTEGER;
+                    if (isNaN(nb)) nb = Number.MAX_SAFE_INTEGER;
+                    return na - nb;
+                });
+            });
             let rodadaAtual = gruposRodada.length ? gruposRodada[0].rodada : null;
             let houveNovaRodada = rodadaAtual !== ultimaRodadaAtualCache;
             ultimaRodadaAtualCache = rodadaAtual;
