@@ -235,7 +235,7 @@
         .podium-silver { background: rgba(192, 192, 192, 0.15); color: var(--accent-silver); border-color: var(--accent-silver); }
         .podium-bronze { background: rgba(205, 127, 50, 0.15); color: var(--accent-bronze); border-color: var(--accent-bronze); }
 
-        .session-blocks-container { display: flex; flex-direction: column; gap: 16px; }
+        .session-blocks-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 640px), 1fr)); gap: 16px; align-items: start; }
         .session-block { display: flex; flex-direction: column; gap: 12px; background: rgba(21, 28, 40, 0.4); border: 1px solid var(--border-card); border-radius: 12px; padding: 12px; }
         .card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; padding: 14px; width: 100%; }
         .card-header { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 700; color: var(--text-title); margin-bottom: 12px; }

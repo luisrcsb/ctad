@@ -257,7 +257,7 @@
             resumos = lista.map(function (r) { try { return window.gerarResumoBateria(r); } catch (e) { return null; } }).filter(Boolean);
         }
         if (!resumos.length) {
-            container.innerHTML = '<div class="card" style="text-align:center;color:var(--text-muted);">Nenhuma corrida publicada ainda.</div>';
+            container.innerHTML = '<div class="card" style="text-align:center;color:var(--text-muted);grid-column:1 / -1;">Nenhuma corrida publicada ainda.</div>';
             return;
         }
         // Agrupa por pista
@@ -282,7 +282,7 @@
             return '<div class="session-block"><div class="session-block-header"><div class="session-block-title">🏁 ' + escapeHtmlPortal(window.nomePista(pid)) + '</div></div>' +
                 '<div style="display:flex;flex-direction:column;gap:8px;">' + cards + '</div></div>';
         }).join('');
-        container.innerHTML = html + '<div class="card" style="text-align:center;">👤 <strong>Faça login</strong> para filtrar automaticamente para a sua pista e liberar gráficos, laudo e tabela volta a volta.</div>';
+        container.innerHTML = html + '<div class="card" style="text-align:center;grid-column:1 / -1;">👤 <strong>Faça login</strong> para filtrar automaticamente para a sua pista e liberar gráficos, laudo e tabela volta a volta.</div>';
     };
 
     // ---- Seletor de pista (superuser: todas; piloto: só as dele) ----
