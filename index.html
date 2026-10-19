@@ -3974,7 +3974,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                     </label>
                     ${ehRodadaAtual ? '<span class="filtro-rodada-atual">• atual</span>' : ''}
                 </div>`;
-                return `<div class="filtro-rodada-grupo">${cabecalho}${itensHtml}</div>`;
+                return `<div class="filtro-rodada-grupo">${cabecalho}<div class="filtro-rodada-itens">${itensHtml}</div></div>`;
             }).join('');
             sincronizarCabecalhosRodada();
 

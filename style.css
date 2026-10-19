@@ -217,7 +217,9 @@
         .filtro-rodada-grupo { display: flex; flex-direction: column; gap: 4px; padding-bottom: 5px; border-bottom: 1px solid rgba(34, 45, 66, 0.35); }
         .filtro-rodada-grupo:last-child { border-bottom: none; padding-bottom: 0; }
         /* Item da lista: só o número da bateria + checkbox. */
-        .checkbox-bateria { padding: 0 2px; }
+        .filtro-rodada-itens { display: flex; flex-wrap: wrap; gap: 4px; }
+        .filtro-rodada-grupo .checkbox-bateria { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; padding: 2px 6px; gap: 5px; font-size: 0.78rem; font-weight: 700; }
+        .filtro-rodada-grupo .checkbox-bateria input[type="checkbox"] { width: 13px; height: 13px; }
         .checkbox-bateria span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .upload-grid-manager { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
