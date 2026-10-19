@@ -12,6 +12,7 @@
                 relevante: [
                     { tipo: "novo", texto: "O filtro \"SESSÕES / BATERIAS\" agora agrupa as baterias por RODADA (dia): cada dia aparece sob um próprio cabeçalho com a data, que fica fixo no topo enquanto a lista rola — o dia atual vem primeiro, com o selo \"• atual\"." },
                     { tipo: "melhoria", texto: "Seleção automática por rodada: na primeira carga o site marca o dia inteiro (não só a última bateria). Uploads da mesma noite vão somando às que já estão ativas — a sessão que atravessa a madrugada continua pertencendo ao dia que começou (vale até as 6h da manhã seguinte) e só quando abre a rodada do dia novo é que a seleção troca. A seleção manual continua sendo respeitada." },
+                    { tipo: "melhoria", texto: "Lista do filtro mais limpa: cada bateria aparece só com o NÚMERO dela e o checkbox (o nome completo fica no tooltip ao passar o mouse), e o cabeçalho de cada dia ganhou um checkbox próprio pra marcar ou desmarcar aquele dia inteiro de uma vez." },
                     { tipo: "melhoria", texto: "Data de upload histórica corrigida: as baterias antigas voltaram a exibir no histórico da administração a data original do upload (antes aparecia a do reprocessamento em lote de 12/10)." }
                 ]
             },

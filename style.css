@@ -209,8 +209,16 @@
         .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-main); cursor: pointer; }
         .checkbox-item input[type="checkbox"] { accent-color: var(--accent-red); width: 15px; height: 15px; cursor: pointer; }
         /* Cabeçalho de dia no filtro de baterias (rodadas); fica fixo no topo enquanto a lista rola */
-        .filtro-rodada-dia { position: sticky; top: -8px; z-index: 1; background: var(--bg-input); font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 0 2px; border-bottom: 1px dashed var(--border-card); }
+        .filtro-rodada-dia { position: sticky; top: -8px; z-index: 1; background: var(--bg-input); font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 0 2px; border-bottom: 1px dashed var(--border-card); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
         .filtro-rodada-atual { color: var(--accent-gold); }
+        /* Checkbox antes da data: marca/desmarca o dia inteiro. */
+        .filtro-rodada-toggle { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; color: inherit; min-width: 0; }
+        .filtro-rodada-toggle input[type="checkbox"] { accent-color: var(--accent-gold); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+        .filtro-rodada-grupo { display: flex; flex-direction: column; gap: 4px; padding-bottom: 5px; border-bottom: 1px solid rgba(34, 45, 66, 0.35); }
+        .filtro-rodada-grupo:last-child { border-bottom: none; padding-bottom: 0; }
+        /* Item da lista: só o número da bateria + checkbox. */
+        .checkbox-bateria { padding: 0 2px; }
+        .checkbox-bateria span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         .upload-grid-manager { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
         .upload-box { background: var(--bg-input); border: 1px dashed var(--border-card); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }

@@ -1332,6 +1332,18 @@
             return sessaoStr;
         }
 
+        // Número da bateria pra lista do filtro: "16-10-26 Bateria (60)" -> "60".
+        // Sem número no nome (ex.: treino), tenta a chave (bat_..._bateria__60__...);
+        // se ainda assim não houver, retorna '' e o item exibe o nome da sessão.
+        function extrairNumeroBateria(arq) {
+            let sessao = (arq && arq.sessao) || (arq && arq.dados && arq.dados[0] ? arq.dados[0].sessao : '') || '';
+            let m = String(sessao).match(/\((\d+)\)/) || String(sessao).match(/bateria\s*(\d+)/i);
+            if (m) return m[1].padStart(2, '0');
+            let mk = String((arq && arq.firebaseKey) || '').match(/bateria__(\d+)__/i);
+            if (mk) return mk[1].padStart(2, '0');
+            return '';
+        }
+
         function extrairPesoOrdenacao(sessaoStr) {
             if (!sessaoStr) return 0;
             let matchData = sessaoStr.match(/(\d{2})[-/](\d{2})[-/](\d{2})/);
@@ -3828,6 +3840,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
 
         window.selecionarTodasBaterias = function() {
             document.querySelectorAll('.filter-bateria').forEach(cb => cb.checked = true);
+            sincronizarCabecalhosRodada();
             atualizarDashboard();
         };
 
@@ -3910,12 +3923,26 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                         if (bateriasSelecionadasAntigas.includes(key) || novaNaRodadaAtiva) marcado = 'checked';
                     }
 
-                    return `<label class="checkbox-item"><input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="atualizarDashboard()"> ${escapeHtml(formatarNomeSessao(sessaoOriginal))}</label>`;
+                    // Lista enxuta: só o NÚMERO da bateria + checkbox — o dia já
+                    // aparece no cabeçalho do grupo. Nome completo no tooltip.
+                    let nomeCompleto = formatarNomeSessao(sessaoOriginal);
+                    let rotulo = extrairNumeroBateria(arq) || nomeCompleto;
+                    return `<label class="checkbox-item checkbox-bateria" title="${escapeHtml(nomeCompleto)}">` +
+                        `<span>${escapeHtml(rotulo)}</span>` +
+                        `<input type="checkbox" value="${key}" class="filter-bateria" ${marcado} onchange="bateriaFiltroAlterada()"></label>`;
                 }).join('');
-                let cabecalho = '<div class="filtro-rodada-dia">' + escapeHtml(formatarRodadaDia(g.rodada)) +
-                    (ehRodadaAtual ? ' <span class="filtro-rodada-atual">• atual</span>' : '') + '</div>';
-                return cabecalho + itensHtml;
+                // Cabeçalho do dia com checkbox antes da data: marca/desmarca
+                // o dia inteiro de uma vez.
+                let cabecalho = `<div class="filtro-rodada-dia">
+                    <label class="filtro-rodada-toggle" title="Marcar/desmarcar todas as baterias deste dia">
+                        <input type="checkbox" class="filter-rodada-all" onchange="alternarRodadaDia(this)">
+                        <span>${escapeHtml(formatarRodadaDia(g.rodada))}</span>
+                    </label>
+                    ${ehRodadaAtual ? '<span class="filtro-rodada-atual">• atual</span>' : ''}
+                </div>`;
+                return `<div class="filtro-rodada-grupo">${cabecalho}${itensHtml}</div>`;
             }).join('');
+            sincronizarCabecalhosRodada();
 
             let listaNomesUnicos = Array.from(pilotosSet).filter(p => {
                 if (!p || !p.trim()) return false;
@@ -3954,6 +3981,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 // entrar na lista depois continua desmarcado (intenção do "Limpar").
                 if (classeFiltro === 'filter-piloto') pilotosDesmarcadosFiltro.add(cb.value);
             });
+            if (classeFiltro === 'filter-bateria') sincronizarCabecalhosRodada();
             atualizarDashboard();
         };
 
@@ -3963,6 +3991,34 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             else pilotosDesmarcadosFiltro.add(cb.value);
             atualizarDashboard();
         };
+
+        // Marca/desmarca TODAS as baterias de um dia pelo checkbox do cabeçalho.
+        window.alternarRodadaDia = function(cb) {
+            let grupo = cb.closest('.filtro-rodada-grupo');
+            if (!grupo) return;
+            grupo.querySelectorAll('.filter-bateria').forEach(f => { f.checked = cb.checked; });
+            cb.indeterminate = false;
+            atualizarDashboard();
+        };
+
+        // Marcação individual de uma bateria: além do dashboard, refaz o estado
+        // do checkbox do dia (só fica marcado quando o dia inteiro está ativo).
+        window.bateriaFiltroAlterada = function() {
+            sincronizarCabecalhosRodada();
+            atualizarDashboard();
+        };
+
+        // checked = todas as baterias do dia marcadas; indeterminate = só algumas.
+        function sincronizarCabecalhosRodada() {
+            document.querySelectorAll('.filtro-rodada-grupo').forEach(grupo => {
+                let cab = grupo.querySelector('.filter-rodada-all');
+                if (!cab) return;
+                let total = grupo.querySelectorAll('.filter-bateria').length;
+                let marcados = grupo.querySelectorAll('.filter-bateria:checked').length;
+                cab.checked = total > 0 && marcados === total;
+                cab.indeterminate = marcados > 0 && marcados < total;
+            });
+        }
 
 
         window.onclick = function(event) {
