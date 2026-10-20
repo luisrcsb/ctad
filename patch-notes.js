@@ -1,26 +1,21 @@
 /* CTAD - Central de Telemetria — Patch Notes (histórico de atualizações)
    Depende de: 'escapeHtml()' (script principal). Não depende de Firebase. */
 
-        const VERSAO_ATUAL_SISTEMA = "v1.2";
-        const TITULO_VERSAO_ATUAL = "Baterias por Rodada (Dia)";
+        const VERSAO_ATUAL_SISTEMA = "v1.3";
+        const TITULO_VERSAO_ATUAL = "Ferramenta de Auditoria";
 
         const historicoAtualizacoesDB = [
             {
-                versao: "v1.2",
-                data: "18 de Outubro de 2026",
-                titulo: "Baterias por Rodada (Dia)",
+                versao: "v1.3",
+                data: "19 de Outubro de 2026",
+                titulo: "Ferramenta de Auditoria",
                 relevante: [
-                    { tipo: "novo", texto: "O filtro \"SESSÕES / BATERIAS\" agora agrupa as baterias por RODADA (dia): cada dia aparece sob um próprio cabeçalho com a data, que fica fixo no topo enquanto a lista rola — o dia atual vem primeiro, com o selo \"• atual\"." },
-                    { tipo: "melhoria", texto: "Seleção automática por rodada: na primeira carga o site marca o dia inteiro (não só a última bateria). Uploads da mesma noite vão somando às que já estão ativas — a sessão que atravessa a madrugada continua pertencendo ao dia que começou (vale até as 6h da manhã seguinte) e só quando abre a rodada do dia novo é que a seleção troca. A seleção manual continua sendo respeitada." },
-                    { tipo: "melhoria", texto: "Lista do filtro mais limpa: cada bateria aparece só com o NÚMERO dela e o checkbox (o nome completo fica no tooltip ao passar o mouse), os números ficam lado a lado em fichinhas (empilham só em tela estreita), e o cabeçalho de cada dia ganhou um checkbox próprio pra marcar ou desmarcar aquele dia inteiro de uma vez." },
-                    { tipo: "melhoria", texto: "Sessões lado a lado: com mais de uma bateria selecionada, os painéis das sessões agora abrem em colunas lado a lado (em vez de um embaixo do outro) — a quantidade de colunas se adapta sozinha ao tamanho da tela e volta a uma coluna no celular." },
-                    { tipo: "melhoria", texto: "Página reorganizada pra operação fluir: o filtro de SESSÕES/BATERIAS ficou enxuto — todas as baterias do DIA ATUAL aparecem expostas num destaque vermelho 🔥 (com checkbox por bateria e checkbox do dia inteiro) e os dias anteriores ficam recolhidos num botão 📋 Dias anteriores (N) que abre/fecha ao lado, com contador de marcadas; os filtros de SESSÕES/BATERIAS e MÓDULOS VISÍVEIS agora ficam LADO A LADO no painel (empilhando só em tela estreita); os KPIs por sessão ficam logo abaixo dos filtros; e o card 🥊 Pilotos & ⚔️ Desafios virou uma lista ÚNICA de pilotos sem repetir nomes: ranqueada por ELO (#, Piloto, ELO, Corridas e Vitórias — 🥇🥈🥉 nas três primeiras posições) com o checkbox do filtro e o botão Resumo em cada linha, cabeçalho com ✅ marcar todos e 🗑️ Limpar, e logo abaixo os ⚔️ Últimos Desafios Decididos (o Top ELO antigo saiu de dentro do card, pra não repetir os mesmos nomes)." },
-                    { tipo: "correcao", texto: "Área de Downloads consertada e atualizada: o painel do KChrono agora busca a versão mais recente sozinho nos Releases do GitHub do KChrono (estava travado na v1.0.0 com link quebrado — hoje já sai na v1.0.7, com instalador, portátil e acesso a Linux/ISO). O canal de atualização automática do CTAD-Upload-Auto também voltou a responder depois da migração pro GitHub Pages." },
-                    { tipo: "melhoria", texto: "Data de upload histórica corrigida: as baterias antigas voltaram a exibir no histórico da administração a data original do upload (antes aparecia a do reprocessamento em lote de 12/10)." },
-                    { tipo: "novo", texto: "Ferramenta de Auditoria (admin, dentro de cada bateria no histórico de Uploads): abre um painel para inspecionar e corrigir as voltas de cada piloto — dá pra ELIMINAR uma volta suspeita (ex.: o famoso \"gato\", quando o piloto corta caminho, capota e ainda passa no sensor marcando um tempo impossível), corrigir o tempo de qualquer volta e REORGANIZAR a ordem das voltas (subir/descer). Ao salvar, o sistema recalcula automaticamente melhor volta, média, desvio e total de voltas do piloto, e ainda dispara o recálculo do ELO." },
+                    { tipo: "novo", texto: "Ferramenta de Auditoria (admin, dentro de cada bateria no histórico de Uploads): abre um painel para inspecionar e corrigir as voltas de cada piloto — dá pra ELIMINAR uma volta suspeita (ex.: o famoso \"gato\", quando o piloto corta caminho, capota e ainda passa no sensor marcando um tempo impossível), corrigir o tempo de qualquer volta e REORGANIZAR a ordem das voltas (subir/descer). Ao salvar, o sistema recalcula automaticamente melhor volta, média, desvio e total de voltas do piloto, atualiza a vitrine pública e dispara o recálculo do ELO." },
                     { tipo: "melhoria", texto: "Dashboard mais limpo: campeonatos com status \"Finalizada\" e compras coletivas \"Finalizada\" (quitadas e entregues) agora ficam ocultos no painel de status; e o card 🛍️ Produtos Recomendados passou a exibir até 5 produtos (antes 3)." },
+                    { tipo: "correcao", texto: "Salvamento da Auditoria: corrigidas as regras do Firebase (uploadLog agora aceita ações de auditoria) e o salvamento ficou resiliente a falhas de log — os dados da bateria sempre são gravados corretamente." }
                 ]
             },
+            {
             {
                 versao: "v1.1",
                 data: "18 de Outubro de 2026",
