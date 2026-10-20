@@ -318,7 +318,7 @@
                 return;
             }
 
-            container.innerHTML = ids.slice(0, 3).map(id => {
+            container.innerHTML = ids.slice(0, 5).map(id => {
                 let p = produtosRecomendadosCache[id] || {};
                 let total = (Number(p.valorAprox) || 0) + (Number(p.freteAprox) || 0) + (Number(p.impostoAprox) || 0);
                 let qtdFavoritos = contarFavoritosProduto(p);

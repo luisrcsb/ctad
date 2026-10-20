@@ -4270,7 +4270,8 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
         function renderizarKpisGestaoDashboard() {
             let campContainer = document.getElementById('kpi-campeonatos-conteudo');
             if (campContainer) {
-                let keys = Object.keys(campeonatosCache);
+                // Oculta campeonatos finalizados
+                let keys = Object.keys(campeonatosCache).filter(k => (campeonatosCache[k].status || "Em andamento") !== "Finalizada");
                 keys.sort((a, b) => {
                     let timeA = parseInt(a.split('_').pop(), 10) || 0;
                     let timeB = parseInt(b.split('_').pop(), 10) || 0;
@@ -4318,7 +4319,15 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             let comprasContainer = document.getElementById('kpi-compras-conteudo');
             if (comprasContainer) {
                 // Mesma ordenação da Gestão de Compras (admin): atualização mais recente no topo.
-                let keys = ordenarChavesComprasPorAtualizacao(Object.keys(comprasColetivasCache));
+                // Oculta compras finalizadas (quitadas + entregues).
+                let todasChaves = ordenarChavesComprasPorAtualizacao(Object.keys(comprasColetivasCache));
+                let keys = todasChaves.filter(k => {
+                    let c = comprasColetivasCache[k];
+                    let ats = Object.values(c.participantes || {}).filter(p => p && p.ativo);
+                    let qs = ats.filter(p => p.pago).length;
+                    let quit = ats.length > 0 && qs === ats.length;
+                    return !(quit && !!c.entregue);
+                });
                 if (keys.length === 0) {
                     comprasContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.78rem;">Nenhuma compra coletiva.</div>`;
                 } else {
