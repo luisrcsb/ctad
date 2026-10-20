@@ -3625,6 +3625,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                     <div style="display:flex; gap:4px; margin-top:4px;">
                         <button class="btn-text-action" onclick="inspecionarJsonUploadPrincipal(${originalIndex})" style="font-size:0.62rem;">Inspecionar</button>
                         ${item.pdfBase64 ? `<button class="btn-text-action" onclick="baixarArquivoOriginal(${originalIndex})" style="font-size:0.62rem;">📥 Baixar</button>` : ''}
+                        ${item.dados && Array.isArray(item.dados) && item.dados.length ? `<button class="btn-text-action" onclick="abrirAuditoriaBateria(${originalIndex})" style="font-size:0.62rem;">🔍 Auditar</button>` : ''}
                         ${item.textoExtraido ? `<button class="btn-text-action" onclick="reprocessarUpload(${originalIndex})" style="font-size:0.62rem;">🔄 Reprocessar</button>` : ''}
                     </div>
                 `;
@@ -3688,6 +3689,174 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                 
                 return { html: diffHtml, alteracoes, totalAntigos: antigos.length, totalNovos: novos.length };
             }
+
+        window.abrirAuditoriaBateria = function(index) {
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
+            const item = listaUploadsHistoricoCache[index];
+            if (!item || !item.dados || !Array.isArray(item.dados) || item.dados.length === 0) {
+                alert('Esta bateria não possui dados para auditar.');
+                return;
+            }
+            const batKey = item.bateriaKey || item.firebaseKey;
+            const sessaoNome = item.sessao || item.nomeArquivoOriginal || 'Bateria';
+            const modal = document.createElement('div');
+            modal.id = 'modal-auditoria-bateria';
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:12000;overflow:auto;';
+            modal.innerHTML = `
+                <div style="background:var(--bg-card);border:1px solid var(--border-card);border-radius:12px;width:95vw;max-width:1100px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border-card);background:var(--bg-input);">
+                        <div>
+                            <h3 style="margin:0;color:var(--accent-gold);font-size:1.1rem;">🔍 Ferramenta de Auditoria - ${escapeHtml(sessaoNome)}</h3>
+                            <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;">Bateria: ${escapeHtml(batKey)} | ${item.dados.length} piloto(s)</div>
+                        </div>
+                        <button onclick="fecharAuditoriaBateria()" style="background:none;border:none;color:var(--text-muted);font-size:1.8rem;cursor:pointer;line-height:1;">✕</button>
+                    </div>
+                    <div style="padding:12px 20px;background:var(--bg-body);border-bottom:1px solid var(--border-card);display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <label style="font-size:0.75rem;color:var(--text-main);">Selecionar Piloto:</label>
+                        <select id="audit-piloto-select" onchange="carregarVoltasAuditoria('${escapeHtml(batKey)}')" style="background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-card);padding:6px 10px;border-radius:6px;font-size:0.8rem;min-width:250px;">
+                            <option value="">-- Escolha um piloto --</option>
+                            ${item.dados.map((p, idx) => `<option value="${idx}">${escapeHtml(p.piloto)} (Pos: ${p.pos || (idx+1)+'º'} | Melhor: ${p.melhorVoltaTxt || '--'} | Voltas: ${(p.laps||[]).length})</option>`).join('')}
+                        </select>
+                        <div style="font-size:0.7rem;color:var(--accent-gold);margin-left:auto;">💡 Elimine voltas suspeitas e reorganize a ordem arrastando linhas</div>
+                    </div>
+                    <div style="flex:1;overflow:auto;padding:16px 20px;">
+                        <div id="audit-voltas-container" style="color:var(--text-muted);text-align:center;padding:40px;">Selecione um piloto para visualizar e auditar suas voltas</div>
+                    </div>
+                    <div style="padding:12px 20px;border-top:1px solid var(--border-card);background:var(--bg-input);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <div style="font-size:0.7rem;color:var(--text-muted);">Alterações recalculam melhor volta, média, desvio e total</div>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn" onclick="fecharAuditoriaBateria()">Cancelar</button>
+                            <button class="btn-action-primary" onclick="salvarAuditoriaBateria('${escapeHtml(batKey)}')">💾 Salvar Alterações</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            window._auditData = JSON.parse(JSON.stringify(item.dados));
+            window._auditBatKey = batKey;
+            window._auditIndex = index;
+        };
+
+        window.fecharAuditoriaBateria = function() {
+            const modal = document.getElementById('modal-auditoria-bateria');
+            if (modal) modal.remove();
+            delete window._auditData;
+            delete window._auditBatKey;
+            delete window._auditIndex;
+        };
+
+        window.carregarVoltasAuditoria = function(batKey) {
+            const select = document.getElementById('audit-piloto-select');
+            const container = document.getElementById('audit-voltas-container');
+            if (!select || !container || !window._auditData) return;
+            const pilotoIdx = parseInt(select.value);
+            if (isNaN(pilotoIdx)) {
+                container.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:40px;">Selecione um piloto para visualizar e auditar suas voltas</div>';
+                return;
+            }
+            const piloto = window._auditData[pilotoIdx];
+            const laps = piloto.laps || [];
+            if (laps.length === 0) {
+                container.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:40px;">Este piloto não possui voltas registradas.</div>';
+                return;
+            }
+            let html = '<div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">' +
+                '<div style="font-weight:700;color:var(--text-title);">' + escapeHtml(piloto.piloto) + '</div>' +
+                '<div style="font-size:0.75rem;color:var(--text-muted);">' + laps.length + ' volta(s)</div></div>' +
+                '<div style="overflow-x:auto;"><table style="width:100%;min-width:600px;"><thead><tr style="background:var(--bg-input);">' +
+                '<th style="padding:8px;text-align:center;width:60px;">#</th>' +
+                '<th style="padding:8px;text-align:left;">Ordem</th>' +
+                '<th style="padding:8px;text-align:left;">Tempo (s)</th>' +
+                '<th style="padding:8px;text-align:center;">Ações</th></tr></thead><tbody id="audit-voltas-tbody">';
+            laps.forEach((tempo, idx) => {
+                const tempoNum = typeof tempo === 'object' ? tempo.tempo : tempo;
+                html += '<tr data-idx="' + idx + '" style="border-bottom:1px solid var(--border-card);">' +
+                    '<td style="padding:8px;text-align:center;color:var(--text-muted);">' + (idx + 1) + '</td>' +
+                    '<td style="padding:8px;cursor:move;color:var(--accent-gold);" title="Arrastar para reorganizar">☰</td>' +
+                    '<td style="padding:8px;"><input type="number" step="0.001" value="' + Number(tempoNum).toFixed(3) + '" onchange="atualizarTempoVolta(' + pilotoIdx + ', ' + idx + ', this.value)" style="background:var(--bg-input);color:var(--text-main);border:1px solid var(--border-card);padding:4px 8px;border-radius:4px;width:100px;"></td>' +
+                    '<td style="padding:8px;text-align:center;">' +
+                    '<button class="btn-text-action" onclick="eliminarVoltaAuditoria(' + pilotoIdx + ', ' + idx + ')" style="color:var(--accent-red);font-size:0.75rem;">🗑️ Eliminar</button> ' +
+                    (idx > 0 ? '<button class="btn-text-action" onclick="moverVoltaAuditoria(' + pilotoIdx + ', ' + idx + ', -1)" style="font-size:0.75rem;">⬆️ Subir</button> ' : '') +
+                    (idx < laps.length - 1 ? '<button class="btn-text-action" onclick="moverVoltaAuditoria(' + pilotoIdx + ', ' + idx + ', 1)" style="font-size:0.75rem;">⬇️ Descer</button>' : '') +
+                    '</td></tr>';
+            });
+            html += '</tbody></table></div>' +
+                '<div style="margin-top:12px;padding:10px;background:var(--bg-input);border-radius:6px;font-size:0.7rem;color:var(--text-muted);">' +
+                '<strong style="color:var(--accent-gold);">Melhor volta atual:</strong> ' + (piloto.melhorVoltaTxt || '--') +
+                ' | <strong style="color:var(--accent-gold);">Voltas:</strong> ' + laps.length + '</div>';
+            container.innerHTML = html;
+            window._auditCurrentPilotoIdx = pilotoIdx;
+        };
+
+        window.atualizarTempoVolta = function(pilotoIdx, voltaIdx, valor) {
+            if (!window._auditData) return;
+            const tempo = parseFloat(valor);
+            if (isNaN(tempo) || tempo <= 0) { alert('Tempo inválido'); return; }
+            window._auditData[pilotoIdx].laps[voltaIdx] = parseFloat(tempo.toFixed(3));
+        };
+
+        window.eliminarVoltaAuditoria = function(pilotoIdx, voltaIdx) {
+            if (!window._auditData) return;
+            const piloto = window._auditData[pilotoIdx];
+            if (!confirm('Eliminar a volta ' + (voltaIdx + 1) + ' (' + piloto.piloto + ')?\n\nEsta ação não pode ser desfeita sem recarregar.')) return;
+            piloto.laps.splice(voltaIdx, 1);
+            carregarVoltasAuditoria(window._auditBatKey);
+        };
+
+        window.moverVoltaAuditoria = function(pilotoIdx, voltaIdx, direcao) {
+            if (!window._auditData) return;
+            const piloto = window._auditData[pilotoIdx];
+            const laps = piloto.laps;
+            const novoIdx = voltaIdx + direcao;
+            if (novoIdx < 0 || novoIdx >= laps.length) return;
+            const tmp = laps[voltaIdx];
+            laps[voltaIdx] = laps[novoIdx];
+            laps[novoIdx] = tmp;
+            carregarVoltasAuditoria(window._auditBatKey);
+        };
+
+        window.salvarAuditoriaBateria = async function(batKey) {
+            if (!window._auditData) return;
+            if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
+            if (!confirm('Salvar todas as alterações feitas na auditoria?\n\nIsso irá atualizar o banco de dados e recalcular estatísticas e ELO.')) return;
+            try {
+                const dadosAtualizados = window._auditData.map(p => {
+                    const laps = (p.laps || []).filter(t => t !== undefined && t !== null && !isNaN(t) && t > 0);
+                    if (laps.length === 0) {
+                        return Object.assign({}, p, { laps: [], melhorVoltaVal: 0, melhorVoltaTxt: "00,000s", mediaVal: 0, mediaTxt: "00,000s", desvioVal: 0, desvio: "±0,000s", voltasTotais: 0 });
+                    }
+                    const melhor = Math.min.apply(null, laps);
+                    const media = laps.reduce((a,b) => a+b, 0) / laps.length;
+                    const desvio = Math.sqrt(laps.reduce((sum, t) => sum + Math.pow(t - media, 2), 0) / laps.length);
+                    return Object.assign({}, p, {
+                        laps: laps,
+                        melhorVoltaVal: parseFloat(melhor.toFixed(3)),
+                        melhorVoltaTxt: melhor.toFixed(3).replace('.', ',') + 's',
+                        mediaVal: parseFloat(media.toFixed(3)),
+                        mediaTxt: media.toFixed(3).replace('.', ',') + 's',
+                        desvioVal: parseFloat(desvio.toFixed(3)),
+                        desvio: '±' + desvio.toFixed(3).replace('.', ',') + 's',
+                        voltasTotais: laps.length
+                    });
+                });
+                await db.ref('baterias/' + batKey).update({ dados: dadosAtualizados });
+                await db.ref('uploadLog/' + batKey + '_audit_' + Date.now()).set({
+                    uid: usuarioAtual?.uid || 'desconhecido',
+                    acao: 'audit_edit',
+                    bateriaKey: batKey,
+                    timestamp: Date.now(),
+                    descricao: 'Edicao via Ferramenta de Auditoria (eliminar/reorganizar voltas)'
+                });
+                if (typeof window.recalcularEloGeral === 'function') {
+                    try { await window.recalcularEloGeral(); } catch(e) {}
+                }
+                alert('✅ Auditoria salva com sucesso!\n\nEstatísticas e ELO recalculados.');
+                fecharAuditoriaBateria();
+                if (typeof atualizarListaUploadHistoricoPrincipal === 'function') atualizarListaUploadHistoricoPrincipal();
+            } catch(err) {
+                alert('❌ Erro ao salvar: ' + err.message);
+            }
+        };
 
         window.reprocessarUpload = async function(index) {
             if (!exigirAcessoAdmin('campeonatos', 'gerenciar')) return;
