@@ -16,7 +16,6 @@
                 ]
             },
             {
-            {
                 versao: "v1.1",
                 data: "18 de Outubro de 2026",
                 titulo: "ELO ao Vivo e Desafios Consertados",
@@ -40,29 +39,6 @@
                     { tipo: "novo", texto: "Histórico Consolidado: Esta versão consolida o trabalho realizado até o momento, servindo como base sólida para o futuro da plataforma." },
                     { tipo: "novo", texto: "Resumo do que foi construído: dashboard de telemetria com tabela volta a volta, gráficos e melhores voltas; campeonatos com Championship Manager, chaves e grid de treino; dossiê dos pilotos com tags automáticas, ELO e notas pessoais; contas de piloto com aprovação e \"Minha Conta\"; desafios com placar; compras coletivas com Pix, rastreio e linha do tempo; vitrine de produtos com lista de desejos; Telão 4K; painel de administração em página única; notas de atualização e acessibilidade." },
                     { tipo: "novo", texto: "Próximos Passos: A partir deste lançamento, as próximas notas de atualização acompanharão a evolução contínua, correções e novas melhorias implementadas na plataforma." }
-                ]
-            },
-            {
-                versao: "v5.104.0",
-                data: "09 de Outubro de 2026",
-                titulo: "Tags dos Pilotos Automatizadas",
-                relevante: [
-                    { tipo: "melhoria", texto: "Agora oito tags que dependiam de marcação manual são calculadas sozinhas pelos dados de corrida: Velocidade Média por sessão, Precisão Total, Maior Recuperação, Sequência Invicta, Rei da Pista (taxa de vitória), Poles, Melhor Largada e Mais Confiável. Continua valendo a regra de que só leva a tag quem está na frente com vantagem clara — em caso de empate ninguém recebe." },
-                    { tipo: "novo", texto: "Três tags de perfil novas, também automáticas: 🌱 Estreante (até 3 corridas), 🎖️ Veterano (20+ corridas) e 🏁 Maratonista (50+ voltas). Elas premiam o volume de corrida do próprio piloto, sem disputa contra os outros." },
-                    { tipo: "melhoria", texto: "Atribuição de tags passou a acontecer dentro de \"⚙️ Configurar Piloto\" (seção Pilotos), junto de apelido, aliases e carros. A seção \"🏷️ Tags dos Pilotos\" do painel virou uma visão geral somente leitura — e a única tag manual restante, 🧠 Melhor Gestão, é marcada lá no cadastro do piloto." },
-                    { tipo: "correcao", texto: "Corrigido erro de sintaxe na lista de log de uploads (interpolação sem fechamento) que impedia o script principal da página de ser carregado." }
-                ]
-            },
-            {
-                versao: "v5.103.0",
-                data: "09 de Outubro de 2026",
-                titulo: "Painel de Administração em Página Única",
-                relevante: [
-                    { tipo: "melhoria", texto: "O \"Painel de Administração\" virou uma página única em tela cheia com menu lateral fixo, no lugar da janela antiga. Tudo foi embutido na mesma tela: Pista/Telão 4K, Central de Uploads, Gestão de Pilotos, Compras Coletivas, Tags, Solicitações de Acesso, Contas Vinculadas e Produtos Recomendados — sem abrir e fechar telas uma a uma." },
-                    { tipo: "melhoria", texto: "Championship Manager (que também passou a página única em tela cheia) e o disparo do Telão 4K continuam sendo acionados por botão, em tela própria, pra não poluir a navegação." },
-                    { tipo: "novo", texto: "Solicitações de acesso pendentes agora aparecem em três lugares: contador no item \"📝 Solicitações\" do menu, faixa de alerta no topo do painel e um selo com o número no botão \"🔐 Administração\"." },
-                    { tipo: "novo", texto: "\"Minha Conta\" passa a mostrar o status da solicitação do próprio piloto (\"⏳ em análise\" para pendentes, \"❌ não aprovada\" para rejeitadas), atualizando sozinho quando o administrador muda o status." },
-                    { tipo: "melhoria", texto: "Perfil \"Gestor\" agora acessa também Tags, Configurações e Produtos Recomendados, além das ferramentas que já tinha." }
                 ]
             },
             {
