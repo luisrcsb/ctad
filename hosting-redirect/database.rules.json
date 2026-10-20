@@ -1,0 +1,274 @@
+{
+  "rules": {
+    "perfis": {
+      ".read": "auth != null",
+      "$slug": {
+        ".read": "auth != null",
+        ".write": "root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser'"
+      }
+    },
+    "usuarios": {
+      ".read": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
+        ".write": "auth != null && (auth.uid === $uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+      }
+    },
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      },
+      ".write": false
+    },
+    "usuariosPilotos": {
+      ".read": true,
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+      }
+    },
+    "solicitacoesCadastro": {
+      ".read": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+        ".write": "auth != null && (auth.uid === $uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+        "status": {
+          ".validate": "(!data.exists() && newData.val() === 'pendente') || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true"
+        }
+      }
+    },
+    "notasPilotos": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "campeonatos": {
+      ".read": true,
+      ".indexOn": [
+        "pistaId"
+      ],
+      "$camKey": {
+        ".read": true,
+        ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+        "pilotosInscritos": {
+          "$pKey": {
+            ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true || data.child('pilotoKey').val() === auth.uid)"
+          }
+        },
+        "bateriasBancoSeparado": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+        },
+        "configuracoes": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+        },
+        "gridTreinoDados": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+        },
+        "status": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+        }
+      }
+    },
+    "pistas": {
+      ".read": true,
+      "$pistaId": {
+        ".read": true,
+        "info": {
+          ".read": true,
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true)"
+        },
+        "membros": {
+          ".read": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true || data.child(auth.uid).exists())",
+          "$uid": {
+            ".read": "auth != null && (auth.uid === $uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true)",
+            ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('admins/' + auth.uid).val() === true || (root.child('pistas/' + $pistaId + '/membros/' + auth.uid + '/nivel').val() === 'admin' && ((!data.exists() && newData.child('nivel').val() === 'piloto') || (data.exists() && data.child('nivel').val() === 'piloto' && (!newData.exists() || newData.child('nivel').val() === 'piloto')))))"
+          }
+        }
+      }
+    },
+    "publicResumo": {
+      ".read": true,
+      "baterias": {
+        ".read": true,
+        "$batKey": {
+          ".read": true,
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+        }
+      },
+      "campeonatos": {
+        ".read": true,
+        "$camKey": {
+          ".read": true,
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+        }
+      }
+    },
+    "baterias": {
+      ".read": true,
+      ".indexOn": [
+        "pistaId",
+        "fileHash",
+        "sessao"
+      ],
+      ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+      "$batKey": {
+        ".validate": "!newData.exists() || newData.hasChildren(['fileHash', 'parserVersion', 'fileSize', 'uploadedBy', 'uploadedAt'])",
+        "fileHash": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
+          ".validate": "newData.isString() && newData.val().length === 64"
+        },
+        "parserVersion": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
+          ".validate": "newData.isNumber() && newData.val() >= 1"
+        },
+        "fileSize": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "uploadedBy": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
+          ".validate": "newData.isString()"
+        },
+        "uploadedAt": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    },
+    "pilotosMetadados": {
+      ".read": true,
+      "$metaKey": {
+        ".read": true,
+        ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+        "elo": {
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true || root.child('usuariosPilotos/' + auth.uid + '/piloto').exists())",
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3000"
+        }
+      }
+    },
+    "mesclagensPilotos": {
+      ".read": true,
+      ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+    },
+    "uploadLog": {
+      ".read": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
+      "$logKey": {
+        ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "acao": {
+          ".validate": "newData.isString() && (newData.val() === 'upload' || newData.val() === 'reprocess' || newData.val() === 'delete' || newData.val() === 'audit_edit')"
+        },
+        "bateriaKey": {
+          ".validate": "newData.isString()"
+        },
+        "fileHash": {
+          ".validate": "newData.isString() && newData.val().length === 64"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        }
+      }
+    },
+    "comprasColetivas": {
+      ".read": true,
+      "$compraKey": {
+        ".read": true,
+        ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+      }
+    },
+    "produtosRecomendados": {
+      ".read": true,
+      "$id": {
+        ".read": true,
+        ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+        "favoritadoPor": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
+      }
+    },
+    "desafios": {
+      ".read": true,
+      "$desafioId": {
+        ".read": true,
+        ".write": "auth != null && (!data.exists() && newData.hasChildren(['desafiante', 'desafiados', 'formato', 'status']) && newData.child('desafiante').val() !== '' && newData.child('status').val() === 'aguardando' && newData.child('desafiados/0').exists() && (newData.child('desafianteUid').val() === auth.uid || newData.child('desafiadosUids').hasChild(auth.uid) || root.child('usuariosPilotos/' + auth.uid + '/piloto').val() === newData.child('desafiante').val() || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true) || (data.exists() && newData.exists()) && (data.child('desafianteUid').val() === auth.uid || data.child('desafiadosUids').hasChild(auth.uid) || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true) || (data.exists() && !newData.exists()) && (data.child('desafianteUid').val() === auth.uid || data.child('desafiadosUids').hasChild(auth.uid) || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true))",
+        "status": {
+          ".validate": "newData.val() === 'aguardando' || newData.val() === 'decidido' || newData.val() === 'expirado'"
+        },
+        "ausenciasDesafiado": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "ultimaBateriaAusencia": {
+          ".validate": "newData.isString() && newData.val().length < 256"
+        }
+      }
+    },
+    "convitesDesafio": {
+      ".read": "auth != null",
+      "$conviteId": {
+        ".read": true,
+        ".write": "auth != null && ((!data.exists() && newData.hasChildren(['desafiante', 'desafianteUid', 'convidados', 'criadoEm', 'formato']) && newData.child('desafianteUid').val() === auth.uid) || (data.exists() && !newData.exists() && (data.child('desafianteUid').val() === auth.uid || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)))",
+        "convidados": {
+          "$convKey": {
+            "status": {
+              ".write": "auth != null && (data.parent().child('uid').val() === auth.uid || root.child('usuariosPilotos/' + auth.uid + '/piloto').val() === data.parent().child('nome').val() || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+            },
+            "respondidoEm": {
+              ".write": "auth != null && (data.parent().child('uid').val() === auth.uid || root.child('usuariosPilotos/' + auth.uid + '/piloto').val() === data.parent().child('nome').val() || root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+            }
+          }
+        }
+      }
+    },
+    "comments": {
+      ".read": true,
+      "$bateriaKey": {
+        ".read": true,
+        "$comId": {
+          ".write": "auth != null"
+        }
+      }
+    },
+    "likes": {
+      ".read": true,
+      "$bateriaKey": {
+        ".write": "auth != null"
+      }
+    },
+    "configuracoesGlobais": {
+      ".read": true,
+      ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+    },
+    "patchNotes": {
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('admins/' + auth.uid).val() === true)"
+    },
+    "categorias": {
+      ".read": true,
+      "$catId": {
+        ".read": true,
+        ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+      }
+    },
+    "manuais": {
+      "usuario": {
+        ".read": true,
+        "$docId": {
+          ".read": true,
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+        }
+      },
+      "admin": {
+        ".read": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+        "$docId": {
+          ".read": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)",
+          ".write": "auth != null && (root.child('usuarios/' + auth.uid + '/nivel').val() === 'superuser' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'admin' || root.child('usuarios/' + auth.uid + '/nivel').val() === 'gestor' || root.child('admins/' + auth.uid).val() === true)"
+        }
+      }
+    }
+  }
+}

@@ -159,7 +159,7 @@
           ".validate": "newData.isString()"
         },
         "acao": {
-          ".validate": "newData.isString() && (newData.val() === 'upload' || newData.val() === 'reprocess' || newData.val() === 'delete')"
+          ".validate": "newData.isString() && (newData.val() === 'upload' || newData.val() === 'reprocess' || newData.val() === 'delete' || newData.val() === 'audit_edit')"
         },
         "bateriaKey": {
           ".validate": "newData.isString()"

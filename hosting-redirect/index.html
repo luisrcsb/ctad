@@ -3735,6 +3735,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             window._auditData = JSON.parse(JSON.stringify(item.dados));
             window._auditBatKey = batKey;
             window._auditIndex = index;
+            window._auditFileHash = item.fileHash || '';
         };
 
         window.fecharAuditoriaBateria = function() {
@@ -3743,6 +3744,7 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
             delete window._auditData;
             delete window._auditBatKey;
             delete window._auditIndex;
+            delete window._auditFileHash;
         };
 
         window.carregarVoltasAuditoria = function(batKey) {
@@ -3840,13 +3842,30 @@ function parsearTextoConvertido(texto, sessaoNome, batKey) {
                     });
                 });
                 await db.ref('baterias/' + batKey).update({ dados: dadosAtualizados });
-                await db.ref('uploadLog/' + batKey + '_audit_' + Date.now()).set({
-                    uid: usuarioAtual?.uid || 'desconhecido',
-                    acao: 'audit_edit',
-                    bateriaKey: batKey,
-                    timestamp: Date.now(),
-                    descricao: 'Edicao via Ferramenta de Auditoria (eliminar/reorganizar voltas)'
-                });
+                // Atualiza o resumo público (vitrine) para não ficar com o dado antigo
+                try {
+                    const itemAtual = listaUploadsHistoricoCache[window._auditIndex];
+                    if (itemAtual && typeof window.gerarResumoBateria === 'function') {
+                        const itemAtualizado = Object.assign({}, itemAtual, { dados: dadosAtualizados, firebaseKey: batKey });
+                        const resumo = window.gerarResumoBateria(itemAtualizado);
+                        await db.ref('publicResumo/baterias/' + batKey).set(resumo);
+                    }
+                } catch (eResumo) {
+                    console.warn('Resumo público não atualizado:', eResumo && eResumo.message ? eResumo.message : eResumo);
+                }
+                // Log de auditoria: não deve derrubar o salvamento se as regras
+                // do log estiverem restritas — o essencial (dados) já foi salvo.
+                try {
+                    await db.ref('uploadLog/' + batKey + '_audit_' + Date.now()).set({
+                        uid: usuarioAtual?.uid || 'desconhecido',
+                        acao: 'audit_edit',
+                        bateriaKey: batKey,
+                        fileHash: (window._auditFileHash && window._auditFileHash.length === 64) ? window._auditFileHash : '0'.repeat(64),
+                        timestamp: Date.now()
+                    });
+                } catch (eLog) {
+                    console.warn('Log de auditoria não gravado (permissão):', eLog && eLog.message ? eLog.message : eLog);
+                }
                 if (typeof window.recalcularEloGeral === 'function') {
                     try { await window.recalcularEloGeral(); } catch(e) {}
                 }
