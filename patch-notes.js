@@ -10,7 +10,7 @@
                 data: "19 de Outubro de 2026",
                 titulo: "Ferramenta de Auditoria",
                 relevante: [
-                    { tipo: "novo", texto: "Ferramenta de Auditoria (admin, dentro de cada bateria no histórico de Uploads): abre um painel para inspecionar e corrigir as voltas de cada piloto — dá pra ELIMINAR uma volta suspeita (ex.: o famoso \"gato\", quando o piloto corta caminho, capota e ainda passa no sensor marcando um tempo impossível), corrigir o tempo de qualquer volta e REORGANIZAR a ordem das voltas (subir/descer). Ao salvar, o sistema recalcula automaticamente melhor volta, média, desvio e total de voltas do piloto, atualiza a vitrine pública e dispara o recálculo do ELO." },
+                    { tipo: "novo", texto: "Ferramenta de Auditoria para corrigir voltas diretamente no histórico de baterias (admin)." },
                     { tipo: "melhoria", texto: "Dashboard mais limpo: campeonatos com status \"Finalizada\" e compras coletivas \"Finalizada\" (quitadas e entregues) agora ficam ocultos no painel de status; e o card 🛍️ Produtos Recomendados passou a exibir até 5 produtos (antes 3)." },
                     { tipo: "correcao", texto: "Salvamento da Auditoria: corrigidas as regras do Firebase (uploadLog agora aceita ações de auditoria) e o salvamento ficou resiliente a falhas de log — os dados da bateria sempre são gravados corretamente." }
                 ]
