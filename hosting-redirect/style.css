@@ -297,7 +297,7 @@
         .footer-logo-img { height: 28px; width: auto; object-fit: contain; border-radius: 4px; padding: 2px 4px; background: #ffffff; }
         .footer-oferecimento { display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .footer-oferecimento-text { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); }
-        .footer-kchrono-img { height: 56px; width: auto; object-fit: contain; border-radius: 4px; padding: 2px 4px; background: #ffffff; }
+        .footer-kchrono-img { height: 64px; width: auto; object-fit: contain; border-radius: 4px; padding: 2px 4px; background: #ffffff; }
         .footer-copyright { font-size: 0.8rem; color: var(--text-muted); text-align: center; border-top: 1px solid var(--border-card); padding-top: 8px; width: 100%; }
 
         .version-badge-interactive {
